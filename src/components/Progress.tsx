@@ -1,4 +1,3 @@
-import React from 'react';
 import type { SurveyResponse, BaselineSurvey, Session } from '../lib/types';
 
 interface ProgressPageProps {

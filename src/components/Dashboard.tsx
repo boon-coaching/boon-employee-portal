@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Employee, Session } from '../lib/types';
 
 interface DashboardProps {
