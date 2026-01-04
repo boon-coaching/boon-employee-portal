@@ -9,14 +9,23 @@ export default function AuthCallback() {
   useEffect(() => {
     async function handleCallback() {
       try {
+        // Check for error in URL params first
+        const urlParams = new URLSearchParams(window.location.search);
+        const errorDesc = urlParams.get('error_description');
+
+        if (errorDesc) {
+          setError(errorDesc);
+          return;
+        }
+
         // Get the URL hash (Supabase puts tokens there)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
         const refreshToken = hashParams.get('refresh_token');
 
         if (accessToken && refreshToken) {
-          // Set the session
-          const { error } = await supabase.auth.setSession({
+          // Set the session and wait for it to be confirmed
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
@@ -24,19 +33,30 @@ export default function AuthCallback() {
           if (error) {
             throw error;
           }
+
+          // Verify session was established before navigating
+          if (data.session) {
+            console.log('Session established, redirecting to dashboard');
+            navigate('/', { replace: true });
+            return;
+          }
         }
 
-        // Also check URL params (some flows use these)
-        const urlParams = new URLSearchParams(window.location.search);
-        const errorDesc = urlParams.get('error_description');
-        
-        if (errorDesc) {
-          setError(errorDesc);
-          return;
+        // If no tokens in hash, check if session already exists
+        // (Supabase may have auto-detected tokens)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          throw sessionError;
         }
 
-        // Redirect to dashboard
-        navigate('/', { replace: true });
+        if (session) {
+          console.log('Existing session found, redirecting to dashboard');
+          navigate('/', { replace: true });
+        } else {
+          // No session and no tokens - something went wrong
+          setError('No authentication tokens found. Please try signing in again.');
+        }
       } catch (err: any) {
         console.error('Auth callback error:', err);
         setError(err.message || 'Something went wrong');
