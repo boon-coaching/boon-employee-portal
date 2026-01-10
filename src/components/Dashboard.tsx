@@ -36,14 +36,16 @@ export default function Dashboard({ profile, sessions }: DashboardProps) {
           <p className="text-gray-500 mt-2 text-lg font-medium">Your personal coaching space</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
-          <a 
-            href="https://boon-health.com/book" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-2xl text-white bg-boon-blue hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-95"
-          >
-            Book a session
-          </a>
+          {profile?.booking_link && (
+            <a
+              href={profile.booking_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-2xl text-white bg-boon-blue hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-95"
+            >
+              Book a session
+            </a>
+          )}
         </div>
       </header>
 

@@ -93,7 +93,7 @@ function ProtectedApp() {
         return <ProgressPage progress={progress} baseline={baseline} sessions={sessions} />;
       case 'coach':
         const currentCoachName = sessions.length > 0 ? sessions[0].coach_name : "Your Coach";
-        return <CoachPage coachName={currentCoachName} sessions={sessions} />;
+        return <CoachPage coachName={currentCoachName} sessions={sessions} bookingLink={employee?.booking_link || null} />;
       default:
         return <Dashboard profile={employee} sessions={sessions} />;
     }

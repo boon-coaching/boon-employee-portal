@@ -13,6 +13,7 @@ export interface Employee {
   auth_user_id: string | null;
   status: string | null;
   program_type: string | null;
+  booking_link: string | null;
   created_at: string;
 }
 
