@@ -1,5 +1,6 @@
 import type { Employee, Session, ActionItem } from '../lib/types';
 import ActionItems from './ActionItems';
+import SessionPrep from './SessionPrep';
 
 interface DashboardProps {
   profile: Employee | null;
@@ -143,6 +144,13 @@ export default function Dashboard({ profile, sessions, actionItems, onActionUpda
 
       {/* Action Items */}
       <ActionItems items={actionItems} onUpdate={onActionUpdate} />
+
+      {/* Session Prep */}
+      <SessionPrep
+        sessions={sessions}
+        actionItems={actionItems}
+        coachName={lastSession?.coach_name || 'Your Coach'}
+      />
 
       {/* Next Step & Summary Row */}
       <div className="grid md:grid-cols-2 gap-8 md:gap-10 pb-8">
