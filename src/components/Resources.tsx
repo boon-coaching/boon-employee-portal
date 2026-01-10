@@ -13,87 +13,108 @@ interface Resource {
 const resources: Resource[] = [
   // Featured
   {
-    title: 'The Mindful Pause',
-    description: 'A simple technique to create space between stimulus and response. Practice being intentional in your reactions.',
+    title: 'How to Deal with Difficult People',
+    description: 'Harvard-backed strategies for navigating challenging workplace relationships with empathy and boundaries.',
     type: 'article',
-    duration: '5 min read',
-    url: '#',
+    duration: '7 min read',
+    url: 'https://hbr.org/2022/09/how-to-deal-with-a-mean-colleague',
     featured: true,
   },
   {
-    title: 'Giving Feedback That Lands',
-    description: 'How to deliver constructive feedback that motivates rather than deflates.',
+    title: 'The Secret to Giving Great Feedback',
+    description: 'LeeAnn Renninger shares a science-based method for delivering feedback that actually lands.',
     type: 'video',
-    duration: '10 min watch',
-    url: '#',
+    duration: '8 min watch',
+    url: 'https://www.ted.com/talks/leeann_renninger_the_secret_to_giving_great_feedback',
     featured: true,
   },
   // Articles
   {
-    title: 'The Art of Active Listening',
-    description: 'Transform your conversations by truly hearing what others are saying.',
+    title: 'What Great Listeners Actually Do',
+    description: 'Research reveals that great listening goes beyond staying quiet—it\'s about making people feel heard.',
     type: 'article',
     duration: '6 min read',
-    url: '#',
+    url: 'https://hbr.org/2016/07/what-great-listeners-actually-do',
   },
   {
-    title: 'Managing Energy, Not Time',
-    description: 'Why sustainable performance comes from managing your energy reserves.',
+    title: 'Manage Your Energy, Not Your Time',
+    description: 'Tony Schwartz on why sustainable high performance requires managing your energy, not just your calendar.',
     type: 'article',
-    duration: '8 min read',
-    url: '#',
+    duration: '10 min read',
+    url: 'https://hbr.org/2007/10/manage-your-energy-not-your-time',
+  },
+  {
+    title: 'How to Say No to Taking on More Work',
+    description: 'Practical scripts and strategies for setting boundaries without damaging relationships.',
+    type: 'article',
+    duration: '5 min read',
+    url: 'https://hbr.org/2022/12/how-to-say-no-to-taking-on-more-work',
   },
   // Videos
   {
-    title: 'Leading Through Change',
-    description: 'Practical strategies for guiding your team through uncertainty.',
+    title: 'How to Lead in a Crisis',
+    description: 'Amy Edmondson on the leadership behaviors that help teams navigate uncertainty and change.',
     type: 'video',
     duration: '12 min watch',
-    url: '#',
+    url: 'https://www.ted.com/talks/amy_c_edmondson_how_to_lead_in_a_crisis',
   },
   {
-    title: 'Building Trust in Teams',
-    description: 'The foundations of psychological safety and how to cultivate it.',
+    title: 'Building a Psychologically Safe Workplace',
+    description: 'Amy Edmondson explains why psychological safety is the foundation of high-performing teams.',
     type: 'video',
-    duration: '15 min watch',
-    url: '#',
+    duration: '14 min watch',
+    url: 'https://www.youtube.com/watch?v=LhoLuui9gX8',
+  },
+  {
+    title: 'How to Have Better Conversations',
+    description: 'Celeste Headlee shares 10 rules for having more meaningful, connected conversations.',
+    type: 'video',
+    duration: '12 min watch',
+    url: 'https://www.ted.com/talks/celeste_headlee_10_ways_to_have_a_better_conversation',
   },
   // Exercises
   {
-    title: 'Morning Reflection Practice',
-    description: 'A 5-minute journaling exercise to start your day with intention.',
+    title: '5-Minute Journal Template',
+    description: 'A simple morning and evening reflection practice to build gratitude and intention.',
     type: 'exercise',
     duration: '5 min daily',
-    url: '#',
+    url: 'https://www.intelligentchange.com/pages/five-minute-journal-app',
   },
   {
-    title: 'The Difficult Conversation Prep',
-    description: 'A worksheet to prepare for challenging discussions with confidence.',
+    title: 'Difficult Conversation Planner',
+    description: 'A structured worksheet from Crucial Conversations to prepare for high-stakes discussions.',
     type: 'exercise',
-    duration: '15 min exercise',
-    url: '#',
+    duration: '15 min prep',
+    url: 'https://cruciallearning.com/blog/how-to-prepare-for-a-crucial-conversation/',
   },
   {
-    title: 'Weekly Energy Audit',
-    description: 'Track what gives you energy vs. what drains it over a week.',
+    title: 'Energy Audit Worksheet',
+    description: 'Identify what energizes vs. drains you to make better decisions about where to focus.',
     type: 'exercise',
-    duration: '5 min daily',
-    url: '#',
+    duration: '20 min exercise',
+    url: 'https://www.mindtools.com/aycnkop/managing-your-energy',
   },
   // Books
   {
     title: 'Radical Candor',
-    description: 'Kim Scott\'s framework for caring personally while challenging directly.',
+    description: 'Kim Scott\'s framework for caring personally while challenging directly—the key to being a great boss.',
     type: 'book',
-    duration: 'Book summary',
-    url: '#',
+    duration: 'Book',
+    url: 'https://www.radicalcandor.com/the-book/',
   },
   {
     title: 'Essentialism',
-    description: 'Greg McKeown\'s guide to doing less but better.',
+    description: 'Greg McKeown\'s disciplined pursuit of less—a guide to doing what matters most.',
     type: 'book',
-    duration: 'Book summary',
-    url: '#',
+    duration: 'Book',
+    url: 'https://gregmckeown.com/books/essentialism/',
+  },
+  {
+    title: 'Crucial Conversations',
+    description: 'Tools for talking when stakes are high, opinions vary, and emotions run strong.',
+    type: 'book',
+    duration: 'Book',
+    url: 'https://cruciallearning.com/crucial-conversations-book/',
   },
 ];
 
@@ -136,6 +157,8 @@ export default function Resources() {
               <a
                 key={idx}
                 href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 p-6 rounded-2xl border border-boon-blue/10 hover:border-boon-blue/30 transition-all"
               >
                 <div className="flex items-center gap-2 mb-3">
@@ -197,6 +220,8 @@ export default function Resources() {
           <a
             key={idx}
             href={resource.url}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-boon-blue/30 transition-all flex flex-col"
           >
             <div className="flex items-center gap-2 mb-2">
