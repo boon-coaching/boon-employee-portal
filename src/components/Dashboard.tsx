@@ -86,14 +86,31 @@ export default function Dashboard({ profile, sessions, actionItems, onActionUpda
         </div>
       </section>
 
+      {/* Your Goals - from most recent session */}
+      {lastSession?.goals && (
+        <section className="bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 rounded-[2rem] p-8 border border-boon-blue/10">
+          <div className="flex items-start justify-between mb-4">
+            <h2 className="text-xl font-extrabold text-boon-text">Your Goals</h2>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              From {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          <div className="prose prose-sm max-w-none">
+            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+              {lastSession.goals}
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="grid md:grid-cols-2 gap-8 md:gap-10">
         {/* Working On */}
         <section className="space-y-5">
-          <h2 className="text-xl font-extrabold text-boon-text">Working on</h2>
+          <h2 className="text-xl font-extrabold text-boon-text">Themes</h2>
           <div className="space-y-3">
             {focusAreas.length > 0 ? focusAreas.map((area, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:border-boon-blue/20 transition-all cursor-pointer group active:scale-[0.98]"
               >
                 <h3 className="font-bold text-boon-text group-hover:text-boon-blue transition-colors leading-snug">
@@ -110,7 +127,7 @@ export default function Dashboard({ profile, sessions, actionItems, onActionUpda
                 </div>
               </div>
             )) : (
-              <p className="text-gray-400 italic text-sm">Focus areas will appear here as you progress.</p>
+              <p className="text-gray-400 italic text-sm">Themes will appear here as you progress.</p>
             )}
           </div>
         </section>

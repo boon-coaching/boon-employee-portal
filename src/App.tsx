@@ -100,7 +100,7 @@ function ProtectedApp() {
       case 'sessions':
         return <SessionsPage sessions={sessions} />;
       case 'progress':
-        return <ProgressPage progress={progress} baseline={baseline} sessions={sessions} />;
+        return <ProgressPage progress={progress} baseline={baseline} sessions={sessions} actionItems={actionItems} />;
       case 'resources':
         return <Resources />;
       case 'coach':

@@ -29,6 +29,8 @@ export interface Session {
   mental_well_being: boolean;
   other_themes: string | null;
   summary: string | null;
+  goals: string | null;
+  plan: string | null;
   duration_minutes: number | null;
   company_id: string | null;
   account_name: string | null;
