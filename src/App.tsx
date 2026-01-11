@@ -96,7 +96,7 @@ function ProtectedApp() {
   const renderView = () => {
     switch (view) {
       case 'dashboard':
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} onActionUpdate={reloadActionItems} />;
+        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} onActionUpdate={reloadActionItems} />;
       case 'sessions':
         return <SessionsPage sessions={sessions} />;
       case 'progress':
@@ -107,7 +107,7 @@ function ProtectedApp() {
         const currentCoachName = sessions.length > 0 ? sessions[0].coach_name : "Your Coach";
         return <CoachPage coachName={currentCoachName} sessions={sessions} bookingLink={employee?.booking_link || null} />;
       default:
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} onActionUpdate={reloadActionItems} />;
+        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} onActionUpdate={reloadActionItems} />;
     }
   };
 
