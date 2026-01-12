@@ -28,24 +28,17 @@ const CONFIG = {
 };
 
 // Field mapping from Salesforce to Supabase
-// Based on Boon's Salesforce org field structure
+// MINIMAL SYNC: Only sync new fields (goals, plan, summary)
+// All other fields preserved from existing Zapier data
 const FIELD_MAPPING = {
-  // Salesforce field -> Supabase column
+  // Required for matching
+  'AppointmentNumber': 'appointment_number',
+
+  // New fields to add
   'Id': 'salesforce_id',
-  'SchedStartTime': 'session_date',        // Scheduled Start
-  'Status': 'status',                      // Status picklist
-  'Coach_First_Name__c': 'coach_name',     // Coach First Name
-  'Leadership_Management_Skills__c': 'leadership_management_skills',  // Multi-select
-  'Communication_Skills__c': 'communication_skills',                  // Multi-select
-  'Mental_Well_Being__c': 'mental_well_being',                        // Multi-select
-  'Other_Themes__c': 'other_themes',       // Long Text
-  'Notes__c': 'summary',                   // Notes = session summary
+  'Notes__c': 'summary',                   // Session summary
   'Goals__c': 'goals',                     // Goals discussed
   'Plan__c': 'plan',                       // Action plan
-  'ActualDuration': 'duration_minutes',    // Duration in minutes
-  'Account_Name__c': 'account_name',       // Company name
-  'AppointmentNumber': 'appointment_number',
-  'CreatedDate': 'created_at',
 };
 
 // Initialize clients
@@ -113,12 +106,8 @@ function mapRecord(sfRecord) {
       value = statusMap[value.toLowerCase()] || value;
     }
 
-    // Multi-select picklists come as semicolon-separated strings
-    // Convert to boolean: true if the field has any value selected
-    if (['leadership_management_skills', 'communication_skills', 'mental_well_being'].includes(supabaseColumn)) {
-      // Has value = theme was discussed in session
-      value = value !== null && value !== undefined && value !== '';
-    }
+    // Multi-select picklists - preserve actual text values (e.g., "Motivating teams")
+    // Don't transform these - keep the original Salesforce values
 
     // Handle dates - SchedStartTime is a datetime
     if (supabaseColumn === 'session_date' && value) {
