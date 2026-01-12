@@ -45,7 +45,7 @@ jobs:
 
       - name: Run Salesforce sync
         run: |
-          node scripts/sync-salesforce.js
+          node scripts/sync-salesforce.cjs
         env:
           FULL_SYNC: ${{ github.event.inputs.full_sync || 'false' }}
 
