@@ -152,46 +152,21 @@ async function updateExistingRecords(records) {
   }
 
   console.log(`Processing ${records.length} Salesforce records...`);
-
-  // First, get all existing appointment_numbers from Supabase
-  console.log('Fetching existing appointment numbers from Supabase...');
-  const { data: existingRecords, error: fetchError } = await supabase
-    .from('session_tracking')
-    .select('appointment_number')
-    .not('appointment_number', 'is', null);
-
-  if (fetchError) {
-    console.error('Error fetching existing records:', fetchError);
-    throw fetchError;
-  }
-
-  const existingAppointmentNumbers = new Set(
-    existingRecords.map(r => r.appointment_number)
-  );
-  console.log(`Found ${existingAppointmentNumbers.size} existing appointment numbers in Supabase`);
-
-  // Filter to only records that exist in Supabase
-  const recordsToUpdate = records.filter(r =>
-    r.appointment_number && existingAppointmentNumbers.has(r.appointment_number)
-  );
-  const skipped = records.length - recordsToUpdate.length;
-
-  console.log(`Updating ${recordsToUpdate.length} existing records (skipping ${skipped} that don't exist in Supabase)`);
-
-  if (recordsToUpdate.length === 0) {
-    return { updated: 0, skipped, errors: 0 };
-  }
+  console.log('Updating only existing records in Supabase (no inserts)...');
 
   let totalUpdated = 0;
   let errors = [];
 
   // Process in batches - use UPDATE not UPSERT
-  for (let i = 0; i < recordsToUpdate.length; i += CONFIG.batchSize) {
-    const batch = recordsToUpdate.slice(i, i + CONFIG.batchSize);
+  // Update will only affect rows where appointment_number exists
+  for (let i = 0; i < records.length; i += CONFIG.batchSize) {
+    const batch = records.slice(i, i + CONFIG.batchSize);
 
-    // Update each record individually to avoid inserting new ones
+    // Update each record - if appointment_number doesn't exist, update affects 0 rows (which is fine)
     for (const record of batch) {
       const { appointment_number, ...updateData } = record;
+
+      if (!appointment_number) continue;
 
       const { error } = await supabase
         .from('session_tracking')
@@ -206,14 +181,18 @@ async function updateExistingRecords(records) {
       }
     }
 
-    console.log(`Processed batch ${Math.floor(i / CONFIG.batchSize) + 1}: ${batch.length} records`);
+    const batchNum = Math.floor(i / CONFIG.batchSize) + 1;
+    const totalBatches = Math.ceil(records.length / CONFIG.batchSize);
+    if (batchNum % 100 === 0 || batchNum === totalBatches) {
+      console.log(`Processed batch ${batchNum}/${totalBatches}`);
+    }
   }
 
   if (errors.length > 0) {
     console.error(`Completed with ${errors.length} errors`);
   }
 
-  return { updated: totalUpdated, skipped, errors: errors.length };
+  return { updated: totalUpdated, skipped: 0, errors: errors.length };
 }
 
 async function main() {
