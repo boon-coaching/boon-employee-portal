@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { Session } from '../lib/types';
+import { submitSessionFeedback } from '../lib/dataFetcher';
 
 interface SessionsPageProps {
   sessions: Session[];
@@ -22,17 +23,21 @@ export default function SessionsPage({ sessions }: SessionsPageProps) {
 
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!feedbackSession) return;
+
     setIsSubmitting(true);
-    // TODO: Submit to Supabase
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    const success = await submitSessionFeedback(feedbackSession.id, feedbackRating, feedbackText);
     setIsSubmitting(false);
-    setIsSuccess(true);
-    setTimeout(() => {
-      setFeedbackSession(null);
-      setIsSuccess(false);
-      setFeedbackRating(0);
-      setFeedbackText('');
-    }, 2200);
+
+    if (success) {
+      setIsSuccess(true);
+      setTimeout(() => {
+        setFeedbackSession(null);
+        setIsSuccess(false);
+        setFeedbackRating(0);
+        setFeedbackText('');
+      }, 2200);
+    }
   };
 
   // Calendar Helpers
