@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './lib/AuthContext';
 import { fetchSessions, fetchProgressData, fetchBaseline, fetchActionItems } from './lib/dataFetcher';
+import { determineLifecycleStage } from './lib/useLifecycleStage';
 import type { View, Session, SurveyResponse, BaselineSurvey, ActionItem } from './lib/types';
 
 // Pages
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import NoEmployeeFound from './pages/NoEmployeeFound';
+import WelcomePage from './pages/WelcomePage';
+import MatchingPage from './pages/MatchingPage';
+import GettingStartedPage from './pages/GettingStartedPage';
 
 // Components
 import Layout from './components/Layout';
@@ -17,6 +21,9 @@ import ProgressPage from './components/Progress';
 import Resources from './components/Resources';
 import CoachPage from './components/Coach';
 import Settings from './components/Settings';
+
+// Configuration - Replace with actual survey URL
+const WELCOME_SURVEY_URL = 'https://boon.typeform.com/welcome'; // TODO: Update with actual URL
 
 function ProtectedApp() {
   const { employee, loading } = useAuth();
@@ -83,10 +90,10 @@ function ProtectedApp() {
     return (
       <div className="min-h-screen bg-boon-bg flex items-center justify-center">
         <div className="flex flex-col items-center">
-          <img 
-            src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Icon_Blue_10_i8hkao.png" 
-            className="w-12 h-12 animate-bounce mb-4" 
-            alt="Loading..." 
+          <img
+            src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Icon_Blue_10_i8hkao.png"
+            className="w-12 h-12 animate-bounce mb-4"
+            alt="Loading..."
           />
           <p className="text-boon-blue font-medium">Getting your dashboard ready...</p>
         </div>
@@ -94,6 +101,23 @@ function ProtectedApp() {
     );
   }
 
+  // Determine lifecycle stage
+  const lifecycle = determineLifecycleStage(employee, sessions, baseline);
+
+  // Route to appropriate page based on lifecycle stage
+  if (lifecycle.stage === 'welcome') {
+    return <WelcomePage welcomeSurveyUrl={WELCOME_SURVEY_URL} />;
+  }
+
+  if (lifecycle.stage === 'matching') {
+    return <MatchingPage />;
+  }
+
+  if (lifecycle.stage === 'getting-started') {
+    return <GettingStartedPage sessions={sessions} />;
+  }
+
+  // Active coaching - render full dashboard with navigation
   const renderView = () => {
     switch (view) {
       case 'dashboard':
