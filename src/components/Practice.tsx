@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { SCENARIOS, CATEGORY_INFO, type PracticeScenario, type ScenarioCategory } from '../data/scenarios';
 import type { Session } from '../lib/types';
 import PracticeModal from './PracticeModal';
@@ -8,9 +8,10 @@ import { getTeamMembers, getSavedPlans, deleteSavedPlan, type TeamMember, type S
 interface PracticeProps {
   sessions: Session[];
   coachName: string;
+  userEmail: string;
 }
 
-export default function Practice({ sessions, coachName }: PracticeProps) {
+export default function Practice({ sessions, coachName, userEmail }: PracticeProps) {
   const [selectedCategory, setSelectedCategory] = useState<ScenarioCategory | 'all'>('all');
   const [selectedScenario, setSelectedScenario] = useState<PracticeScenario | null>(null);
   const [customSituation, setCustomSituation] = useState('');
@@ -20,33 +21,43 @@ export default function Practice({ sessions, coachName }: PracticeProps) {
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [showTeamManager, setShowTeamManager] = useState(false);
   const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
+  const [_isLoading, setIsLoading] = useState(true);
 
   // Load team members and saved plans
+  const refreshData = useCallback(async () => {
+    if (!userEmail) return;
+    const [members, plans] = await Promise.all([
+      getTeamMembers(userEmail),
+      getSavedPlans(userEmail)
+    ]);
+    setTeamMembers(members);
+    setSavedPlans(plans);
+  }, [userEmail]);
+
   useEffect(() => {
-    setTeamMembers(getTeamMembers());
-    setSavedPlans(getSavedPlans());
-  }, []);
+    const loadData = async () => {
+      setIsLoading(true);
+      await refreshData();
+      setIsLoading(false);
+    };
+    loadData();
+  }, [refreshData]);
 
-  const refreshData = () => {
-    setTeamMembers(getTeamMembers());
-    setSavedPlans(getSavedPlans());
-  };
-
-  const handleDeletePlan = (id: string) => {
+  const handleDeletePlan = async (id: string) => {
     if (confirm('Delete this saved plan?')) {
-      deleteSavedPlan(id);
+      await deleteSavedPlan(id);
       refreshData();
     }
   };
 
   const handleOpenSavedPlan = (plan: SavedPlan) => {
     // Find the original scenario or create a custom one
-    const originalScenario = SCENARIOS.find(s => s.id === plan.scenarioId);
+    const originalScenario = SCENARIOS.find(s => s.id === plan.scenario_id);
     if (originalScenario) {
       setSelectedScenario(originalScenario);
       setCustomSituation(plan.context);
-      if (plan.teamMemberId) {
-        const member = teamMembers.find(m => m.id === plan.teamMemberId);
+      if (plan.team_member_id) {
+        const member = teamMembers.find(m => m.id === plan.team_member_id);
         setSelectedTeamMember(member || null);
       }
     }
@@ -202,7 +213,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                     onClick={() => handleOpenSavedPlan(plan)}
                     className="text-xs text-gray-600 hover:text-boon-blue truncate flex-1 text-left"
                   >
-                    {plan.scenarioTitle} {plan.teamMemberName && `• ${plan.teamMemberName}`}
+                    {plan.scenario_title} {plan.team_member_name && `• ${plan.team_member_name}`}
                   </button>
                   <button
                     onClick={() => handleDeletePlan(plan.id)}
@@ -395,6 +406,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
           initialContext={selectedScenario.id.startsWith('custom-') ? customSituation : ''}
           coachName={coachName}
           teamMember={selectedTeamMember}
+          userEmail={userEmail}
           onClose={() => {
             setSelectedScenario(null);
             setCustomSituation('');
@@ -408,6 +420,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
       {showTeamManager && (
         <TeamManager
           members={teamMembers}
+          userEmail={userEmail}
           onUpdate={refreshData}
           onClose={() => setShowTeamManager(false)}
         />

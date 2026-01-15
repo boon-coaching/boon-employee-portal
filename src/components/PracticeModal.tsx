@@ -8,13 +8,14 @@ interface PracticeModalProps {
   initialContext?: string;
   coachName: string;
   teamMember?: TeamMember | null;
+  userEmail: string;
   onClose: () => void;
   onPlanSaved?: () => void;
 }
 
 type ViewMode = 'guide' | 'rapid' | 'full' | 'practice';
 
-export default function PracticeModal({ scenario, initialContext = '', coachName, teamMember, onClose, onPlanSaved }: PracticeModalProps) {
+export default function PracticeModal({ scenario, initialContext = '', coachName, teamMember, userEmail, onClose, onPlanSaved }: PracticeModalProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('guide');
   const [context, setContext] = useState(initialContext);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -81,12 +82,12 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
       setEvaluation(null);
 
       // Save to playbook
-      savePlan({
-        scenarioId: scenario.id,
-        scenarioTitle: scenario.title,
+      await savePlan(userEmail, {
+        scenario_id: scenario.id,
+        scenario_title: scenario.title,
         context: context,
-        teamMemberId: teamMember?.id,
-        teamMemberName: teamMember?.name,
+        team_member_id: teamMember?.id,
+        team_member_name: teamMember?.name,
         plan: plan,
       });
       onPlanSaved?.();

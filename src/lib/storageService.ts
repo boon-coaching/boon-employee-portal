@@ -1,68 +1,100 @@
-// Local storage service for Practice feature
+// Storage service for Practice feature - using Supabase for persistence
+import { supabase } from './supabase';
 
 export interface TeamMember {
   id: string;
   name: string;
   role: string;
   context: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface SavedPlan {
   id: string;
-  scenarioId: string;
-  scenarioTitle: string;
+  scenario_id: string;
+  scenario_title: string;
   context: string;
-  teamMemberId?: string;
-  teamMemberName?: string;
+  team_member_id?: string;
+  team_member_name?: string;
   plan: string;
-  createdAt: string;
+  created_at: string;
 }
-
-const TEAM_STORAGE_KEY = 'boon_practice_team';
-const PLAYBOOK_STORAGE_KEY = 'boon_practice_playbook';
 
 // ============================================
 // TEAM MEMBERS
 // ============================================
 
-export function getTeamMembers(): TeamMember[] {
-  try {
-    const stored = localStorage.getItem(TEAM_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
+export async function getTeamMembers(email: string): Promise<TeamMember[]> {
+  const { data, error } = await supabase
+    .from('practice_team_members')
+    .select('id, name, role, context, created_at')
+    .eq('employee_email', email.toLowerCase())
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching team members:', error);
     return [];
   }
+
+  return data || [];
 }
 
-export function saveTeamMember(member: Omit<TeamMember, 'id' | 'createdAt'>): TeamMember {
-  const members = getTeamMembers();
-  const newMember: TeamMember = {
-    ...member,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-  };
-  members.push(newMember);
-  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(members));
-  return newMember;
+export async function saveTeamMember(
+  email: string,
+  member: { name: string; role: string; context: string }
+): Promise<TeamMember | null> {
+  const { data, error } = await supabase
+    .from('practice_team_members')
+    .insert({
+      employee_email: email.toLowerCase(),
+      name: member.name,
+      role: member.role,
+      context: member.context,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving team member:', error);
+    return null;
+  }
+
+  return data;
 }
 
-export function updateTeamMember(id: string, updates: Partial<Omit<TeamMember, 'id' | 'createdAt'>>): TeamMember | null {
-  const members = getTeamMembers();
-  const index = members.findIndex(m => m.id === id);
-  if (index === -1) return null;
+export async function updateTeamMember(
+  id: string,
+  updates: { name?: string; role?: string; context?: string }
+): Promise<TeamMember | null> {
+  const { data, error } = await supabase
+    .from('practice_team_members')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
 
-  members[index] = { ...members[index], ...updates };
-  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(members));
-  return members[index];
+  if (error) {
+    console.error('Error updating team member:', error);
+    return null;
+  }
+
+  return data;
 }
 
-export function deleteTeamMember(id: string): boolean {
-  const members = getTeamMembers();
-  const filtered = members.filter(m => m.id !== id);
-  if (filtered.length === members.length) return false;
+export async function deleteTeamMember(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('practice_team_members')
+    .delete()
+    .eq('id', id);
 
-  localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(filtered));
+  if (error) {
+    console.error('Error deleting team member:', error);
+    return false;
+  }
+
   return true;
 }
 
@@ -70,41 +102,79 @@ export function deleteTeamMember(id: string): boolean {
 // PLAYBOOK (SAVED PLANS)
 // ============================================
 
-export function getSavedPlans(): SavedPlan[] {
-  try {
-    const stored = localStorage.getItem(PLAYBOOK_STORAGE_KEY);
-    const plans = stored ? JSON.parse(stored) : [];
-    // Sort by most recent first
-    return plans.sort((a: SavedPlan, b: SavedPlan) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  } catch {
+export async function getSavedPlans(email: string): Promise<SavedPlan[]> {
+  const { data, error } = await supabase
+    .from('practice_saved_plans')
+    .select('id, scenario_id, scenario_title, context, team_member_id, team_member_name, plan, created_at')
+    .eq('employee_email', email.toLowerCase())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching saved plans:', error);
     return [];
   }
+
+  return data || [];
 }
 
-export function savePlan(plan: Omit<SavedPlan, 'id' | 'createdAt'>): SavedPlan {
-  const plans = getSavedPlans();
-  const newPlan: SavedPlan = {
-    ...plan,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-  };
-  plans.unshift(newPlan); // Add to beginning
-  localStorage.setItem(PLAYBOOK_STORAGE_KEY, JSON.stringify(plans));
-  return newPlan;
+export async function savePlan(
+  email: string,
+  plan: {
+    scenario_id: string;
+    scenario_title: string;
+    context: string;
+    team_member_id?: string;
+    team_member_name?: string;
+    plan: string;
+  }
+): Promise<SavedPlan | null> {
+  const { data, error } = await supabase
+    .from('practice_saved_plans')
+    .insert({
+      employee_email: email.toLowerCase(),
+      scenario_id: plan.scenario_id,
+      scenario_title: plan.scenario_title,
+      context: plan.context,
+      team_member_id: plan.team_member_id,
+      team_member_name: plan.team_member_name,
+      plan: plan.plan,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving plan:', error);
+    return null;
+  }
+
+  return data;
 }
 
-export function deleteSavedPlan(id: string): boolean {
-  const plans = getSavedPlans();
-  const filtered = plans.filter(p => p.id !== id);
-  if (filtered.length === plans.length) return false;
+export async function deleteSavedPlan(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('practice_saved_plans')
+    .delete()
+    .eq('id', id);
 
-  localStorage.setItem(PLAYBOOK_STORAGE_KEY, JSON.stringify(filtered));
+  if (error) {
+    console.error('Error deleting plan:', error);
+    return false;
+  }
+
   return true;
 }
 
-export function getPlanById(id: string): SavedPlan | null {
-  const plans = getSavedPlans();
-  return plans.find(p => p.id === id) || null;
+export async function getPlanById(id: string): Promise<SavedPlan | null> {
+  const { data, error } = await supabase
+    .from('practice_saved_plans')
+    .select('id, scenario_id, scenario_title, context, team_member_id, team_member_name, plan, created_at')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching plan:', error);
+    return null;
+  }
+
+  return data;
 }

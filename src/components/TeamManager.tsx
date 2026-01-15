@@ -4,13 +4,15 @@ import { saveTeamMember, updateTeamMember, deleteTeamMember } from '../lib/stora
 
 interface TeamManagerProps {
   members: TeamMember[];
+  userEmail: string;
   onUpdate: () => void;
   onClose: () => void;
 }
 
-export default function TeamManager({ members, onUpdate, onClose }: TeamManagerProps) {
+export default function TeamManager({ members, userEmail, onUpdate, onClose }: TeamManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
@@ -32,22 +34,24 @@ export default function TeamManager({ members, onUpdate, onClose }: TeamManagerP
     setIsAdding(false);
   };
 
-  const handleSave = () => {
-    if (!name.trim()) return;
+  const handleSave = async () => {
+    if (!name.trim() || isSaving) return;
+    setIsSaving(true);
 
     if (editingId) {
-      updateTeamMember(editingId, { name, role, context });
+      await updateTeamMember(editingId, { name, role, context });
     } else {
-      saveTeamMember({ name, role, context });
+      await saveTeamMember(userEmail, { name, role, context });
     }
 
     resetForm();
+    setIsSaving(false);
     onUpdate();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Remove this team member?')) {
-      deleteTeamMember(id);
+      await deleteTeamMember(id);
       onUpdate();
     }
   };
