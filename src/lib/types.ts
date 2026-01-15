@@ -12,7 +12,7 @@ export interface Employee {
   coach_id: string | null;
   auth_user_id: string | null;
   status: string | null;
-  program_type: string | null;
+  program: string | null; // Links to programs table
   booking_link: string | null;
   created_at: string;
 }
@@ -59,28 +59,46 @@ export interface SurveyResponse {
   adaptability: number | null;
 }
 
+// Baseline survey from welcome_survey_baseline table
+// Contains both wellbeing metrics AND competency baselines
 export interface BaselineSurvey {
   id: string;
   email: string;
-  satisfaction: number | null;
-  productivity: number | null;
-  work_life_balance: number | null;
-  resilience: number | null;
-  focus_leadership: boolean;
-  focus_communication: boolean;
-  focus_wellbeing: boolean;
+  created_at: string;
+  // Wellbeing metrics
+  q_work_satisfaction: number | null;
+  q_productivity: number | null;
+  q_work_life_balance: number | null;
+  q_resilience: number | null;
+  // 12 Core competencies (baseline self-assessment)
+  q_adaptability_and_resilience: number | null;
+  q_building_relationships_at_work: number | null;
+  q_change_management: number | null;
+  q_delegation_and_accountability: number | null;
+  q_effective_communication: number | null;
+  q_effective_planning_and_execution: number | null;
+  q_emotional_intelligence: number | null;
+  q_giving_and_receiving_feedback: number | null;
+  q_persuasion_and_influence: number | null;
+  q_self_confidence_and_imposter_syndrome: number | null;
+  q_strategic_thinking: number | null;
+  q_time_management_and_productivity: number | null;
 }
 
-// Grow clients have additional core competencies
-export interface GrowBaselineSurvey extends BaselineSurvey {
-  // Core competency self-ratings (1-5 scale)
-  strategic_thinking: number | null;
-  decision_making: number | null;
-  people_management: number | null;
-  influence: number | null;
-  emotional_intelligence: number | null;
-  adaptability: number | null;
+// Competency score from competency_scores table (current/end-of-program scores)
+export interface CompetencyScore {
+  id: string;
+  email: string;
+  created_at: string;
+  competency_name: string;
+  score: number;
+  score_label: 'Applying' | 'Growing' | 'Excelling' | string;
+  score_type: 'end_of_program' | string;
+  program_title: string | null;
 }
+
+// Program type enum
+export type ProgramType = 'SCALE' | 'GROW' | 'EXEC';
 
 export interface Coach {
   id: string;
