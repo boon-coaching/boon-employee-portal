@@ -18,6 +18,7 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import SessionsPage from './components/Sessions';
 import ProgressPage from './components/Progress';
+import Practice from './components/Practice';
 import Resources from './components/Resources';
 import CoachPage from './components/Coach';
 import Settings from './components/Settings';
@@ -126,6 +127,9 @@ function ProtectedApp() {
         return <SessionsPage sessions={sessions} />;
       case 'progress':
         return <ProgressPage progress={progress} baseline={baseline} sessions={sessions} actionItems={actionItems} />;
+      case 'practice':
+        const practiceCoachName = sessions.length > 0 ? sessions[0].coach_name : "Your Coach";
+        return <Practice sessions={sessions} coachName={practiceCoachName} />;
       case 'resources':
         return <Resources />;
       case 'coach':
