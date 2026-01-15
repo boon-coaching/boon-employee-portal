@@ -64,17 +64,15 @@ export async function fetchBaseline(email: string): Promise<BaselineSurvey | nul
     .from('welcome_survey_baseline')
     .select('*')
     .ilike('email', email)
-    .single();
+    .order('id', { ascending: false })
+    .limit(1);
 
   if (error) {
-    // Not an error if baseline doesn't exist - employee may not have filled it out
-    if (error.code !== 'PGRST116') {
-      console.error('Error fetching baseline:', error);
-    }
+    console.error('Error fetching baseline:', error);
     return null;
   }
 
-  return data as BaselineSurvey;
+  return (data && data.length > 0) ? data[0] as BaselineSurvey : null;
 }
 
 /**
