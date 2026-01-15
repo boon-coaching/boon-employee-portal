@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SurveyResponse, BaselineSurvey, GrowBaselineSurvey, Session, ActionItem } from '../lib/types';
+import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem } from '../lib/types';
 import {
   RadarChart,
   PolarGrid,
@@ -7,173 +7,159 @@ import {
   PolarRadiusAxis,
   Radar,
   ResponsiveContainer,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  AreaChart,
-  Area,
+  Cell,
 } from 'recharts';
 
 interface ProgressPageProps {
   progress: SurveyResponse[];
-  baseline: BaselineSurvey | GrowBaselineSurvey | null;
+  baseline: BaselineSurvey | null;
+  competencyScores: CompetencyScore[];
   sessions: Session[];
   actionItems: ActionItem[];
-  programType?: string;
+  programType: ProgramType | null;
 }
 
-// Helper to check if baseline is Grow type (has core competencies)
-function isGrowBaseline(baseline: BaselineSurvey | GrowBaselineSurvey | null): baseline is GrowBaselineSurvey {
-  return baseline !== null && 'strategic_thinking' in baseline;
+// The 12 competencies with their database column keys
+const COMPETENCIES = [
+  { key: 'adaptability_and_resilience', label: 'Adaptability & Resilience', shortLabel: 'Adaptability' },
+  { key: 'building_relationships_at_work', label: 'Building Relationships', shortLabel: 'Relationships' },
+  { key: 'change_management', label: 'Change Management', shortLabel: 'Change Mgmt' },
+  { key: 'delegation_and_accountability', label: 'Delegation & Accountability', shortLabel: 'Delegation' },
+  { key: 'effective_communication', label: 'Effective Communication', shortLabel: 'Communication' },
+  { key: 'effective_planning_and_execution', label: 'Planning & Execution', shortLabel: 'Planning' },
+  { key: 'emotional_intelligence', label: 'Emotional Intelligence', shortLabel: 'EQ' },
+  { key: 'giving_and_receiving_feedback', label: 'Giving & Receiving Feedback', shortLabel: 'Feedback' },
+  { key: 'persuasion_and_influence', label: 'Persuasion & Influence', shortLabel: 'Influence' },
+  { key: 'self_confidence_and_imposter_syndrome', label: 'Self Confidence', shortLabel: 'Confidence' },
+  { key: 'strategic_thinking', label: 'Strategic Thinking', shortLabel: 'Strategic' },
+  { key: 'time_management_and_productivity', label: 'Time Management', shortLabel: 'Time Mgmt' },
+];
+
+// Map competency_scores.competency_name to our keys
+function mapCompetencyName(name: string): string {
+  return name.toLowerCase().replace(/ /g, '_').replace(/&/g, 'and');
 }
 
-// Calculate improvement percentage
-function calculateImprovement(baseline: number | null, current: number | null): number | null {
-  if (baseline === null || current === null || baseline === 0) return null;
-  return Math.round(((current - baseline) / baseline) * 100);
+// Get score label color
+function getScoreLabelColor(label: string): string {
+  switch (label?.toLowerCase()) {
+    case 'excelling': return 'text-green-600 bg-green-100';
+    case 'growing': return 'text-blue-600 bg-blue-100';
+    case 'applying': return 'text-amber-600 bg-amber-100';
+    default: return 'text-gray-600 bg-gray-100';
+  }
 }
 
-// Get improvement color class
-function getImprovementColor(improvement: number | null): string {
-  if (improvement === null) return 'text-gray-400';
-  if (improvement > 10) return 'text-green-600';
-  if (improvement > 0) return 'text-green-500';
-  if (improvement === 0) return 'text-gray-500';
-  return 'text-red-500';
-}
-
-// Get improvement icon
-function getImprovementIcon(improvement: number | null): string {
-  if (improvement === null) return '—';
-  if (improvement > 0) return '↑';
-  if (improvement === 0) return '→';
-  return '↓';
+// Get bar color based on score
+function getBarColor(score: number): string {
+  if (score >= 4) return '#10B981'; // green
+  if (score >= 3) return '#3B82F6'; // blue
+  if (score >= 2) return '#F59E0B'; // amber
+  return '#EF4444'; // red
 }
 
 export default function ProgressPage({
   progress,
   baseline,
+  competencyScores,
   sessions,
   actionItems,
-  programType = 'scale'
+  programType
 }: ProgressPageProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'competencies'>('overview');
+  const [activeTab, setActiveTab] = useState<'competencies' | 'wellbeing'>('competencies');
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const completedActions = actionItems.filter(a => a.status === 'completed');
 
-  // Get the latest survey response for "current" state
-  const latestSurvey = progress.length > 0
-    ? progress.reduce((latest, current) =>
-        new Date(current.date) > new Date(latest.date) ? current : latest
-      )
+  const isGrowOrExec = programType === 'GROW' || programType === 'EXEC';
+
+  // Build competency data with baseline and current scores
+  const competencyData = COMPETENCIES.map(comp => {
+    // Get baseline from welcome_survey_baseline (q_ prefixed columns)
+    const baselineKey = `q_${comp.key}` as keyof BaselineSurvey;
+    const baselineValue = baseline?.[baselineKey] as number | null;
+
+    // Get current from competency_scores (match by competency_name)
+    const currentScore = competencyScores.find(cs =>
+      mapCompetencyName(cs.competency_name) === comp.key ||
+      cs.competency_name.toLowerCase().includes(comp.shortLabel.toLowerCase())
+    );
+
+    return {
+      key: comp.key,
+      label: comp.label,
+      shortLabel: comp.shortLabel,
+      baseline: baselineValue ?? 0,
+      current: currentScore?.score ?? baselineValue ?? 0,
+      scoreLabel: currentScore?.score_label || null,
+      improvement: baselineValue && currentScore?.score
+        ? Math.round(((currentScore.score - baselineValue) / baselineValue) * 100)
+        : null,
+    };
+  });
+
+  // Calculate average improvement for competencies
+  const competenciesWithImprovement = competencyData.filter(c => c.improvement !== null);
+  const avgCompetencyImprovement = competenciesWithImprovement.length > 0
+    ? Math.round(competenciesWithImprovement.reduce((sum, c) => sum + (c.improvement || 0), 0) / competenciesWithImprovement.length)
     : null;
 
-  // Core metrics for all clients (Scale + Grow)
-  const coreMetrics = [
-    {
-      key: 'satisfaction',
-      label: 'Work Satisfaction',
-      baselineKey: 'satisfaction' as const,
-      currentKey: 'wellbeing_satisfaction' as const,
-      icon: '😊',
-      color: '#4A90A4'
-    },
-    {
-      key: 'productivity',
-      label: 'Productivity',
-      baselineKey: 'productivity' as const,
-      currentKey: 'wellbeing_productivity' as const,
-      icon: '⚡',
-      color: '#10B981'
-    },
-    {
-      key: 'balance',
-      label: 'Work-Life Balance',
-      baselineKey: 'work_life_balance' as const,
-      currentKey: 'wellbeing_balance' as const,
-      icon: '⚖️',
-      color: '#8B5CF6'
-    },
-    {
-      key: 'resilience',
-      label: 'Resilience',
-      baselineKey: 'resilience' as const,
-      currentKey: 'wellbeing_resilience' as const,
-      icon: '💪',
-      color: '#F59E0B'
-    },
+  // Wellbeing metrics
+  const wellbeingMetrics = [
+    { key: 'work_satisfaction', label: 'Work Satisfaction', icon: '😊', color: '#4A90A4' },
+    { key: 'productivity', label: 'Productivity', icon: '⚡', color: '#10B981' },
+    { key: 'work_life_balance', label: 'Work-Life Balance', icon: '⚖️', color: '#8B5CF6' },
+    { key: 'resilience', label: 'Resilience', icon: '💪', color: '#F59E0B' },
   ];
 
-  // Core competencies for Grow clients only
-  const competencyMetrics = [
-    { key: 'strategic_thinking', label: 'Strategic Thinking', icon: '🎯' },
-    { key: 'decision_making', label: 'Decision Making', icon: '⚖️' },
-    { key: 'people_management', label: 'People Management', icon: '👥' },
-    { key: 'influence', label: 'Influence', icon: '🌟' },
-    { key: 'emotional_intelligence', label: 'Emotional Intelligence', icon: '💡' },
-    { key: 'adaptability', label: 'Adaptability', icon: '🔄' },
-  ];
+  // Get the latest survey response for current wellbeing values
+  const latestProgress = progress.length > 0 ? progress[progress.length - 1] : null;
 
-  // Prepare radar chart data for core metrics
-  const radarData = coreMetrics.map(metric => ({
-    metric: metric.label,
-    baseline: baseline?.[metric.baselineKey] ?? 0,
-    current: latestSurvey?.[metric.currentKey] ?? baseline?.[metric.baselineKey] ?? 0,
+  const wellbeingData = wellbeingMetrics.map(metric => {
+    const baselineKey = `q_${metric.key}` as keyof BaselineSurvey;
+    const baselineValue = baseline?.[baselineKey] as number | null;
+
+    // Map wellbeing metric keys to survey response fields
+    const progressKeyMap: Record<string, keyof SurveyResponse> = {
+      'work_satisfaction': 'wellbeing_satisfaction',
+      'productivity': 'wellbeing_productivity',
+      'work_life_balance': 'wellbeing_balance',
+      'resilience': 'wellbeing_resilience',
+    };
+
+    const progressKey = progressKeyMap[metric.key];
+    const currentValue = latestProgress?.[progressKey] as number | null;
+
+    return {
+      ...metric,
+      baseline: baselineValue ?? 0,
+      current: currentValue ?? baselineValue ?? 0,
+    };
+  });
+
+  // Radar chart data for competencies
+  const radarData = competencyData.map(comp => ({
+    competency: comp.shortLabel,
+    baseline: comp.baseline,
+    current: comp.current,
     fullMark: 5,
   }));
 
-  // Prepare competency radar data for Grow clients
-  const competencyRadarData = isGrowBaseline(baseline)
-    ? competencyMetrics.map(metric => ({
-        metric: metric.label,
-        baseline: (baseline as GrowBaselineSurvey)?.[metric.key as keyof GrowBaselineSurvey] as number ?? 0,
-        current: latestSurvey?.[metric.key as keyof SurveyResponse] as number ??
-                 (baseline as GrowBaselineSurvey)?.[metric.key as keyof GrowBaselineSurvey] as number ?? 0,
-        fullMark: 5,
-      }))
-    : [];
-
-  // Prepare timeline data for line chart
-  const timelineData = progress.map(survey => ({
-    date: new Date(survey.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    satisfaction: survey.wellbeing_satisfaction,
-    productivity: survey.wellbeing_productivity,
-    balance: survey.wellbeing_balance,
-    resilience: survey.wellbeing_resilience,
-  }));
-
-  // Add baseline as first point if we have it
-  if (baseline && timelineData.length > 0) {
-    timelineData.unshift({
-      date: 'Baseline',
-      satisfaction: baseline.satisfaction,
-      productivity: baseline.productivity,
-      balance: baseline.work_life_balance,
-      resilience: baseline.resilience,
-    });
-  }
-
-  // Calculate overall improvement
-  const overallImprovement = coreMetrics.reduce((acc, metric) => {
-    const improvement = calculateImprovement(
-      baseline?.[metric.baselineKey] ?? null,
-      latestSurvey?.[metric.currentKey] ?? null
-    );
-    if (improvement !== null) {
-      acc.total += improvement;
-      acc.count++;
-    }
-    return acc;
-  }, { total: 0, count: 0 });
-
-  const avgImprovement = overallImprovement.count > 0
-    ? Math.round(overallImprovement.total / overallImprovement.count)
-    : null;
-
-  const isGrow = programType?.toLowerCase().includes('grow') || isGrowBaseline(baseline);
+  // Bar chart data (sorted by current score)
+  const barChartData = [...competencyData]
+    .sort((a, b) => b.current - a.current)
+    .map(comp => ({
+      name: comp.shortLabel,
+      score: comp.current,
+      baseline: comp.baseline,
+    }));
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -181,33 +167,15 @@ export default function ProgressPage({
       <header className="text-center sm:text-left">
         <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">My Progress</h1>
         <p className="text-gray-500 mt-2 font-medium">
-          Track your growth from where you started to where you are today.
+          {isGrowOrExec
+            ? 'Track your leadership competency growth over time.'
+            : 'Track your wellbeing and growth over time.'}
         </p>
       </header>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Show both tabs for Grow/Exec, only wellbeing for Scale */}
       <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-            activeTab === 'overview'
-              ? 'bg-white text-boon-text shadow-sm'
-              : 'text-gray-500 hover:text-boon-text'
-          }`}
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('timeline')}
-          className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
-            activeTab === 'timeline'
-              ? 'bg-white text-boon-text shadow-sm'
-              : 'text-gray-500 hover:text-boon-text'
-          }`}
-        >
-          Timeline
-        </button>
-        {isGrow && (
+        {isGrowOrExec && (
           <button
             onClick={() => setActiveTab('competencies')}
             className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
@@ -219,19 +187,31 @@ export default function ProgressPage({
             Competencies
           </button>
         )}
+        <button
+          onClick={() => setActiveTab('wellbeing')}
+          className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+            activeTab === 'wellbeing'
+              ? 'bg-white text-boon-text shadow-sm'
+              : 'text-gray-500 hover:text-boon-text'
+          }`}
+        >
+          Wellbeing
+        </button>
       </div>
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-boon-blue to-boon-darkBlue p-6 rounded-2xl text-center text-white">
           <p className="text-4xl font-black">
-            {avgImprovement !== null ? (
-              <span className="flex items-center justify-center gap-1">
-                {avgImprovement > 0 ? '+' : ''}{avgImprovement}%
-              </span>
-            ) : '—'}
+            {avgCompetencyImprovement !== null ? (
+              <span>{avgCompetencyImprovement > 0 ? '+' : ''}{avgCompetencyImprovement}%</span>
+            ) : (
+              <span>{competencyScores.length > 0 ? competencyScores.length : '—'}</span>
+            )}
           </p>
-          <p className="text-xs font-bold uppercase tracking-widest mt-1 opacity-80">Avg Improvement</p>
+          <p className="text-xs font-bold uppercase tracking-widest mt-1 opacity-80">
+            {avgCompetencyImprovement !== null ? 'Avg Growth' : 'Scores Recorded'}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
           <p className="text-3xl font-black text-boon-text">{completedSessions.length}</p>
@@ -242,354 +222,88 @@ export default function ProgressPage({
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Actions Done</p>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-          <p className="text-3xl font-black text-purple-600">{progress.length}</p>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Check-ins</p>
+          <p className="text-3xl font-black text-purple-600">
+            {competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling').length}
+          </p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Excelling</p>
         </div>
       </div>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
+      {/* Competencies Tab */}
+      {activeTab === 'competencies' && isGrowOrExec && (
         <div className="space-y-8">
-          {/* Core Metrics Cards */}
+          {/* Competency Cards Grid */}
           <section>
-            <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Wellbeing Metrics</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {coreMetrics.map(metric => {
-                const baselineValue = baseline?.[metric.baselineKey] ?? null;
-                const currentValue = latestSurvey?.[metric.currentKey] ?? baselineValue;
-                const improvement = calculateImprovement(baselineValue, currentValue);
-
-                return (
-                  <div
-                    key={metric.key}
-                    className="bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-boon-blue/20 transition-all"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-2xl">{metric.icon}</span>
-                      <span className={`font-bold text-sm ${getImprovementColor(improvement)}`}>
-                        {getImprovementIcon(improvement)} {improvement !== null ? `${Math.abs(improvement)}%` : '—'}
+            <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {competencyData.map(comp => (
+                <div
+                  key={comp.key}
+                  className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-bold text-boon-text text-sm leading-tight">{comp.label}</h3>
+                    {comp.scoreLabel && (
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${getScoreLabelColor(comp.scoreLabel)}`}>
+                        {comp.scoreLabel}
                       </span>
-                    </div>
-                    <h3 className="font-bold text-boon-text text-sm mb-3">{metric.label}</h3>
-                    <div className="flex items-end gap-3">
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Baseline</p>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gray-300 rounded-full transition-all duration-500"
-                            style={{ width: `${(baselineValue ?? 0) * 20}%` }}
-                          />
-                        </div>
-                        <p className="text-sm font-bold text-gray-500 mt-1">{baselineValue ?? '—'}/5</p>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Current</p>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${(currentValue ?? 0) * 20}%`,
-                              backgroundColor: metric.color
-                            }}
-                          />
-                        </div>
-                        <p className="text-sm font-bold mt-1" style={{ color: metric.color }}>
-                          {currentValue ?? '—'}/5
-                        </p>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                );
-              })}
+
+                  <div className="space-y-3">
+                    {/* Baseline */}
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-400 uppercase tracking-wide">Baseline</span>
+                        <span className="font-bold text-gray-500">{comp.baseline || '—'}/5</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gray-300 rounded-full transition-all duration-500"
+                          style={{ width: `${(comp.baseline || 0) * 20}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Current */}
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-400 uppercase tracking-wide">Current</span>
+                        <span className="font-bold text-purple-600">{comp.current || '—'}/5</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                          style={{ width: `${(comp.current || 0) * 20}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Improvement indicator */}
+                    {comp.improvement !== null && (
+                      <div className={`text-xs font-bold text-right ${comp.improvement >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {comp.improvement > 0 ? '↑' : comp.improvement < 0 ? '↓' : '→'} {Math.abs(comp.improvement)}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
           {/* Radar Chart */}
-          {baseline && (
+          {(baseline || competencyScores.length > 0) && (
             <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
               <h2 className="text-lg font-extrabold text-boon-text mb-6 text-center">
-                Your Growth Snapshot
-              </h2>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-                    <PolarGrid stroke="#e5e7eb" />
-                    <PolarAngleAxis
-                      dataKey="metric"
-                      tick={{ fill: '#374151', fontSize: 11, fontWeight: 600 }}
-                    />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 5]}
-                      tick={{ fill: '#9ca3af', fontSize: 10 }}
-                    />
-                    <Radar
-                      name="Baseline"
-                      dataKey="baseline"
-                      stroke="#9ca3af"
-                      fill="#9ca3af"
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                    />
-                    <Radar
-                      name="Current"
-                      dataKey="current"
-                      stroke="#4A90A4"
-                      fill="#4A90A4"
-                      fillOpacity={0.4}
-                      strokeWidth={2}
-                    />
-                    <Legend
-                      wrapperStyle={{ paddingTop: 20 }}
-                      formatter={(value) => (
-                        <span className="text-sm font-semibold text-gray-600">{value}</span>
-                      )}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-center text-sm text-gray-500 mt-4">
-                The larger the blue area, the more you've grown since your baseline assessment.
-              </p>
-            </section>
-          )}
-
-          {/* No Baseline State */}
-          {!baseline && (
-            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
-              <div className="w-16 h-16 bg-boon-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-boon-text mb-2">Complete Your Welcome Survey</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                Take the welcome survey to establish your baseline metrics.
-                This will help you track your progress over time.
-              </p>
-            </section>
-          )}
-        </div>
-      )}
-
-      {/* Timeline Tab */}
-      {activeTab === 'timeline' && (
-        <div className="space-y-8">
-          {timelineData.length > 1 ? (
-            <>
-              {/* Progress Over Time Chart */}
-              <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
-                <h2 className="text-lg font-extrabold text-boon-text mb-6">Progress Over Time</h2>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={timelineData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorSatisfaction" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#4A90A4" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#4A90A4" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorProductivity" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorResilience" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                      />
-                      <YAxis
-                        domain={[0, 5]}
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: 12,
-                          border: 'none',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                          padding: '12px 16px'
-                        }}
-                      />
-                      <Legend
-                        wrapperStyle={{ paddingTop: 20 }}
-                        formatter={(value) => (
-                          <span className="text-sm font-medium text-gray-600 capitalize">{value}</span>
-                        )}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="satisfaction"
-                        stroke="#4A90A4"
-                        fill="url(#colorSatisfaction)"
-                        strokeWidth={2}
-                        name="Satisfaction"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="productivity"
-                        stroke="#10B981"
-                        fill="url(#colorProductivity)"
-                        strokeWidth={2}
-                        name="Productivity"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="balance"
-                        stroke="#8B5CF6"
-                        fill="url(#colorBalance)"
-                        strokeWidth={2}
-                        name="Balance"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="resilience"
-                        stroke="#F59E0B"
-                        fill="url(#colorResilience)"
-                        strokeWidth={2}
-                        name="Resilience"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </section>
-
-              {/* Session Timeline */}
-              <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
-                <h2 className="text-lg font-extrabold text-boon-text mb-6">Session Journey</h2>
-                <div className="space-y-4">
-                  {completedSessions.slice(0, 8).map((session, idx) => {
-                    const theme = session.mental_well_being ? 'Mental Well-being' :
-                                  session.communication_skills ? 'Communication' :
-                                  session.leadership_management_skills ? 'Leadership' : 'General Growth';
-                    const themeColor = session.mental_well_being ? 'bg-purple-100 text-purple-700' :
-                                       session.communication_skills ? 'bg-green-100 text-green-700' :
-                                       session.leadership_management_skills ? 'bg-blue-100 text-blue-700' :
-                                       'bg-gray-100 text-gray-700';
-
-                    return (
-                      <div key={session.id} className="flex items-start gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className="w-3 h-3 rounded-full bg-boon-blue" />
-                          {idx < completedSessions.length - 1 && (
-                            <div className="w-0.5 h-12 bg-gray-200 mt-1" />
-                          )}
-                        </div>
-                        <div className="flex-1 pb-4">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                            {new Date(session.session_date).toLocaleDateString('en-US', {
-                              month: 'long',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </p>
-                          <p className="font-semibold text-boon-text mt-1">Session with {session.coach_name}</p>
-                          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${themeColor}`}>
-                            {theme}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            </>
-          ) : (
-            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
-              <div className="w-16 h-16 bg-boon-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-boon-text mb-2">Timeline Coming Soon</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                After completing more check-ins and sessions, you'll see your progress charted over time here.
-              </p>
-            </section>
-          )}
-        </div>
-      )}
-
-      {/* Competencies Tab (Grow clients only) */}
-      {activeTab === 'competencies' && isGrow && (
-        <div className="space-y-8">
-          {/* Competency Cards */}
-          <section>
-            <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {competencyMetrics.map(metric => {
-                const baselineValue = isGrowBaseline(baseline)
-                  ? (baseline as GrowBaselineSurvey)?.[metric.key as keyof GrowBaselineSurvey] as number ?? null
-                  : null;
-                const currentValue = latestSurvey?.[metric.key as keyof SurveyResponse] as number ?? baselineValue;
-                const improvement = calculateImprovement(baselineValue, currentValue);
-
-                return (
-                  <div
-                    key={metric.key}
-                    className="bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-2xl">{metric.icon}</span>
-                      <span className={`font-bold text-sm ${getImprovementColor(improvement)}`}>
-                        {getImprovementIcon(improvement)} {improvement !== null ? `${Math.abs(improvement)}%` : '—'}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-boon-text mb-4">{metric.label}</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-400 uppercase tracking-wide">Baseline</span>
-                          <span className="font-bold text-gray-500">{baselineValue ?? '—'}/5</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gray-300 rounded-full transition-all duration-500"
-                            style={{ width: `${(baselineValue ?? 0) * 20}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-400 uppercase tracking-wide">Current</span>
-                          <span className="font-bold text-purple-600">{currentValue ?? '—'}/5</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-purple-500 rounded-full transition-all duration-500"
-                            style={{ width: `${(currentValue ?? 0) * 20}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Competency Radar */}
-          {competencyRadarData.length > 0 && (
-            <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
-              <h2 className="text-lg font-extrabold text-boon-text mb-6 text-center">
-                Leadership Competency Profile
+                Competency Profile
               </h2>
               <div className="h-96">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={competencyRadarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                  <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
                     <PolarGrid stroke="#e5e7eb" />
                     <PolarAngleAxis
-                      dataKey="metric"
-                      tick={{ fill: '#374151', fontSize: 10, fontWeight: 600 }}
+                      dataKey="competency"
+                      tick={{ fill: '#374151', fontSize: 9, fontWeight: 600 }}
                     />
                     <PolarRadiusAxis
                       angle={30}
@@ -622,7 +336,106 @@ export default function ProgressPage({
                 </ResponsiveContainer>
               </div>
               <p className="text-center text-sm text-gray-500 mt-4">
-                The purple area shows your current self-assessment across key leadership dimensions.
+                The purple area shows your current competency levels compared to your baseline (gray).
+              </p>
+            </section>
+          )}
+
+          {/* Bar Chart */}
+          {competencyScores.length > 0 && (
+            <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
+              <h2 className="text-lg font-extrabold text-boon-text mb-6">Competency Rankings</h2>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" domain={[0, 5]} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fill: '#374151', fontSize: 11 }} width={75} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: 'none',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                      }}
+                    />
+                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                      {barChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getBarColor(entry.score)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          )}
+
+          {/* No Data State */}
+          {!baseline && competencyScores.length === 0 && (
+            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-boon-text mb-2">Competency Data Coming Soon</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Your competency scores will appear here after your baseline assessment and coaching sessions.
+              </p>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* Wellbeing Tab */}
+      {activeTab === 'wellbeing' && (
+        <div className="space-y-8">
+          <section>
+            <h2 className="text-lg font-extrabold text-boon-text mb-4">Wellbeing Metrics</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {wellbeingData.map(metric => (
+                <div
+                  key={metric.key}
+                  className="bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-boon-blue/20 transition-all"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-2xl">{metric.icon}</span>
+                  </div>
+                  <h3 className="font-bold text-boon-text text-sm mb-3">{metric.label}</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-400 uppercase tracking-wide">Score</span>
+                        <span className="font-bold" style={{ color: metric.color }}>
+                          {metric.current || '—'}/5
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${(metric.current || 0) * 20}%`,
+                            backgroundColor: metric.color
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* No Baseline State */}
+          {!baseline && (
+            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
+              <div className="w-16 h-16 bg-boon-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-boon-text mb-2">Complete Your Welcome Survey</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Take the welcome survey to establish your baseline wellbeing metrics and track your progress.
               </p>
             </section>
           )}
@@ -630,50 +443,35 @@ export default function ProgressPage({
       )}
 
       {/* Insights Section */}
-      <section className="bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 p-8 rounded-[2rem] border border-boon-blue/10">
-        <h2 className="text-lg font-extrabold text-boon-text mb-6">What the data tells us</h2>
+      <section className="bg-gradient-to-br from-purple-50 to-boon-lightBlue/20 p-8 rounded-[2rem] border border-purple-100">
+        <h2 className="text-lg font-extrabold text-boon-text mb-6">Insights</h2>
         <div className="grid sm:grid-cols-3 gap-6">
           {[
             {
               icon: '📈',
-              title: 'Trend',
-              desc: avgImprovement !== null && avgImprovement > 0
-                ? `You're showing ${avgImprovement}% average improvement across your core metrics.`
-                : 'Keep attending sessions and completing check-ins to track your growth.'
+              title: 'Growth',
+              desc: competencyScores.length > 0
+                ? `You have ${competencyScores.filter(c => c.score >= 4).length} competencies at level 4 or above.`
+                : 'Your growth insights will appear as you complete assessments.'
             },
             {
               icon: '🎯',
-              title: 'Focus',
-              desc: coreMetrics.reduce((best, metric) => {
-                const improvement = calculateImprovement(
-                  baseline?.[metric.baselineKey] ?? null,
-                  latestSurvey?.[metric.currentKey] ?? null
-                );
-                if (improvement !== null && (best.value === null || improvement > best.value)) {
-                  return { label: metric.label, value: improvement };
-                }
-                return best;
-              }, { label: '', value: null as number | null }).label
-                ? `${coreMetrics.reduce((best, metric) => {
-                    const improvement = calculateImprovement(
-                      baseline?.[metric.baselineKey] ?? null,
-                      latestSurvey?.[metric.currentKey] ?? null
-                    );
-                    if (improvement !== null && (best.value === null || improvement > best.value)) {
-                      return { label: metric.label, value: improvement };
-                    }
-                    return best;
-                  }, { label: '', value: null as number | null }).label} shows the most growth.`
-                : 'Your areas of focus will emerge as you progress.'
+              title: 'Focus Area',
+              desc: competencyScores.length > 0
+                ? (() => {
+                    const lowest = competencyData.filter(c => c.current > 0).sort((a, b) => a.current - b.current)[0];
+                    return lowest ? `Consider focusing on ${lowest.label} for development.` : 'Great balance across competencies!';
+                  })()
+                : 'Focus areas will be identified after your baseline assessment.'
             },
             {
               icon: '💡',
               title: 'Next Step',
               desc: completedSessions.length === 0
-                ? 'Book your first session to start your coaching journey.'
-                : completedActions.length < 3
-                  ? 'Complete more action items to accelerate your progress.'
-                  : 'Keep up the momentum! You\'re building great habits.'
+                ? 'Book your first coaching session to start your journey.'
+                : completedSessions.length < 3
+                  ? 'Continue building momentum with regular coaching sessions.'
+                  : 'Keep up the great work! Consider setting stretch goals.'
             }
           ].map((card, i) => (
             <div

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Employee, Session, SurveyResponse, BaselineSurvey, GrowBaselineSurvey, ActionItem, SlackConnectionStatus, SlackNudge } from './types';
+import type { Employee, Session, SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, SlackNudge } from './types';
 
 /**
  * Fetch employee profile by email
@@ -56,11 +56,12 @@ export async function fetchProgressData(email: string): Promise<SurveyResponse[]
 }
 
 /**
- * Fetch baseline survey for a Scale client
+ * Fetch baseline survey from welcome_survey_baseline table
+ * Contains both wellbeing metrics and competency baselines
  */
 export async function fetchBaseline(email: string): Promise<BaselineSurvey | null> {
   const { data, error } = await supabase
-    .from('welcome_survey_scale')
+    .from('welcome_survey_baseline')
     .select('*')
     .ilike('email', email)
     .single();
@@ -77,24 +78,45 @@ export async function fetchBaseline(email: string): Promise<BaselineSurvey | nul
 }
 
 /**
- * Fetch baseline survey for a Grow client (includes core competencies)
+ * Fetch competency scores for a user (current/end-of-program scores)
  */
-export async function fetchGrowBaseline(email: string): Promise<GrowBaselineSurvey | null> {
+export async function fetchCompetencyScores(email: string): Promise<CompetencyScore[]> {
   const { data, error } = await supabase
-    .from('welcome_survey_grow')
+    .from('competency_scores')
     .select('*')
     .ilike('email', email)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    if (error.code !== 'PGRST116' && error.code !== '42P01') {
+      console.error('Error fetching competency scores:', error);
+    }
+    return [];
+  }
+
+  return (data as CompetencyScore[]) || [];
+}
+
+/**
+ * Fetch program type for an employee via their program field
+ */
+export async function fetchProgramType(programId: string | null): Promise<ProgramType | null> {
+  if (!programId) return null;
+
+  const { data, error } = await supabase
+    .from('programs')
+    .select('program_type')
+    .eq('id', programId)
     .single();
 
   if (error) {
-    // Not an error if baseline doesn't exist
     if (error.code !== 'PGRST116') {
-      console.error('Error fetching grow baseline:', error);
+      console.error('Error fetching program type:', error);
     }
     return null;
   }
 
-  return data as GrowBaselineSurvey;
+  return data?.program_type as ProgramType || null;
 }
 
 /**
