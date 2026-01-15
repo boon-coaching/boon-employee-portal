@@ -45,7 +45,7 @@ export async function fetchProgressData(email: string): Promise<SurveyResponse[]
     .from('survey_submissions')
     .select('*')
     .ilike('email', email)
-    .order('date', { ascending: true });
+    .order('created_at', { ascending: true });
 
   if (error) {
     console.error('Error fetching progress data:', error);
@@ -64,17 +64,16 @@ export async function fetchBaseline(email: string): Promise<BaselineSurvey | nul
     .from('welcome_survey_baseline')
     .select('*')
     .ilike('email', email)
-    .single();
+    .order('id', { ascending: false })
+    .limit(1);
 
   if (error) {
-    // Not an error if baseline doesn't exist - employee may not have filled it out
-    if (error.code !== 'PGRST116') {
-      console.error('Error fetching baseline:', error);
-    }
+    console.error('Error fetching baseline:', error);
     return null;
   }
 
-  return data as BaselineSurvey;
+  console.log('Baseline data fetched:', data);
+  return (data && data.length > 0) ? data[0] as BaselineSurvey : null;
 }
 
 /**
@@ -157,7 +156,7 @@ export async function fetchLatestSurveyResponse(email: string): Promise<SurveyRe
     .from('survey_submissions')
     .select('*')
     .ilike('email', email)
-    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1)
     .single();
 
