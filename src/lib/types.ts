@@ -115,4 +115,4 @@ export interface SlackNudge {
   responded_at: string | null;
 }
 
-export type View = 'dashboard' | 'sessions' | 'progress' | 'coach' | 'resources' | 'reflection' | 'settings';
+export type View = 'dashboard' | 'sessions' | 'progress' | 'practice' | 'coach' | 'resources' | 'reflection' | 'settings';
