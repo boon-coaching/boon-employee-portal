@@ -1,17 +1,67 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { SCENARIOS, CATEGORY_INFO, type PracticeScenario, type ScenarioCategory } from '../data/scenarios';
 import type { Session } from '../lib/types';
 import PracticeModal from './PracticeModal';
+import TeamManager from './TeamManager';
+import { getTeamMembers, getSavedPlans, deleteSavedPlan, type TeamMember, type SavedPlan } from '../lib/storageService';
 
 interface PracticeProps {
   sessions: Session[];
   coachName: string;
+  userEmail: string;
 }
 
-export default function Practice({ sessions, coachName }: PracticeProps) {
+export default function Practice({ sessions, coachName, userEmail }: PracticeProps) {
   const [selectedCategory, setSelectedCategory] = useState<ScenarioCategory | 'all'>('all');
   const [selectedScenario, setSelectedScenario] = useState<PracticeScenario | null>(null);
   const [customSituation, setCustomSituation] = useState('');
+
+  // Team & Playbook state
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [showTeamManager, setShowTeamManager] = useState(false);
+  const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
+  const [_isLoading, setIsLoading] = useState(true);
+
+  // Load team members and saved plans
+  const refreshData = useCallback(async () => {
+    if (!userEmail) return;
+    const [members, plans] = await Promise.all([
+      getTeamMembers(userEmail),
+      getSavedPlans(userEmail)
+    ]);
+    setTeamMembers(members);
+    setSavedPlans(plans);
+  }, [userEmail]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await refreshData();
+      setIsLoading(false);
+    };
+    loadData();
+  }, [refreshData]);
+
+  const handleDeletePlan = async (id: string) => {
+    if (confirm('Delete this saved plan?')) {
+      await deleteSavedPlan(id);
+      refreshData();
+    }
+  };
+
+  const handleOpenSavedPlan = (plan: SavedPlan) => {
+    // Find the original scenario or create a custom one
+    const originalScenario = SCENARIOS.find(s => s.id === plan.scenario_id);
+    if (originalScenario) {
+      setSelectedScenario(originalScenario);
+      setCustomSituation(plan.context);
+      if (plan.team_member_id) {
+        const member = teamMembers.find(m => m.id === plan.team_member_id);
+        setSelectedTeamMember(member || null);
+      }
+    }
+  };
 
   // Determine user's coaching themes from their session history
   const userThemes = useMemo(() => {
@@ -99,12 +149,125 @@ Describe your situation in detail so we can provide the most relevant guidance.`
         </p>
       </header>
 
+      {/* My Team & My Playbook Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* My Team Card */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-bold text-boon-text">My Team</h3>
+                <p className="text-xs text-gray-400">{teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowTeamManager(true)}
+              className="px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+            >
+              {teamMembers.length > 0 ? 'Manage' : 'Add'}
+            </button>
+          </div>
+          {teamMembers.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {teamMembers.slice(0, 4).map(member => (
+                <span key={member.id} className="px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-medium text-gray-600">
+                  {member.name}
+                </span>
+              ))}
+              {teamMembers.length > 4 && (
+                <span className="px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-medium text-gray-400">
+                  +{teamMembers.length - 4} more
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">Add team members for more personalized practice scenarios</p>
+          )}
+        </div>
+
+        {/* My Playbook Card */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-bold text-boon-text">My Playbook</h3>
+                <p className="text-xs text-gray-400">{savedPlans.length} saved plan{savedPlans.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+          </div>
+          {savedPlans.length > 0 ? (
+            <div className="space-y-2 max-h-24 overflow-y-auto">
+              {savedPlans.slice(0, 3).map(plan => (
+                <div key={plan.id} className="flex items-center justify-between group">
+                  <button
+                    onClick={() => handleOpenSavedPlan(plan)}
+                    className="text-xs text-gray-600 hover:text-boon-blue truncate flex-1 text-left"
+                  >
+                    {plan.scenario_title} {plan.team_member_name && `• ${plan.team_member_name}`}
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlan(plan.id)}
+                    className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">Your generated plans will be saved here for future reference</p>
+          )}
+        </div>
+      </div>
+
       {/* Custom Situation Input */}
       <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2rem] p-6 md:p-8 border border-boon-blue/10">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-lg font-extrabold text-boon-text mb-4 text-center">
             What's on your mind?
           </h2>
+
+          {/* Team Member Selector */}
+          {teamMembers.length > 0 && (
+            <div className="mb-4">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">
+                This is about... (optional)
+              </label>
+              <select
+                value={selectedTeamMember?.id || ''}
+                onChange={(e) => {
+                  const member = teamMembers.find(m => m.id === e.target.value);
+                  setSelectedTeamMember(member || null);
+                }}
+                className="w-full p-3 rounded-xl border-2 border-white bg-white text-sm focus:border-boon-blue focus:ring-0 focus:outline-none shadow-sm"
+              >
+                <option value="">General situation (no specific person)</option>
+                {teamMembers.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} {member.role && `- ${member.role}`}
+                  </option>
+                ))}
+              </select>
+              {selectedTeamMember?.context && (
+                <p className="mt-2 text-xs text-gray-400 italic">
+                  {selectedTeamMember.context}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="relative">
             <textarea
               value={customSituation}
@@ -115,7 +278,10 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                   handleCustomSubmit();
                 }
               }}
-              placeholder="Describe your situation... (e.g., 'I need to give feedback to a senior team member who keeps missing deadlines')"
+              placeholder={selectedTeamMember
+                ? `Describe your situation with ${selectedTeamMember.name}...`
+                : "Describe your situation... (e.g., 'I need to give feedback to a senior team member who keeps missing deadlines')"
+              }
               className="w-full p-5 pr-24 rounded-2xl border-2 border-white focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[100px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
             />
             <button
@@ -239,10 +405,24 @@ Describe your situation in detail so we can provide the most relevant guidance.`
           scenario={selectedScenario}
           initialContext={selectedScenario.id.startsWith('custom-') ? customSituation : ''}
           coachName={coachName}
+          teamMember={selectedTeamMember}
+          userEmail={userEmail}
           onClose={() => {
             setSelectedScenario(null);
             setCustomSituation('');
+            setSelectedTeamMember(null);
           }}
+          onPlanSaved={refreshData}
+        />
+      )}
+
+      {/* Team Manager Modal */}
+      {showTeamManager && (
+        <TeamManager
+          members={teamMembers}
+          userEmail={userEmail}
+          onUpdate={refreshData}
+          onClose={() => setShowTeamManager(false)}
         />
       )}
     </div>

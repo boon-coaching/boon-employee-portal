@@ -129,7 +129,7 @@ function ProtectedApp() {
         return <ProgressPage progress={progress} baseline={baseline} sessions={sessions} actionItems={actionItems} />;
       case 'practice':
         const practiceCoachName = sessions.length > 0 ? sessions[0].coach_name : "Your Coach";
-        return <Practice sessions={sessions} coachName={practiceCoachName} />;
+        return <Practice sessions={sessions} coachName={practiceCoachName} userEmail={employee?.company_email || ''} />;
       case 'resources':
         return <Resources />;
       case 'coach':
