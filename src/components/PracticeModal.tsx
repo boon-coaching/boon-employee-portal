@@ -1,17 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 import type { PracticeScenario } from '../data/scenarios';
 import { generatePlan, getRoleplayResponse, evaluateRoleplay, type ChatMessage } from '../lib/practiceService';
+import { savePlan, type TeamMember } from '../lib/storageService';
 
 interface PracticeModalProps {
   scenario: PracticeScenario;
   initialContext?: string;
   coachName: string;
+  teamMember?: TeamMember | null;
   onClose: () => void;
+  onPlanSaved?: () => void;
 }
 
 type ViewMode = 'guide' | 'rapid' | 'full' | 'practice';
 
-export default function PracticeModal({ scenario, initialContext = '', coachName, onClose }: PracticeModalProps) {
+export default function PracticeModal({ scenario, initialContext = '', coachName, teamMember, onClose, onPlanSaved }: PracticeModalProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('guide');
   const [context, setContext] = useState(initialContext);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -57,7 +60,13 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
     setIsGenerating(true);
     setError(null);
 
-    const { plan, error: apiError } = await generatePlan(scenario, context);
+    // Build context with team member info if available
+    let fullContext = context;
+    if (teamMember) {
+      fullContext = `About ${teamMember.name}${teamMember.role ? ` (${teamMember.role})` : ''}: ${teamMember.context || 'No additional context.'}\n\nSituation: ${context}`;
+    }
+
+    const { plan, error: apiError } = await generatePlan(scenario, fullContext);
 
     if (apiError) {
       setError(apiError);
@@ -70,6 +79,17 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
       setViewMode('rapid');
       setRoleplayMessages([]);
       setEvaluation(null);
+
+      // Save to playbook
+      savePlan({
+        scenarioId: scenario.id,
+        scenarioTitle: scenario.title,
+        context: context,
+        teamMemberId: teamMember?.id,
+        teamMemberName: teamMember?.name,
+        plan: plan,
+      });
+      onPlanSaved?.();
     }
     setIsGenerating(false);
   };
