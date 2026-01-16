@@ -506,11 +506,39 @@ export default function ProgressPage({
         </div>
       )}
 
-      {/* Insights Section */}
+      {/* Insights Section - Reframed for completed users */}
       <section className="bg-gradient-to-br from-purple-50 to-boon-lightBlue/20 p-8 rounded-[2rem] border border-purple-100">
         <h2 className="text-lg font-extrabold text-boon-text mb-6">Insights</h2>
         <div className="grid sm:grid-cols-3 gap-6">
-          {[
+          {(isCompleted ? [
+            {
+              icon: '📈',
+              title: 'Growth',
+              desc: competencyScores.length > 0
+                ? `You grew in ${competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length} of ${COMPETENCIES.length} competencies.`
+                : 'Your growth is reflected across your leadership profile.'
+            },
+            {
+              icon: '⭐',
+              title: 'Strongest Area',
+              desc: competencyScores.length > 0
+                ? (() => {
+                    const highest = competencyData.filter(c => c.current > 0).sort((a, b) => b.current - a.current)[0];
+                    return highest ? `${highest.label} is where you showed the most development.` : 'Strong growth across all areas!';
+                  })()
+                : 'Your strengths define your leadership profile.'
+            },
+            {
+              icon: '🌱',
+              title: 'Continued Growth',
+              desc: competencyScores.length > 0
+                ? (() => {
+                    const lowest = competencyData.filter(c => c.current > 0).sort((a, b) => a.current - b.current)[0];
+                    return lowest ? `If you want to keep building, ${lowest.label} could be a focus area.` : 'Continue practicing to maintain growth!';
+                  })()
+                : 'Your Practice Space is always available when challenges arise.'
+            }
+          ] : [
             {
               icon: '📈',
               title: 'Growth',
@@ -537,7 +565,7 @@ export default function ProgressPage({
                   ? 'Continue building momentum with regular coaching sessions.'
                   : 'Keep up the great work! Consider setting stretch goals.'
             }
-          ].map((card, i) => (
+          ]).map((card, i) => (
             <div
               key={i}
               className="p-6 bg-white/60 rounded-2xl border border-white hover:bg-white hover:shadow-lg transition-all"

@@ -128,7 +128,7 @@ function ProtectedApp() {
   const renderView = () => {
     switch (view) {
       case 'dashboard':
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} />;
+        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} />;
       case 'sessions':
         return <SessionsPage sessions={sessions} coachingState={coachingState} />;
       case 'progress':
@@ -144,7 +144,7 @@ function ProtectedApp() {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} />;
+        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} />;
     }
   };
 
