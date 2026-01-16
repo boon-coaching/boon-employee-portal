@@ -142,6 +142,55 @@ function ProtectedApp() {
   // Effective program type (actual or overridden for admin preview)
   const effectiveProgramType = programTypeOverride || programType;
 
+  // Mock data for admin preview of Pre-First Session state
+  const mockUpcomingSession: Session = {
+    id: 'preview-session-1',
+    employee_id: employee?.id || '',
+    session_date: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() + 7); // One week from now
+      date.setHours(14, 0, 0, 0); // 2:00 PM
+      return date.toISOString();
+    })(),
+    status: 'Upcoming',
+    session_number: 1,
+    coach_name: sessions[0]?.coach_name || 'Darcy Roberts',
+    themes: null,
+    session_notes: null,
+    employee_name: employee?.first_name || 'there',
+    one_liner: null,
+    focus_area: null,
+    participant_goal: null,
+    exercises_discussed: null,
+    post_session_1: null,
+    post_session_2: null,
+    post_session_3: null,
+  };
+
+  const mockBaseline: BaselineSurvey = {
+    id: 'preview-baseline-1',
+    email: employee?.company_email || '',
+    submitted_at: new Date().toISOString(),
+    coaching_goals: "I want to get better at giving direct feedback without damaging relationships, and develop more confidence in high-stakes conversations.",
+    comp_adaptability_and_resilience: 3,
+    comp_building_relationships_at_work: 4,
+    comp_change_management: 2,
+    comp_delegation_and_accountability: 3,
+    comp_effective_communication: 4,
+    comp_effective_planning_and_execution: 3,
+    comp_emotional_intelligence: 4,
+    comp_giving_and_receiving_feedback: 2,
+    comp_persuasion_and_influence: 3,
+    comp_self_confidence_and_imposter_syndrome: 2,
+    comp_strategic_thinking: 3,
+    comp_time_management_and_productivity: 4,
+  };
+
+  // Determine if we need mock data for preview
+  const isPreviewingPreFirstSession = stateOverride === 'MATCHED_PRE_FIRST_SESSION';
+  const effectiveSessions = isPreviewingPreFirstSession ? [mockUpcomingSession] : sessions;
+  const effectiveBaseline = isPreviewingPreFirstSession ? mockBaseline : baseline;
+
   // Apply state override if set (for admin preview)
   const coachingState: CoachingStateData = (stateOverride || programTypeOverride)
     ? {
@@ -212,7 +261,7 @@ function ProtectedApp() {
   const renderView = () => {
     switch (view) {
       case 'dashboard':
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
+        return <Dashboard profile={employee} sessions={effectiveSessions} actionItems={actionItems} baseline={effectiveBaseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
       case 'sessions':
         return <SessionsPage sessions={sessions} coachingState={coachingState} />;
       case 'progress':
@@ -228,7 +277,7 @@ function ProtectedApp() {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
+        return <Dashboard profile={employee} sessions={effectiveSessions} actionItems={actionItems} baseline={effectiveBaseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
     }
   };
 
