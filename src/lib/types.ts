@@ -155,6 +155,45 @@ export interface SlackNudge {
 
 export type View = 'dashboard' | 'sessions' | 'progress' | 'practice' | 'coach' | 'resources' | 'reflection' | 'settings';
 
+// SCALE Checkpoint data (longitudinal tracking every 6 sessions)
+export interface Checkpoint {
+  id: string;
+  email: string;
+  checkpoint_number: number; // 1, 2, 3, ...
+  session_count_at_checkpoint: number; // 6, 12, 18, ...
+  // Competency scores as JSON object
+  competency_scores: {
+    adaptability_and_resilience: number;
+    building_relationships_at_work: number;
+    change_management: number;
+    delegation_and_accountability: number;
+    effective_communication: number;
+    effective_planning_and_execution: number;
+    emotional_intelligence: number;
+    giving_and_receiving_feedback: number;
+    persuasion_and_influence: number;
+    self_confidence_and_imposter_syndrome: number;
+    strategic_thinking: number;
+    time_management_and_productivity: number;
+  };
+  reflection_text: string | null; // "What's shifted"
+  focus_area: string | null; // "What to focus on next"
+  nps_score: number | null;
+  testimonial_consent: boolean;
+  created_at: string;
+}
+
+// SCALE checkpoint tracking data
+export interface ScaleCheckpointStatus {
+  isScaleUser: boolean;
+  currentCheckpointNumber: number;
+  sessionsSinceLastCheckpoint: number;
+  nextCheckpointDueAtSession: number;
+  isCheckpointDue: boolean;
+  checkpoints: Checkpoint[];
+  latestCheckpoint: Checkpoint | null;
+}
+
 // Post-program reflection data
 export interface ReflectionResponse {
   id: string;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Employee, Session, ActionItem, BaselineSurvey, CompetencyScore, View } from '../lib/types';
+import type { Employee, Session, ActionItem, BaselineSurvey, CompetencyScore, View, Checkpoint } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { isAlumniState, isPreFirstSession, isPendingReflectionState } from '../lib/coachingState';
 import ActionItems from './ActionItems';
@@ -10,6 +10,7 @@ import KeyTakeaways from './KeyTakeaways';
 import CompletionAcknowledgment from './CompletionAcknowledgment';
 import PreFirstSessionHome from './PreFirstSessionHome';
 import PendingReflectionHome from './PendingReflectionHome';
+import ScaleHome from './ScaleHome';
 
 interface DashboardProps {
   profile: Employee | null;
@@ -22,9 +23,13 @@ interface DashboardProps {
   userEmail: string;
   onNavigate?: (view: View) => void;
   onStartReflection?: () => void;
+  checkpoints?: Checkpoint[];
+  onStartCheckpoint?: () => void;
 }
 
-export default function Dashboard({ profile, sessions, actionItems, baseline, competencyScores, onActionUpdate, coachingState, userEmail, onNavigate, onStartReflection }: DashboardProps) {
+export default function Dashboard({ profile, sessions, actionItems, baseline, competencyScores, onActionUpdate, coachingState, userEmail, onNavigate, onStartReflection, checkpoints: _checkpoints = [], onStartCheckpoint }: DashboardProps) {
+  // Note: checkpoints not used directly in Dashboard, but passed through for type consistency
+  void _checkpoints;
   const [showCompletionAck, setShowCompletionAck] = useState(true);
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming');
@@ -33,6 +38,7 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, co
   const isCompleted = isAlumniState(coachingState.state);
   const isPreFirst = isPreFirstSession(coachingState.state);
   const isPendingReflection = isPendingReflectionState(coachingState.state);
+  const isScale = coachingState.isScale;
 
   // Pre-first-session: Show dedicated anticipation-focused Home
   if (isPreFirst) {
@@ -47,7 +53,7 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, co
     );
   }
 
-  // Pending reflection: Show reflection CTA-focused Home
+  // Pending reflection: Show reflection CTA-focused Home (for GROW/EXEC)
   if (isPendingReflection && onStartReflection) {
     return (
       <PendingReflectionHome
@@ -56,6 +62,23 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, co
         baseline={baseline}
         onNavigate={onNavigate}
         onStartReflection={onStartReflection}
+      />
+    );
+  }
+
+  // SCALE users: Show ScaleHome with checkpoint prompt
+  if (isScale && !isCompleted) {
+    return (
+      <ScaleHome
+        profile={profile}
+        sessions={sessions}
+        actionItems={actionItems}
+        baseline={baseline}
+        checkpointStatus={coachingState.scaleCheckpointStatus}
+        onActionUpdate={onActionUpdate}
+        userEmail={userEmail}
+        onNavigate={onNavigate}
+        onStartCheckpoint={onStartCheckpoint}
       />
     );
   }

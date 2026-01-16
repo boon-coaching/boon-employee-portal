@@ -1,4 +1,4 @@
-import type { Employee, Session, BaselineSurvey, CompetencyScore, ReflectionResponse } from './types';
+import type { Employee, Session, BaselineSurvey, CompetencyScore, ReflectionResponse, Checkpoint, ScaleCheckpointStatus } from './types';
 
 /**
  * GROW Coaching State Machine
@@ -37,6 +37,9 @@ export interface CoachingStateData {
   hasEndOfProgramScores: boolean;
   hasReflection: boolean;
   isPendingReflection: boolean;
+  // SCALE checkpoint tracking
+  isScale: boolean;
+  scaleCheckpointStatus: ScaleCheckpointStatus;
 }
 
 // Program session expectations
@@ -130,6 +133,49 @@ function extractProgramType(program: string | null): string | null {
 }
 
 /**
+ * Calculate SCALE checkpoint status
+ * Checkpoints are due every 6 sessions
+ */
+function calculateScaleCheckpointStatus(
+  completedSessionCount: number,
+  checkpoints: Checkpoint[]
+): ScaleCheckpointStatus {
+  const CHECKPOINT_INTERVAL = 6;
+
+  // Get the latest checkpoint if any
+  const latestCheckpoint = checkpoints.length > 0
+    ? checkpoints[checkpoints.length - 1]
+    : null;
+
+  // Calculate current checkpoint number (next one to complete)
+  const currentCheckpointNumber = latestCheckpoint
+    ? latestCheckpoint.checkpoint_number + 1
+    : 1;
+
+  // Calculate sessions since last checkpoint
+  const sessionsAtLastCheckpoint = latestCheckpoint
+    ? latestCheckpoint.session_count_at_checkpoint
+    : 0;
+  const sessionsSinceLastCheckpoint = completedSessionCount - sessionsAtLastCheckpoint;
+
+  // Next checkpoint is due at: last checkpoint sessions + 6
+  const nextCheckpointDueAtSession = sessionsAtLastCheckpoint + CHECKPOINT_INTERVAL;
+
+  // Checkpoint is due when they've completed 6+ sessions since last checkpoint
+  const isCheckpointDue = sessionsSinceLastCheckpoint >= CHECKPOINT_INTERVAL;
+
+  return {
+    isScaleUser: true,
+    currentCheckpointNumber,
+    sessionsSinceLastCheckpoint,
+    nextCheckpointDueAtSession,
+    isCheckpointDue,
+    checkpoints,
+    latestCheckpoint,
+  };
+}
+
+/**
  * Main state determination function
  * Single source of truth for coaching state
  */
@@ -138,7 +184,8 @@ export function getCoachingState(
   sessions: Session[],
   baseline: BaselineSurvey | null,
   competencyScores: CompetencyScore[] = [],
-  reflection: ReflectionResponse | null = null
+  reflection: ReflectionResponse | null = null,
+  checkpoints: Checkpoint[] = []
 ): CoachingStateData {
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming') || null;
@@ -156,13 +203,29 @@ export function getCoachingState(
 
   const programType = extractProgramType(employee?.program || null);
   const isGrowOrExec = programType === 'GROW' || programType === 'EXEC';
+  const isScale = programType === 'SCALE';
   const totalExpectedSessions = programType ? PROGRAM_SESSION_COUNTS[programType] || 12 : 12;
-  const programProgress = Math.min(100, Math.round((completedSessions.length / totalExpectedSessions) * 100));
+  const programProgress = isScale
+    ? 0 // SCALE is ongoing, no fixed progress
+    : Math.min(100, Math.round((completedSessions.length / totalExpectedSessions) * 100));
 
   const hasEndOfProgramScores = competencyScores.some(cs => cs.score_type === 'end_of_program');
   const hasReflection = !!reflection || hasEndOfProgramScores;
-  const allSessionsDone = areAllSessionsDone(sessions, programType);
-  const isFullyCompleted = isProgramFullyCompleted(employee, competencyScores, reflection);
+  const allSessionsDone = !isScale && areAllSessionsDone(sessions, programType);
+  const isFullyCompleted = !isScale && isProgramFullyCompleted(employee, competencyScores, reflection);
+
+  // Calculate SCALE checkpoint status
+  const scaleCheckpointStatus: ScaleCheckpointStatus = isScale
+    ? calculateScaleCheckpointStatus(completedSessions.length, checkpoints)
+    : {
+        isScaleUser: false,
+        currentCheckpointNumber: 0,
+        sessionsSinceLastCheckpoint: 0,
+        nextCheckpointDueAtSession: 0,
+        isCheckpointDue: false,
+        checkpoints: [],
+        latestCheckpoint: null,
+      };
 
   // Determine state
   let state: CoachingState;
@@ -172,7 +235,7 @@ export function getCoachingState(
   } else if (isFullyCompleted) {
     state = 'COMPLETED_PROGRAM';
   } else if (allSessionsDone && !hasReflection) {
-    // Sessions done but reflection not submitted
+    // Sessions done but reflection not submitted (GROW/EXEC only)
     state = 'PENDING_REFLECTION';
   } else if (!hasCoach) {
     state = 'SIGNED_UP_NOT_MATCHED';
@@ -200,6 +263,8 @@ export function getCoachingState(
     hasEndOfProgramScores,
     hasReflection,
     isPendingReflection,
+    isScale,
+    scaleCheckpointStatus,
   };
 }
 

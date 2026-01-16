@@ -322,6 +322,57 @@ ON reflection_responses(lower(email));
 
 
 -- ============================================
+-- 10d. Create checkpoints table for SCALE longitudinal tracking
+-- ============================================
+-- SCALE users get checkpoints every 6 sessions to track growth over time
+
+CREATE TABLE IF NOT EXISTS public.checkpoints (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  checkpoint_number INTEGER NOT NULL CHECK (checkpoint_number >= 1),
+  session_count_at_checkpoint INTEGER NOT NULL,
+  -- Competency scores stored as JSONB for flexibility
+  competency_scores JSONB NOT NULL DEFAULT '{}',
+  -- Reflection and focus
+  reflection_text TEXT,  -- "What's shifted"
+  focus_area TEXT,       -- "What to focus on next 6 sessions"
+  -- NPS and testimonial
+  nps_score INTEGER CHECK (nps_score BETWEEN 0 AND 10),
+  testimonial_consent BOOLEAN DEFAULT false,
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  -- Ensure one checkpoint number per user
+  UNIQUE(email, checkpoint_number)
+);
+
+-- Enable RLS on checkpoints
+ALTER TABLE checkpoints ENABLE ROW LEVEL SECURITY;
+
+-- Employees can insert and view their own checkpoints
+DROP POLICY IF EXISTS "employees_manage_own_checkpoints" ON checkpoints;
+
+CREATE POLICY "employees_manage_own_checkpoints"
+ON checkpoints
+FOR ALL
+USING (
+  lower(email) = (
+    SELECT lower(company_email)
+    FROM employee_manager
+    WHERE auth_user_id = auth.uid()
+  )
+  OR
+  lower(email) = lower(auth.jwt() ->> 'email')
+);
+
+-- Create indexes for efficient lookups
+CREATE INDEX IF NOT EXISTS idx_checkpoints_email
+ON checkpoints(lower(email));
+
+CREATE INDEX IF NOT EXISTS idx_checkpoints_email_number
+ON checkpoints(lower(email), checkpoint_number DESC);
+
+
+-- ============================================
 -- VERIFICATION QUERIES
 -- Run these to verify the setup worked
 -- ============================================

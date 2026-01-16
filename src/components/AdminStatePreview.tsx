@@ -5,6 +5,9 @@ interface AdminStatePreviewProps {
   currentState: CoachingState;
   onStateOverride: (state: CoachingState | null) => void;
   overrideState: CoachingState | null;
+  programType?: string | null;
+  onProgramTypeOverride?: (type: string | null) => void;
+  programTypeOverride?: string | null;
 }
 
 const ALL_STATES: { state: CoachingState; label: string; description: string; color: string }[] = [
@@ -29,7 +32,7 @@ const ALL_STATES: { state: CoachingState; label: string; description: string; co
   {
     state: 'ACTIVE_PROGRAM',
     label: 'Active Program',
-    description: 'In active coaching with completed sessions',
+    description: 'In active coaching (GROW/EXEC or SCALE)',
     color: 'bg-green-500',
   },
   {
@@ -50,9 +53,15 @@ export default function AdminStatePreview({
   currentState,
   onStateOverride,
   overrideState,
+  programType,
+  onProgramTypeOverride,
+  programTypeOverride,
 }: AdminStatePreviewProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
+
+  const effectiveProgramType = programTypeOverride || programType;
+  const isScaleMode = effectiveProgramType === 'SCALE';
 
   // Check if admin preview is enabled (via localStorage or URL param)
   useEffect(() => {
@@ -122,13 +131,56 @@ export default function AdminStatePreview({
               <span className="text-sm font-medium text-gray-700">
                 {ALL_STATES.find(s => s.state === currentState)?.label || currentState}
               </span>
+              {programType && (
+                <span className="text-[9px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded uppercase">
+                  {programType}
+                </span>
+              )}
             </div>
-            {overrideState && (
+            {(overrideState || programTypeOverride) && (
               <p className="text-[10px] text-orange-600 mt-1 font-medium">
-                Override active - viewing simulated state
+                Override active - viewing simulated experience
               </p>
             )}
           </div>
+
+          {/* Program Type Toggle - for testing SCALE vs GROW/EXEC */}
+          {onProgramTypeOverride && (
+            <div className="px-4 py-2 bg-purple-50 border-b border-purple-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
+                    Program Type
+                  </p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    Toggle to test SCALE checkpoint flow
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => onProgramTypeOverride(isScaleMode ? null : 'SCALE')}
+                    className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                      isScaleMode
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                    }`}
+                  >
+                    SCALE
+                  </button>
+                  <button
+                    onClick={() => onProgramTypeOverride(programTypeOverride ? null : 'GROW')}
+                    className={`px-2 py-1 text-[10px] font-bold rounded transition-all ${
+                      effectiveProgramType === 'GROW' && programTypeOverride
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                    }`}
+                  >
+                    GROW
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* State Options */}
           <div className="max-h-80 overflow-y-auto">
