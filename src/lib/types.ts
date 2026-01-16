@@ -154,3 +154,69 @@ export interface SlackNudge {
 }
 
 export type View = 'dashboard' | 'sessions' | 'progress' | 'practice' | 'coach' | 'resources' | 'reflection' | 'settings';
+
+// SCALE Checkpoint data (longitudinal tracking every 6 sessions)
+export interface Checkpoint {
+  id: string;
+  email: string;
+  checkpoint_number: number; // 1, 2, 3, ...
+  session_count_at_checkpoint: number; // 6, 12, 18, ...
+  // Competency scores as JSON object
+  competency_scores: {
+    adaptability_and_resilience: number;
+    building_relationships_at_work: number;
+    change_management: number;
+    delegation_and_accountability: number;
+    effective_communication: number;
+    effective_planning_and_execution: number;
+    emotional_intelligence: number;
+    giving_and_receiving_feedback: number;
+    persuasion_and_influence: number;
+    self_confidence_and_imposter_syndrome: number;
+    strategic_thinking: number;
+    time_management_and_productivity: number;
+  };
+  reflection_text: string | null; // "What's shifted"
+  focus_area: string | null; // "What to focus on next"
+  nps_score: number | null;
+  testimonial_consent: boolean;
+  created_at: string;
+}
+
+// SCALE checkpoint tracking data
+export interface ScaleCheckpointStatus {
+  isScaleUser: boolean;
+  currentCheckpointNumber: number;
+  sessionsSinceLastCheckpoint: number;
+  nextCheckpointDueAtSession: number;
+  isCheckpointDue: boolean;
+  checkpoints: Checkpoint[];
+  latestCheckpoint: Checkpoint | null;
+}
+
+// Post-program reflection data
+export interface ReflectionResponse {
+  id: string;
+  email: string;
+  created_at: string;
+  // Competency post-assessment (same 12 as baseline)
+  comp_adaptability_and_resilience: number | null;
+  comp_building_relationships_at_work: number | null;
+  comp_change_management: number | null;
+  comp_delegation_and_accountability: number | null;
+  comp_effective_communication: number | null;
+  comp_effective_planning_and_execution: number | null;
+  comp_emotional_intelligence: number | null;
+  comp_giving_and_receiving_feedback: number | null;
+  comp_persuasion_and_influence: number | null;
+  comp_self_confidence_and_imposter_syndrome: number | null;
+  comp_strategic_thinking: number | null;
+  comp_time_management_and_productivity: number | null;
+  // NPS
+  nps_score: number | null;
+  // Qualitative
+  qualitative_shift: string | null;
+  qualitative_other: string | null;
+  // Testimonial consent
+  testimonial_consent: boolean;
+}

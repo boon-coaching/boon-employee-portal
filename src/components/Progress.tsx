@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem } from '../lib/types';
+import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem, Checkpoint } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
-import { isAlumniState } from '../lib/coachingState';
+import { isAlumniState, isPreFirstSession, isPendingReflectionState } from '../lib/coachingState';
+import GrowthTimeline from './GrowthTimeline';
 import {
   RadarChart,
   PolarGrid,
@@ -27,6 +28,9 @@ interface ProgressPageProps {
   actionItems: ActionItem[];
   programType: ProgramType | null;
   coachingState: CoachingStateData;
+  onStartReflection?: () => void;
+  checkpoints?: Checkpoint[];
+  onStartCheckpoint?: () => void;
 }
 
 // The 12 competencies with their database column keys
@@ -75,15 +79,707 @@ export default function ProgressPage({
   sessions,
   actionItems,
   programType,
-  coachingState
+  coachingState,
+  onStartReflection,
+  checkpoints = [],
+  onStartCheckpoint
 }: ProgressPageProps) {
   const [activeTab, setActiveTab] = useState<'competencies' | 'wellbeing'>('competencies');
+  const [expandedCheckpoint, setExpandedCheckpoint] = useState<string | null>(null);
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const completedActions = actionItems.filter(a => a.status === 'completed');
 
   const isGrowOrExec = programType === 'GROW' || programType === 'EXEC';
+  const isScale = programType === 'SCALE';
   const isCompleted = isAlumniState(coachingState.state);
+  const isPreFirst = isPreFirstSession(coachingState.state);
+  const isPendingReflection = isPendingReflectionState(coachingState.state);
+
+  // Get coach name for pre-first-session messaging
+  const upcomingSession = sessions.find(s => s.status === 'Upcoming');
+  const coachFirstName = upcomingSession?.coach_name?.split(' ')[0] || 'your coach';
+
+  // Pre-first-session: Show anticipation-focused empty state
+  if (isPreFirst) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <header className="text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">My Progress</h1>
+          <p className="text-gray-500 mt-2 font-medium">Track your leadership growth over time.</p>
+        </header>
+
+        {/* Anticipation State */}
+        <section className="bg-gradient-to-br from-purple-50 to-boon-lightBlue/20 rounded-[2.5rem] p-10 md:p-14 border border-purple-100 text-center">
+          <div className="w-20 h-20 mx-auto mb-8 bg-purple-100 rounded-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-extrabold text-boon-text mb-4">
+            Your Leadership Profile
+          </h2>
+          <p className="text-gray-600 text-lg max-w-lg mx-auto leading-relaxed mb-6">
+            Your leadership profile will emerge as you work with {coachFirstName}.
+          </p>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            After your first session, you'll see insights on your competencies, growth patterns, and wellbeing metrics here.
+          </p>
+        </section>
+
+        {/* What to Expect */}
+        <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
+          <h3 className="text-lg font-extrabold text-boon-text mb-6">What You'll Track</h3>
+          <div className="grid sm:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-purple-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-boon-text text-sm mb-2">12 Competencies</h4>
+              <p className="text-gray-500 text-xs">Leadership skills like communication, delegation, and emotional intelligence.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-boon-text text-sm mb-2">Growth Trends</h4>
+              <p className="text-gray-500 text-xs">Visual comparisons between your baseline and current levels.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-boon-lightBlue rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h4 className="font-bold text-boon-text text-sm mb-2">Wellbeing Metrics</h4>
+              <p className="text-gray-500 text-xs">Track satisfaction, productivity, balance, and motivation over time.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // SCALE: Show longitudinal view with checkpoint history
+  if (isScale) {
+    // Get the latest checkpoint for current scores
+    const latestCheckpoint = checkpoints.length > 0 ? checkpoints[checkpoints.length - 1] : null;
+
+    // Build competency data from checkpoints for trend tracking
+    const scaleCompetencyData = COMPETENCIES.map(comp => {
+      const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
+      const baselineValue = baseline?.[baselineKey] as number | null;
+
+      // Get scores from all checkpoints for trendline
+      const trendScores = checkpoints.map(cp => ({
+        checkpointNumber: cp.checkpoint_number,
+        score: cp.competency_scores[comp.key as keyof typeof cp.competency_scores] || 0,
+        date: cp.created_at,
+      }));
+
+      // Current is from latest checkpoint
+      const currentScore = latestCheckpoint
+        ? latestCheckpoint.competency_scores[comp.key as keyof typeof latestCheckpoint.competency_scores]
+        : baselineValue || 0;
+
+      // Calculate trend (comparing last two checkpoints, or baseline to first)
+      let trend: 'up' | 'down' | 'stable' = 'stable';
+      if (trendScores.length >= 2) {
+        const diff = trendScores[trendScores.length - 1].score - trendScores[trendScores.length - 2].score;
+        trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'stable';
+      } else if (trendScores.length === 1 && baselineValue) {
+        const diff = trendScores[0].score - baselineValue;
+        trend = diff > 0 ? 'up' : diff < 0 ? 'down' : 'stable';
+      }
+
+      return {
+        key: comp.key,
+        label: comp.label,
+        shortLabel: comp.shortLabel,
+        baseline: baselineValue || 0,
+        current: currentScore || 0,
+        trend,
+        trendScores,
+      };
+    });
+
+    // Calculate time in program
+    const firstSession = completedSessions.length > 0 ? completedSessions[completedSessions.length - 1] : null;
+    const monthsInProgram = firstSession
+      ? Math.max(1, Math.floor((Date.now() - new Date(firstSession.session_date).getTime()) / (1000 * 60 * 60 * 24 * 30)))
+      : 0;
+
+    // Build radar data with multiple checkpoint layers
+    const scaleRadarData = COMPETENCIES.map(comp => {
+      const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
+      const result: Record<string, any> = {
+        competency: comp.shortLabel,
+        baseline: baseline?.[baselineKey] as number || 0,
+        fullMark: 5,
+      };
+
+      // Add each checkpoint as a layer
+      checkpoints.forEach(cp => {
+        result[`checkpoint${cp.checkpoint_number}`] = cp.competency_scores[comp.key as keyof typeof cp.competency_scores] || 0;
+      });
+
+      return result;
+    });
+
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Header */}
+        <header className="text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">My Progress</h1>
+          <p className="text-gray-500 mt-2 font-medium">Track your leadership growth over time.</p>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
+            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+            SCALE Program
+          </div>
+        </header>
+
+        {/* Checkpoint Due Banner */}
+        {coachingState.scaleCheckpointStatus.isCheckpointDue && onStartCheckpoint && (
+          <section className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-[2rem] p-6 border-2 border-purple-200">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-boon-text">Time for a check-in</h2>
+                  <p className="text-sm text-gray-600">Add a new data point to your growth curve.</p>
+                </div>
+              </div>
+              <button
+                onClick={onStartCheckpoint}
+                className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all"
+              >
+                Start Check-In
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-boon-text">{completedSessions.length}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-boon-text">{monthsInProgram > 0 ? `${monthsInProgram}` : '—'}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Months</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-purple-600">{checkpoints.length}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Check-ins</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-gray-400">
+              {coachingState.scaleCheckpointStatus.isCheckpointDue
+                ? 'Now'
+                : `Session ${coachingState.scaleCheckpointStatus.nextCheckpointDueAtSession}`
+              }
+            </p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Next Check-in</p>
+          </div>
+        </div>
+
+        {/* Growth Timeline */}
+        {(checkpoints.length > 0 || baseline) && (
+          <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
+            <h2 className="text-lg font-extrabold text-boon-text mb-6">Growth Timeline</h2>
+            <GrowthTimeline
+              checkpoints={checkpoints}
+              baseline={baseline}
+              onCheckpointClick={(cp) => setExpandedCheckpoint(expandedCheckpoint === cp.id ? null : cp.id)}
+            />
+          </section>
+        )}
+
+        {/* Competency Grid with Trends */}
+        <section>
+          <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {scaleCompetencyData.map(comp => (
+              <div
+                key={comp.key}
+                className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="font-bold text-boon-text text-sm leading-tight">{comp.label}</h3>
+                  <div className="flex items-center gap-1">
+                    {comp.trend === 'up' && (
+                      <span className="text-green-600 text-sm font-bold">↑</span>
+                    )}
+                    {comp.trend === 'down' && (
+                      <span className="text-red-500 text-sm font-bold">↓</span>
+                    )}
+                    {comp.trend === 'stable' && (
+                      <span className="text-gray-400 text-sm font-bold">→</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Current Score */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400 uppercase tracking-wide">Current</span>
+                      <span className="font-bold text-purple-600">{comp.current || '—'}/5</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                        style={{ width: `${(comp.current || 0) * 20}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mini Trend Dots */}
+                  {comp.trendScores.length > 0 && (
+                    <div className="flex items-center gap-1 pt-2">
+                      <span className="text-[10px] text-gray-400 mr-2">History:</span>
+                      {baseline && (
+                        <div
+                          className="w-2 h-2 rounded-full bg-gray-300"
+                          title={`Baseline: ${comp.baseline}/5`}
+                        />
+                      )}
+                      {comp.trendScores.map((ts, i) => (
+                        <div
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${
+                            ts.score >= 4 ? 'bg-green-500' :
+                            ts.score >= 3 ? 'bg-purple-500' :
+                            'bg-amber-500'
+                          }`}
+                          title={`Check-in ${ts.checkpointNumber}: ${ts.score}/5`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Radar Chart with Multiple Checkpoints */}
+        {(checkpoints.length > 0 || baseline) && (
+          <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
+            <h2 className="text-lg font-extrabold text-boon-text mb-6 text-center">
+              Competency Evolution
+            </h2>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={scaleRadarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis
+                    dataKey="competency"
+                    tick={{ fill: '#374151', fontSize: 9, fontWeight: 600 }}
+                  />
+                  <PolarRadiusAxis
+                    angle={30}
+                    domain={[0, 5]}
+                    tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  />
+                  {/* Baseline */}
+                  <Radar
+                    name="Baseline"
+                    dataKey="baseline"
+                    stroke="#9ca3af"
+                    fill="#9ca3af"
+                    fillOpacity={0.15}
+                    strokeWidth={1}
+                    strokeDasharray="4 4"
+                  />
+                  {/* Checkpoints - each with progressively darker purple */}
+                  {checkpoints.map((cp, idx) => (
+                    <Radar
+                      key={cp.id}
+                      name={`Check-in ${cp.checkpoint_number}`}
+                      dataKey={`checkpoint${cp.checkpoint_number}`}
+                      stroke={`hsl(270, ${60 + idx * 10}%, ${60 - idx * 10}%)`}
+                      fill={`hsl(270, ${60 + idx * 10}%, ${60 - idx * 10}%)`}
+                      fillOpacity={0.1 + idx * 0.1}
+                      strokeWidth={idx === checkpoints.length - 1 ? 2 : 1}
+                    />
+                  ))}
+                  <Legend
+                    wrapperStyle={{ paddingTop: 20 }}
+                    formatter={(value) => (
+                      <span className="text-sm font-semibold text-gray-600">{value}</span>
+                    )}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Each layer shows your competency profile at a different check-in. Darker purple = more recent.
+            </p>
+          </section>
+        )}
+
+        {/* Checkpoint History */}
+        {checkpoints.length > 0 && (
+          <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
+            <h2 className="text-lg font-extrabold text-boon-text mb-6">Check-in History</h2>
+            <div className="space-y-4">
+              {[...checkpoints].reverse().map(cp => (
+                <div
+                  key={cp.id}
+                  className={`border rounded-2xl transition-all ${
+                    expandedCheckpoint === cp.id ? 'border-purple-300 bg-purple-50/30' : 'border-gray-100 bg-white'
+                  }`}
+                >
+                  <button
+                    onClick={() => setExpandedCheckpoint(expandedCheckpoint === cp.id ? null : cp.id)}
+                    className="w-full p-5 flex items-center justify-between text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <span className="font-bold text-purple-600">{cp.checkpoint_number}</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-boon-text">Check-in {cp.checkpoint_number}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(cp.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          {' · '}Session {cp.session_count_at_checkpoint}
+                        </p>
+                      </div>
+                    </div>
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform ${expandedCheckpoint === cp.id ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {expandedCheckpoint === cp.id && (
+                    <div className="px-5 pb-5 pt-2 border-t border-gray-100">
+                      {cp.focus_area && (
+                        <div className="mb-4">
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Focus Area</p>
+                          <p className="text-gray-700">{cp.focus_area}</p>
+                        </div>
+                      )}
+                      {cp.reflection_text && (
+                        <div className="mb-4">
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Reflection</p>
+                          <p className="text-gray-600 italic">"{cp.reflection_text}"</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Competency Scores</p>
+                        <div className="flex flex-wrap gap-2">
+                          {COMPETENCIES.map(comp => {
+                            const score = cp.competency_scores[comp.key as keyof typeof cp.competency_scores];
+                            return (
+                              <span
+                                key={comp.key}
+                                className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                  score >= 4 ? 'bg-green-100 text-green-700' :
+                                  score >= 3 ? 'bg-purple-100 text-purple-700' :
+                                  'bg-amber-100 text-amber-700'
+                                }`}
+                              >
+                                {comp.shortLabel}: {score}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Insights */}
+        <section className="bg-gradient-to-br from-purple-50 to-boon-lightBlue/20 p-8 rounded-[2rem] border border-purple-100">
+          <h2 className="text-lg font-extrabold text-boon-text mb-6">Insights</h2>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              {
+                icon: '📈',
+                title: 'Biggest Growth',
+                desc: (() => {
+                  if (checkpoints.length < 1 || !baseline) return 'Complete check-ins to see your growth trends.';
+                  const latestCp = checkpoints[checkpoints.length - 1];
+                  let biggestGrowth = { key: '', growth: 0 };
+                  COMPETENCIES.forEach(comp => {
+                    const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
+                    const baselineVal = baseline?.[baselineKey] as number || 0;
+                    const currentVal = latestCp.competency_scores[comp.key as keyof typeof latestCp.competency_scores] || 0;
+                    const growth = baselineVal > 0 ? ((currentVal - baselineVal) / baselineVal) * 100 : 0;
+                    if (growth > biggestGrowth.growth) {
+                      biggestGrowth = { key: comp.label, growth };
+                    }
+                  });
+                  return biggestGrowth.growth > 0
+                    ? `${biggestGrowth.key} (+${Math.round(biggestGrowth.growth)}% since baseline)`
+                    : 'Building consistency across all areas.';
+                })()
+              },
+              {
+                icon: '⭐',
+                title: 'Consistent Strength',
+                desc: (() => {
+                  if (checkpoints.length < 2) return 'More check-ins will reveal your consistent strengths.';
+                  // Find competency with highest average across checkpoints
+                  let strongest = { key: '', avg: 0 };
+                  COMPETENCIES.forEach(comp => {
+                    const avg = checkpoints.reduce((sum, cp) => {
+                      return sum + (cp.competency_scores[comp.key as keyof typeof cp.competency_scores] || 0);
+                    }, 0) / checkpoints.length;
+                    if (avg > strongest.avg) {
+                      strongest = { key: comp.label, avg };
+                    }
+                  });
+                  return strongest.avg >= 4
+                    ? `${strongest.key} (${strongest.avg.toFixed(1)}+ across check-ins)`
+                    : `${strongest.key} is your strongest area.`;
+                })()
+              },
+              {
+                icon: '🎯',
+                title: 'Focus Suggestion',
+                desc: (() => {
+                  if (checkpoints.length < 1) return 'Complete a check-in to get personalized focus suggestions.';
+                  const latestCp = checkpoints[checkpoints.length - 1];
+                  // Find lowest scoring competency in latest checkpoint
+                  let lowest = { key: '', score: 5 };
+                  COMPETENCIES.forEach(comp => {
+                    const score = latestCp.competency_scores[comp.key as keyof typeof latestCp.competency_scores] || 0;
+                    if (score < lowest.score && score > 0) {
+                      lowest = { key: comp.label, score };
+                    }
+                  });
+                  return lowest.score < 4
+                    ? `Consider focusing on ${lowest.key} in upcoming sessions.`
+                    : 'Great balance! Continue building across all areas.';
+                })()
+              }
+            ].map((card, i) => (
+              <div
+                key={i}
+                className="p-6 bg-white/60 rounded-2xl border border-white hover:bg-white hover:shadow-lg transition-all"
+              >
+                <div className="text-3xl mb-4">{card.icon}</div>
+                <h4 className="font-bold text-boon-text mb-2 uppercase tracking-widest text-xs">{card.title}</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* No Checkpoints State */}
+        {checkpoints.length === 0 && !coachingState.scaleCheckpointStatus.isCheckpointDue && (
+          <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-boon-text mb-2">Your First Check-In is Coming</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              After session {coachingState.scaleCheckpointStatus.nextCheckpointDueAtSession}, you'll be prompted to complete your first check-in.
+              This will establish your baseline for tracking growth over time.
+            </p>
+          </section>
+        )}
+      </div>
+    );
+  }
+
+  // Pending Reflection: Show baseline only, final scores locked until reflection complete
+  if (isPendingReflection) {
+    // Build baseline-only competency data
+    const baselineCompetencyData = COMPETENCIES.map(comp => {
+      const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
+      const baselineValue = baseline?.[baselineKey] as number | null;
+      return {
+        key: comp.key,
+        label: comp.label,
+        shortLabel: comp.shortLabel,
+        baseline: baselineValue ?? 0,
+      };
+    });
+
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Header */}
+        <header className="text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Leadership Profile</h1>
+          <p className="text-gray-500 mt-2 font-medium">Track your leadership competency growth over time.</p>
+        </header>
+
+        {/* Completion Status Banner */}
+        <section className="bg-gradient-to-br from-boon-blue/10 via-white to-purple-50 rounded-[2rem] p-8 border-2 border-boon-blue/20">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-extrabold text-boon-text">Your Leadership Profile is almost complete</h2>
+          </div>
+          <p className="text-gray-600 mb-6">
+            Finish your final reflection to see your growth across all 12 competencies.
+          </p>
+          <button
+            onClick={onStartReflection}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-all"
+          >
+            Complete Reflection
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </section>
+
+        {/* Summary Stats (Partial) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-green-600">{completedSessions.length}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions</p>
+            <p className="text-[10px] text-green-600 mt-1">Complete</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-purple-600">12</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Competencies</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-green-600">
+              <svg className="w-7 h-7 mx-auto text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Baseline</p>
+            <p className="text-[10px] text-green-600 mt-1">Complete</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
+            <p className="text-3xl font-black text-amber-500">
+              <svg className="w-7 h-7 mx-auto text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Final Assessment</p>
+            <p className="text-[10px] text-amber-500 mt-1">Pending</p>
+          </div>
+        </div>
+
+        {/* Competency Grid - Baseline Only */}
+        <section>
+          <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {baselineCompetencyData.map(comp => (
+              <div
+                key={comp.key}
+                className="bg-white p-5 rounded-2xl border border-gray-100"
+              >
+                <h3 className="font-bold text-boon-text text-sm leading-tight mb-4">{comp.label}</h3>
+
+                <div className="space-y-3">
+                  {/* Baseline */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400 uppercase tracking-wide">Baseline</span>
+                      <span className="font-bold text-gray-500">{comp.baseline || '—'}/5</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gray-300 rounded-full transition-all duration-500"
+                        style={{ width: `${(comp.baseline || 0) * 20}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Final - Locked */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-400 uppercase tracking-wide">Final</span>
+                      <span className="font-medium text-amber-500 italic text-[11px]">Complete reflection to reveal</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gray-200 rounded-full border-2 border-dashed border-gray-300" style={{ width: '100%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Radar Chart - Baseline Only */}
+        {baseline && (
+          <section className="bg-white p-8 rounded-[2rem] border border-gray-100 relative">
+            <h2 className="text-lg font-extrabold text-boon-text mb-6 text-center">
+              Competency Profile
+            </h2>
+            <div className="h-96 opacity-50">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={baselineCompetencyData.map(comp => ({
+                  competency: comp.shortLabel,
+                  baseline: comp.baseline,
+                  fullMark: 5,
+                }))} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                  <PolarGrid stroke="#e5e7eb" />
+                  <PolarAngleAxis
+                    dataKey="competency"
+                    tick={{ fill: '#374151', fontSize: 9, fontWeight: 600 }}
+                  />
+                  <PolarRadiusAxis
+                    angle={30}
+                    domain={[0, 5]}
+                    tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  />
+                  <Radar
+                    name="Baseline"
+                    dataKey="baseline"
+                    stroke="#9ca3af"
+                    fill="#9ca3af"
+                    fillOpacity={0.3}
+                    strokeWidth={2}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-[2rem]">
+              <div className="text-center p-8">
+                <p className="text-gray-600 font-medium mb-4">
+                  Complete your reflection to see your full profile
+                </p>
+                <button
+                  onClick={onStartReflection}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-all"
+                >
+                  Complete Reflection
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  }
 
   // Build competency data with baseline and current scores
   const competencyData = COMPETENCIES.map(comp => {

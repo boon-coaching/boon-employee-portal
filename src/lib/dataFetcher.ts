@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Employee, Session, SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, SlackNudge } from './types';
+import type { Employee, Session, SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, SlackNudge, ReflectionResponse, Checkpoint } from './types';
 
 /**
  * Fetch employee profile by email
@@ -378,4 +378,127 @@ export async function fetchNudgeHistory(email: string): Promise<SlackNudge[]> {
   }
 
   return (data as SlackNudge[]) || [];
+}
+
+// ============================================
+// POST-PROGRAM REFLECTION
+// ============================================
+
+/**
+ * Fetch reflection response for a user (post-program assessment)
+ */
+export async function fetchReflection(email: string): Promise<ReflectionResponse | null> {
+  const { data, error } = await supabase
+    .from('reflection_responses')
+    .select('*')
+    .ilike('email', email)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    // Table might not exist yet
+    if (error.code !== '42P01' && error.code !== 'PGRST116') {
+      console.error('Error fetching reflection:', error);
+    }
+    return null;
+  }
+
+  return (data && data.length > 0) ? data[0] as ReflectionResponse : null;
+}
+
+/**
+ * Submit post-program reflection
+ */
+export async function submitReflection(
+  email: string,
+  reflection: Omit<ReflectionResponse, 'id' | 'email' | 'created_at'>
+): Promise<{ success: boolean; data?: ReflectionResponse; error?: string }> {
+  const { data, error } = await supabase
+    .from('reflection_responses')
+    .insert({
+      email: email.toLowerCase(),
+      ...reflection,
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error submitting reflection:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: data as ReflectionResponse };
+}
+
+// ============================================
+// SCALE CHECKPOINTS (Longitudinal Tracking)
+// ============================================
+
+/**
+ * Fetch all checkpoints for a SCALE user
+ */
+export async function fetchCheckpoints(email: string): Promise<Checkpoint[]> {
+  const { data, error } = await supabase
+    .from('checkpoints')
+    .select('*')
+    .ilike('email', email)
+    .order('checkpoint_number', { ascending: true });
+
+  if (error) {
+    // Table might not exist yet
+    if (error.code !== '42P01' && error.code !== 'PGRST116') {
+      console.error('Error fetching checkpoints:', error);
+    }
+    return [];
+  }
+
+  return (data as Checkpoint[]) || [];
+}
+
+/**
+ * Fetch the latest checkpoint for a SCALE user
+ */
+export async function fetchLatestCheckpoint(email: string): Promise<Checkpoint | null> {
+  const { data, error } = await supabase
+    .from('checkpoints')
+    .select('*')
+    .ilike('email', email)
+    .order('checkpoint_number', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    // Table might not exist yet
+    if (error.code !== '42P01' && error.code !== 'PGRST116') {
+      console.error('Error fetching latest checkpoint:', error);
+    }
+    return null;
+  }
+
+  return (data && data.length > 0) ? data[0] as Checkpoint : null;
+}
+
+/**
+ * Submit a SCALE checkpoint
+ */
+export async function submitCheckpoint(
+  email: string,
+  checkpoint: Omit<Checkpoint, 'id' | 'email' | 'created_at'>
+): Promise<{ success: boolean; data?: Checkpoint; error?: string }> {
+  const { data, error } = await supabase
+    .from('checkpoints')
+    .insert({
+      email: email.toLowerCase(),
+      ...checkpoint,
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error submitting checkpoint:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: data as Checkpoint };
 }

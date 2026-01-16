@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './lib/AuthContext';
-import { fetchSessions, fetchProgressData, fetchBaseline, fetchCompetencyScores, fetchProgramType, fetchActionItems } from './lib/dataFetcher';
-import { getCoachingState, type CoachingStateData } from './lib/coachingState';
-import type { View, Session, SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, ActionItem } from './lib/types';
+import { fetchSessions, fetchProgressData, fetchBaseline, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints } from './lib/dataFetcher';
+import { getCoachingState, type CoachingStateData, type CoachingState } from './lib/coachingState';
+import type { View, Session, SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, ActionItem, ReflectionResponse, Checkpoint } from './lib/types';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -11,7 +11,6 @@ import AuthCallback from './pages/AuthCallback';
 import NoEmployeeFound from './pages/NoEmployeeFound';
 import WelcomePage from './pages/WelcomePage';
 import MatchingPage from './pages/MatchingPage';
-import GettingStartedPage from './pages/GettingStartedPage';
 
 // Components
 import Layout from './components/Layout';
@@ -22,6 +21,9 @@ import Practice from './components/Practice';
 import Resources from './components/Resources';
 import CoachPage from './components/Coach';
 import Settings from './components/Settings';
+import ReflectionFlow from './components/ReflectionFlow';
+import CheckpointFlow from './components/CheckpointFlow';
+import AdminStatePreview from './components/AdminStatePreview';
 
 // Configuration - Replace with actual survey URL
 const WELCOME_SURVEY_URL = 'https://boon.typeform.com/welcome'; // TODO: Update with actual URL
@@ -36,6 +38,12 @@ function ProtectedApp() {
   const [competencyScores, setCompetencyScores] = useState<CompetencyScore[]>([]);
   const [programType, setProgramType] = useState<ProgramType | null>(null);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
+  const [reflection, setReflection] = useState<ReflectionResponse | null>(null);
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+  const [showReflectionFlow, setShowReflectionFlow] = useState(false);
+  const [showCheckpointFlow, setShowCheckpointFlow] = useState(false);
+  const [stateOverride, setStateOverride] = useState<CoachingState | null>(null);
+  const [programTypeOverride, setProgramTypeOverride] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -43,13 +51,15 @@ function ProtectedApp() {
 
       setDataLoading(true);
       try {
-        const [sessionsData, progressData, baselineData, competencyData, programTypeData, actionItemsData] = await Promise.all([
+        const [sessionsData, progressData, baselineData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData] = await Promise.all([
           fetchSessions(employee.id),
           fetchProgressData(employee.company_email),
           fetchBaseline(employee.company_email),
           fetchCompetencyScores(employee.company_email),
           fetchProgramType(employee.program),
           fetchActionItems(employee.company_email),
+          fetchReflection(employee.company_email),
+          fetchCheckpoints(employee.company_email),
         ]);
 
         setSessions(sessionsData);
@@ -58,6 +68,8 @@ function ProtectedApp() {
         setCompetencyScores(competencyData);
         setProgramType(programTypeData);
         setActionItems(actionItemsData);
+        setReflection(reflectionData);
+        setCheckpoints(checkpointsData);
       } catch (err) {
         console.error('Error loading data:', err);
       } finally {
@@ -72,6 +84,22 @@ function ProtectedApp() {
     if (!employee?.company_email) return;
     const items = await fetchActionItems(employee.company_email);
     setActionItems(items);
+  }
+
+  // Handle reflection completion - update state and close modal
+  function handleReflectionComplete(newReflection: ReflectionResponse) {
+    setReflection(newReflection);
+    setShowReflectionFlow(false);
+    // Optionally navigate to Progress to show the newly unlocked Leadership Profile
+    setView('progress');
+  }
+
+  // Handle checkpoint completion - update state and close modal
+  function handleCheckpointComplete(newCheckpoint: Checkpoint) {
+    setCheckpoints(prev => [...prev, newCheckpoint]);
+    setShowCheckpointFlow(false);
+    // Navigate to Progress to show the updated trendline
+    setView('progress');
   }
 
   if (loading) {
@@ -109,30 +137,86 @@ function ProtectedApp() {
   }
 
   // Determine coaching state (single source of truth)
-  const coachingState: CoachingStateData = getCoachingState(employee, sessions, baseline, competencyScores);
+  const actualCoachingState: CoachingStateData = getCoachingState(employee, sessions, baseline, competencyScores, reflection, checkpoints);
+
+  // Effective program type (actual or overridden for admin preview)
+  const effectiveProgramType = programTypeOverride || programType;
+
+  // Apply state override if set (for admin preview)
+  const coachingState: CoachingStateData = (stateOverride || programTypeOverride)
+    ? {
+        ...actualCoachingState,
+        state: stateOverride || actualCoachingState.state,
+        // Update derived flags based on override
+        isPendingReflection: stateOverride === 'PENDING_REFLECTION',
+        hasReflection: stateOverride === 'COMPLETED_PROGRAM',
+        isScale: effectiveProgramType === 'SCALE',
+        isGrowOrExec: effectiveProgramType === 'GROW' || effectiveProgramType === 'EXEC',
+        scaleCheckpointStatus: effectiveProgramType === 'SCALE'
+          ? {
+              ...actualCoachingState.scaleCheckpointStatus,
+              isScaleUser: true,
+              // For SCALE preview, simulate checkpoint being due if no checkpoints exist
+              isCheckpointDue: actualCoachingState.completedSessionCount >= 6 && checkpoints.length === 0,
+            }
+          : {
+              isScaleUser: false,
+              currentCheckpointNumber: 0,
+              sessionsSinceLastCheckpoint: 0,
+              nextCheckpointDueAtSession: 0,
+              isCheckpointDue: false,
+              checkpoints: [],
+              latestCheckpoint: null,
+            },
+      }
+    : actualCoachingState;
 
   // Route to appropriate page based on coaching state
   if (coachingState.state === 'NOT_SIGNED_UP') {
-    return <WelcomePage welcomeSurveyUrl={WELCOME_SURVEY_URL} />;
+    return (
+      <>
+        <WelcomePage welcomeSurveyUrl={WELCOME_SURVEY_URL} />
+        <AdminStatePreview
+          currentState={actualCoachingState.state}
+          overrideState={stateOverride}
+          onStateOverride={setStateOverride}
+          programType={programType}
+          programTypeOverride={programTypeOverride}
+          onProgramTypeOverride={setProgramTypeOverride}
+        />
+      </>
+    );
   }
 
   if (coachingState.state === 'SIGNED_UP_NOT_MATCHED') {
-    return <MatchingPage />;
+    return (
+      <>
+        <MatchingPage />
+        <AdminStatePreview
+          currentState={actualCoachingState.state}
+          overrideState={stateOverride}
+          onStateOverride={setStateOverride}
+          programType={programType}
+          programTypeOverride={programTypeOverride}
+          onProgramTypeOverride={setProgramTypeOverride}
+        />
+      </>
+    );
   }
 
-  if (coachingState.state === 'MATCHED_PRE_FIRST_SESSION' && !coachingState.hasCompletedSessions) {
-    return <GettingStartedPage sessions={sessions} />;
-  }
+  // Pre-first-session and beyond - render full dashboard with navigation
+  // The individual components handle the pre-first-session state appropriately
+  const handleStartReflection = () => setShowReflectionFlow(true);
+  const handleStartCheckpoint = () => setShowCheckpointFlow(true);
 
-  // Active or Completed coaching - render full dashboard with navigation
   const renderView = () => {
     switch (view) {
       case 'dashboard':
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} />;
+        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
       case 'sessions':
         return <SessionsPage sessions={sessions} coachingState={coachingState} />;
       case 'progress':
-        return <ProgressPage progress={progress} baseline={baseline} competencyScores={competencyScores} sessions={sessions} actionItems={actionItems} programType={programType} coachingState={coachingState} />;
+        return <ProgressPage progress={progress} baseline={baseline} competencyScores={competencyScores} sessions={sessions} actionItems={actionItems} programType={programType} coachingState={coachingState} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
       case 'practice':
         const practiceCoachName = sessions.length > 0 ? sessions[0].coach_name : "Your Coach";
         return <Practice sessions={sessions} coachName={practiceCoachName} userEmail={employee?.company_email || ''} coachingState={coachingState} competencyScores={competencyScores} />;
@@ -144,13 +228,43 @@ function ProtectedApp() {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} />;
+        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
     }
   };
 
   return (
     <Layout currentView={view} setView={setView} coachingState={coachingState}>
       {renderView()}
+      {/* Reflection Flow Modal */}
+      {showReflectionFlow && (
+        <ReflectionFlow
+          userEmail={employee?.company_email || ''}
+          baseline={baseline}
+          onComplete={handleReflectionComplete}
+          onClose={() => setShowReflectionFlow(false)}
+        />
+      )}
+      {/* Checkpoint Flow Modal (for SCALE users) */}
+      {showCheckpointFlow && (
+        <CheckpointFlow
+          userEmail={employee?.company_email || ''}
+          checkpointNumber={coachingState.scaleCheckpointStatus.currentCheckpointNumber}
+          sessionCount={coachingState.completedSessionCount}
+          baseline={baseline}
+          previousCheckpoint={coachingState.scaleCheckpointStatus.latestCheckpoint}
+          onComplete={handleCheckpointComplete}
+          onClose={() => setShowCheckpointFlow(false)}
+        />
+      )}
+      {/* Admin State Preview Panel */}
+      <AdminStatePreview
+        currentState={actualCoachingState.state}
+        overrideState={stateOverride}
+        onStateOverride={setStateOverride}
+        programType={programType}
+        programTypeOverride={programTypeOverride}
+        onProgramTypeOverride={setProgramTypeOverride}
+      />
     </Layout>
   );
 }
