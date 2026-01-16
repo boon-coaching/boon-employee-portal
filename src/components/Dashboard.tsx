@@ -4,6 +4,7 @@ import { isAlumniState, getStateLabel } from '../lib/coachingState';
 import ActionItems from './ActionItems';
 import SessionPrep from './SessionPrep';
 import IntegrationModule from './IntegrationModule';
+import CoachProfile from './CoachProfile';
 
 interface DashboardProps {
   profile: Employee | null;
@@ -12,9 +13,10 @@ interface DashboardProps {
   baseline: BaselineSurvey | null;
   onActionUpdate: () => void;
   coachingState: CoachingStateData;
+  userEmail: string;
 }
 
-export default function Dashboard({ profile, sessions, actionItems, baseline: _baseline, onActionUpdate, coachingState }: DashboardProps) {
+export default function Dashboard({ profile, sessions, actionItems, baseline: _baseline, onActionUpdate, coachingState, userEmail }: DashboardProps) {
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming');
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
@@ -129,6 +131,14 @@ export default function Dashboard({ profile, sessions, actionItems, baseline: _b
         />
       )}
 
+      {/* Your Coach Profile - for active users */}
+      {!isCompleted && lastSession && (
+        <CoachProfile
+          sessions={sessions}
+          coachName={lastSession.coach_name}
+        />
+      )}
+
       {/* Your Goals - from most recent session */}
       {lastSession?.goals && (
         <section className="bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 rounded-[2rem] p-8 border border-boon-blue/10">
@@ -216,12 +226,13 @@ export default function Dashboard({ profile, sessions, actionItems, baseline: _b
         <ActionItems items={actionItems} onUpdate={onActionUpdate} />
       )}
 
-      {/* Session Prep - only for active program */}
+      {/* Session Prep - PROMINENT - key behavior for active program */}
       {!isCompleted && (
         <SessionPrep
           sessions={sessions}
           actionItems={actionItems}
           coachName={lastSession?.coach_name || 'Your Coach'}
+          userEmail={userEmail}
         />
       )}
 

@@ -330,6 +330,25 @@ export default function ProgressPage({
                         {comp.improvement > 0 ? '↑' : comp.improvement < 0 ? '↓' : '→'} {Math.abs(comp.improvement)}%
                       </div>
                     )}
+
+                    {/* Practice Bridge - show for lower scoring competencies */}
+                    {(comp.scoreLabel?.toLowerCase() === 'applying' || comp.current <= 3) && comp.current > 0 && !isCompleted && (
+                      <button
+                        onClick={() => {
+                          // Navigate to Practice with competency filter
+                          // Using window location for now - ideally use React Router
+                          window.dispatchEvent(new CustomEvent('navigate-to-practice', {
+                            detail: { competency: comp.key }
+                          }));
+                        }}
+                        className="mt-3 w-full py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-lg hover:bg-boon-lightBlue transition-all flex items-center justify-center gap-1"
+                      >
+                        Practice this
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
