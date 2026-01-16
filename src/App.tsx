@@ -142,6 +142,106 @@ function ProtectedApp() {
   // Effective program type (actual or overridden for admin preview)
   const effectiveProgramType = programTypeOverride || programType;
 
+  // Mock data for admin preview states
+  const mockCoachName = sessions[0]?.coach_name || 'Darcy Roberts';
+
+  // Mock upcoming session (for Pre-First Session and Active Program previews)
+  const mockUpcomingSession: Session = {
+    id: 'preview-session-upcoming',
+    employee_id: employee?.id || '',
+    employee_name: employee?.first_name || 'there',
+    session_date: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() + 7); // One week from now
+      date.setHours(14, 0, 0, 0); // 2:00 PM
+      return date.toISOString();
+    })(),
+    status: 'Upcoming',
+    coach_name: mockCoachName,
+    leadership_management_skills: false,
+    communication_skills: false,
+    mental_well_being: false,
+    other_themes: null,
+    summary: null,
+    goals: null,
+    plan: null,
+    duration_minutes: null,
+    company_id: null,
+    account_name: null,
+    program_name: 'GROW',
+    program_title: null,
+    appointment_number: 7,
+    created_at: new Date().toISOString(),
+  };
+
+  // Mock completed sessions (for Active Program preview)
+  const mockCompletedSessions: Session[] = Array.from({ length: 6 }, (_, i) => ({
+    id: `preview-session-${i + 1}`,
+    employee_id: employee?.id || '',
+    employee_name: employee?.first_name || 'there',
+    session_date: (() => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i) * 14); // Every 2 weeks going back
+      date.setHours(14, 0, 0, 0);
+      return date.toISOString();
+    })(),
+    status: 'Completed' as const,
+    coach_name: mockCoachName,
+    leadership_management_skills: i >= 3,
+    communication_skills: i >= 2,
+    mental_well_being: i >= 4,
+    other_themes: null,
+    summary: i === 5 ? 'Great progress on reframing feedback as a gift. Next session we\'ll work on handling defensive reactions.' : null,
+    goals: i === 5 ? 'Practice delivering constructive feedback to direct reports while maintaining psychological safety.' : null,
+    plan: null,
+    duration_minutes: 45,
+    company_id: null,
+    account_name: null,
+    program_name: 'GROW',
+    program_title: null,
+    appointment_number: i + 1,
+    created_at: new Date().toISOString(),
+  }));
+
+  const mockBaseline: BaselineSurvey = {
+    id: 'preview-baseline-1',
+    email: employee?.company_email || '',
+    created_at: new Date().toISOString(),
+    coaching_goals: "I want to get better at giving direct feedback without damaging relationships, and develop more confidence in high-stakes conversations.",
+    satisfaction: 4,
+    productivity: 3,
+    work_life_balance: 3,
+    motivation: 4,
+    comp_adaptability_and_resilience: 3,
+    comp_building_relationships_at_work: 4,
+    comp_change_management: 2,
+    comp_delegation_and_accountability: 3,
+    comp_effective_communication: 4,
+    comp_effective_planning_and_execution: 3,
+    comp_emotional_intelligence: 4,
+    comp_giving_and_receiving_feedback: 2,
+    comp_persuasion_and_influence: 3,
+    comp_self_confidence_and_imposter_syndrome: 2,
+    comp_strategic_thinking: 3,
+    comp_time_management_and_productivity: 4,
+  };
+
+  // Determine if we need mock data for preview
+  const isPreviewingPreFirstSession = stateOverride === 'MATCHED_PRE_FIRST_SESSION';
+  const isPreviewingActiveProgram = stateOverride === 'ACTIVE_PROGRAM';
+
+  // Build effective sessions based on preview state
+  let effectiveSessions = sessions;
+  if (isPreviewingPreFirstSession) {
+    // Pre-first session: just one upcoming session
+    effectiveSessions = [{ ...mockUpcomingSession, appointment_number: 1 }];
+  } else if (isPreviewingActiveProgram) {
+    // Active program: completed sessions + upcoming session
+    effectiveSessions = [...mockCompletedSessions, mockUpcomingSession];
+  }
+
+  const effectiveBaseline = (isPreviewingPreFirstSession || isPreviewingActiveProgram) ? mockBaseline : baseline;
+
   // Apply state override if set (for admin preview)
   const coachingState: CoachingStateData = (stateOverride || programTypeOverride)
     ? {
@@ -212,7 +312,7 @@ function ProtectedApp() {
   const renderView = () => {
     switch (view) {
       case 'dashboard':
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
+        return <Dashboard profile={employee} sessions={effectiveSessions} actionItems={actionItems} baseline={effectiveBaseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
       case 'sessions':
         return <SessionsPage sessions={sessions} coachingState={coachingState} />;
       case 'progress':
@@ -228,7 +328,7 @@ function ProtectedApp() {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard profile={employee} sessions={sessions} actionItems={actionItems} baseline={baseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
+        return <Dashboard profile={employee} sessions={effectiveSessions} actionItems={actionItems} baseline={effectiveBaseline} competencyScores={competencyScores} onActionUpdate={reloadActionItems} coachingState={coachingState} userEmail={employee?.company_email || ''} onNavigate={setView} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} />;
     }
   };
 
