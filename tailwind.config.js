@@ -16,9 +16,9 @@ export default {
           darkCoral: '#E55555',
           bg: '#F8F9FC',
           text: '#1A1F36',
-          amber: '#F59E0B',
+          amber: '#D97706',
           amberLight: '#FEF3C7',
-          amberDark: '#D97706',
+          amberDark: '#B45309',
         }
       },
       fontFamily: {

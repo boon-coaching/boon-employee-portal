@@ -197,7 +197,7 @@ function ProtectedApp() {
     other_themes: null,
     summary: i === 5 ? 'Great progress on reframing feedback as a gift. Next session we\'ll work on handling defensive reactions.' : null,
     goals: i === 5 ? 'Practice delivering constructive feedback to direct reports while maintaining psychological safety.' : null,
-    plan: null,
+    plan: i === 5 ? 'Focus on separating observation from judgment when giving feedback. Practice the SBI model with your next direct report check-in.' : null,
     duration_minutes: 45,
     company_id: null,
     account_name: null,
