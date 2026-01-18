@@ -27,10 +27,64 @@ export default function ActiveGrowHome({
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming');
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
-  const pendingActions = actionItems.filter(a => a.status === 'pending');
+  void actionItems; // Reserved for potential future use
 
   const coachName = lastSession?.coach_name || upcomingSession?.coach_name || 'Your Coach';
   const coachFirstName = coachName.split(' ')[0];
+
+  // Extract plans from recent sessions for "Things You're Working On"
+  const sessionPlans = completedSessions
+    .filter(s => s.plan && s.plan.trim().length > 0)
+    .slice(0, 5) // Last 5 sessions with plans
+    .map(s => ({
+      id: s.id,
+      plan: s.plan!,
+      sessionDate: s.session_date,
+      coachName: s.coach_name,
+    }));
+
+  // State for notes on plan items
+  const [planNotes, setPlanNotes] = useState<Record<string, string>>({});
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+  const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
+
+  // Load existing notes from localStorage
+  useEffect(() => {
+    if (!userEmail) return;
+    const savedNotes = localStorage.getItem(`plan_notes_${userEmail}`);
+    if (savedNotes) {
+      try {
+        setPlanNotes(JSON.parse(savedNotes));
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
+  }, [userEmail]);
+
+  // Save note for a plan item
+  const saveNote = async (sessionId: string, note: string) => {
+    setSavingNoteId(sessionId);
+    const updatedNotes = { ...planNotes, [sessionId]: note };
+    setPlanNotes(updatedNotes);
+    localStorage.setItem(`plan_notes_${userEmail}`, JSON.stringify(updatedNotes));
+
+    // Optionally save to Supabase
+    try {
+      await supabase
+        .from('session_plan_notes')
+        .upsert({
+          email: userEmail.toLowerCase(),
+          session_id: sessionId,
+          note: note,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'email,session_id' });
+    } catch {
+      // localStorage saved as fallback
+    }
+
+    setSavingNoteId(null);
+    setExpandedNoteId(null);
+  };
 
   // Determine sub-state
   const hasUpcomingSession = !!upcomingSession;
@@ -429,10 +483,10 @@ export default function ActiveGrowHome({
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-          THINGS YOU'RE WORKING ON (renamed from Action Items)
-          Uses Georgia, amber accents, no strikethrough
+          THINGS YOU'RE WORKING ON - From session plans
+          Uses Georgia, amber accents, no strikethrough, with "Add note" option
           ═══════════════════════════════════════════════════════════════════ */}
-      {pendingActions.length > 0 && (
+      {sessionPlans.length > 0 && (
         <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
@@ -443,25 +497,65 @@ export default function ActiveGrowHome({
             <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Things You're Working On</h2>
           </div>
           <div className="space-y-4">
-            {pendingActions.map((action) => (
+            {sessionPlans.map((item) => (
               <div
-                key={action.id}
-                className="p-4 bg-white/60 rounded-xl border border-boon-amber/10 hover:border-boon-amber/30 transition-all"
+                key={item.id}
+                className="p-5 bg-white/60 rounded-xl border border-boon-amber/10 hover:border-boon-amber/30 transition-all"
               >
-                <p className="font-serif text-gray-700 leading-relaxed">{action.action_text}</p>
-                <div className="flex items-center gap-3 mt-3">
-                  <span className="text-xs text-gray-400">
-                    From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                  {action.action_text.toLowerCase().includes('feedback') && (
+                <p className="font-serif text-gray-700 leading-relaxed">{item.plan}</p>
+
+                {/* Existing note display */}
+                {planNotes[item.id] && expandedNoteId !== item.id && (
+                  <div className="mt-3 p-3 bg-boon-amberLight/30 rounded-lg border border-boon-amber/10">
+                    <p className="text-xs font-bold text-boon-amber uppercase tracking-widest mb-1">Your note</p>
+                    <p className="font-serif text-sm text-gray-600 italic">{planNotes[item.id]}</p>
+                  </div>
+                )}
+
+                {/* Add/Edit note form */}
+                {expandedNoteId === item.id ? (
+                  <div className="mt-4 space-y-3">
+                    <textarea
+                      defaultValue={planNotes[item.id] || ''}
+                      placeholder="How's this going? Any progress to note..."
+                      className="w-full p-3 rounded-lg border border-boon-amber/20 focus:border-boon-amber focus:ring-0 focus:outline-none font-serif text-sm min-h-[80px] resize-none bg-white placeholder-gray-400"
+                      id={`note-${item.id}`}
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const textarea = document.getElementById(`note-${item.id}`) as HTMLTextAreaElement;
+                          saveNote(item.id, textarea.value);
+                        }}
+                        disabled={savingNoteId === item.id}
+                        className="px-4 py-2 text-xs font-bold text-white bg-boon-amber rounded-lg hover:bg-boon-amberDark transition-colors disabled:opacity-50"
+                      >
+                        {savingNoteId === item.id ? 'Saving...' : 'Save note'}
+                      </button>
+                      <button
+                        onClick={() => setExpandedNoteId(null)}
+                        className="px-4 py-2 text-xs font-medium text-gray-500 hover:text-gray-700"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 mt-3">
+                    <span className="text-xs text-gray-400">
+                      From session on {new Date(item.sessionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
                     <button
-                      onClick={() => onNavigate?.('practice')}
-                      className="ml-auto text-xs text-boon-amber font-medium hover:underline"
+                      onClick={() => setExpandedNoteId(item.id)}
+                      className="ml-auto text-xs text-boon-amber font-medium hover:underline flex items-center gap-1"
                     >
-                      Practice this →
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      {planNotes[item.id] ? 'Edit note' : 'Add note'}
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
