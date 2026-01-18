@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Employee, Session, ActionItem, BaselineSurvey, View } from '../lib/types';
+import type { Employee, Session, ActionItem, BaselineSurvey, View, Coach } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
+import { fetchCoachByName } from '../lib/dataFetcher';
 
 interface ActiveGrowHomeProps {
   profile: Employee | null;
@@ -30,6 +31,44 @@ export default function ActiveGrowHome({
 
   const coachName = lastSession?.coach_name || upcomingSession?.coach_name || 'Your Coach';
   const coachFirstName = coachName.split(' ')[0];
+
+  // Coach profile state
+  const [coachProfile, setCoachProfile] = useState<Coach | null>(null);
+
+  // Fetch coach profile from coaches table
+  useEffect(() => {
+    const loadCoachProfile = async () => {
+      if (!coachName || coachName === 'Your Coach') return;
+
+      const coach = await fetchCoachByName(coachName);
+      if (coach) {
+        setCoachProfile(coach as Coach);
+      }
+    };
+
+    loadCoachProfile();
+  }, [coachName]);
+
+  // Count sessions with this specific coach
+  const sessionsWithCoach = completedSessions.filter(s => s.coach_name === coachName);
+  const sessionCountWithCoach = sessionsWithCoach.length;
+
+  // Helper: Get coach photo URL or generate initials placeholder
+  const getCoachPhotoUrl = (size: number = 100) => {
+    if (coachProfile?.photo_url) {
+      return coachProfile.photo_url;
+    }
+    // Fallback to initials-based placeholder
+    const initials = coachName
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+    // Use a simple SVG data URL for initials
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect fill="%23466FF6" width="${size}" height="${size}"/><text x="50%" y="50%" dy=".35em" fill="white" font-family="system-ui" font-size="${size * 0.4}" font-weight="600" text-anchor="middle">${initials}</text></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  };
 
   // Action items for "Things You're Working On" - from action_items table
   const pendingActions = actionItems.filter(a => a.status === 'pending');
@@ -292,7 +331,7 @@ export default function ActiveGrowHome({
 
               <div className="flex items-center gap-4">
                 <img
-                  src={`https://picsum.photos/seed/${coachName.replace(' ', '')}/100/100`}
+                  src={getCoachPhotoUrl(100)}
                   alt={coachName}
                   className="w-14 h-14 rounded-xl object-cover ring-2 ring-gray-100"
                 />
@@ -453,19 +492,23 @@ export default function ActiveGrowHome({
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Your Coach</h2>
             <div className="flex flex-col sm:flex-row gap-6">
               <img
-                src={`https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200`}
+                src={getCoachPhotoUrl(200)}
                 alt={coachName}
                 className="w-24 h-24 rounded-2xl object-cover ring-4 ring-boon-bg shadow-lg mx-auto sm:mx-0"
               />
               <div className="flex-1 text-center sm:text-left">
                 <h3 className="text-xl font-bold text-boon-text">{coachName}</h3>
                 <p className="text-sm font-bold text-boon-blue uppercase tracking-widest mt-1">Executive Coach</p>
-                <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-                  {coachFirstName} specializes in leadership development and emotional intelligence,
-                  helping professionals unlock their full potential through personalized coaching.
-                </p>
+                {coachProfile?.bio ? (
+                  <p className="text-sm text-gray-600 mt-4 leading-relaxed">{coachProfile.bio}</p>
+                ) : (
+                  <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+                    {coachFirstName} specializes in leadership development and emotional intelligence,
+                    helping professionals unlock their full potential through personalized coaching.
+                  </p>
+                )}
                 <p className="text-sm text-gray-500 mt-3">
-                  <span className="font-semibold text-boon-text">{completedSessions.length} sessions</span> together
+                  <span className="font-semibold text-boon-text">{sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'}</span> together
                 </p>
               </div>
             </div>
@@ -563,7 +606,7 @@ export default function ActiveGrowHome({
           {/* Coach */}
           <div className="flex items-center gap-3">
             <img
-              src={`https://picsum.photos/seed/${coachName.replace(' ', '')}/100/100`}
+              src={getCoachPhotoUrl(100)}
               alt="Coach"
               className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
             />
@@ -616,13 +659,13 @@ export default function ActiveGrowHome({
         <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-4">
             <img
-              src={`https://picsum.photos/seed/${coachName.replace(' ', '')}/100/100`}
+              src={getCoachPhotoUrl(100)}
               alt={coachName}
               className="w-14 h-14 rounded-xl object-cover ring-2 ring-boon-bg shadow-sm"
             />
             <div className="flex-1">
               <h3 className="font-bold text-boon-text">{coachName}</h3>
-              <p className="text-xs text-gray-500">{completedSessions.length} sessions together</p>
+              <p className="text-xs text-gray-500">{sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'} together</p>
             </div>
             <button className="px-4 py-2 text-sm font-bold text-boon-blue border border-boon-blue/30 rounded-xl hover:bg-boon-blue/5 transition-colors">
               Message
@@ -641,7 +684,7 @@ export default function ActiveGrowHome({
           </p>
           <div className="mt-6 flex items-center gap-3 relative z-10">
             <img
-              src={`https://picsum.photos/seed/${coachName.replace(' ', '')}/100/100`}
+              src={getCoachPhotoUrl(100)}
               alt="Coach"
               className="w-9 h-9 rounded-full object-cover ring-2 ring-boon-bg"
             />
