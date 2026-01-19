@@ -59,7 +59,7 @@ function ProtectedApp() {
       setDataLoading(true);
       try {
         const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData] = await Promise.all([
-          fetchSessions(employee.id),
+          fetchSessions(employee.id, employee.company_email),
           fetchProgressData(employee.company_email),
           fetchBaseline(employee.company_email),
           fetchWelcomeSurveyScale(employee.company_email),

@@ -20,21 +20,39 @@ export async function fetchEmployeeProfile(email: string): Promise<Employee | nu
 }
 
 /**
- * Fetch all sessions for an employee by their employee_manager ID
+ * Fetch all sessions for an employee
+ * Tries by employee_id first, then falls back to employee_email
  */
-export async function fetchSessions(employeeId: string): Promise<Session[]> {
+export async function fetchSessions(employeeId: string, employeeEmail?: string): Promise<Session[]> {
+  // Try by employee_id first
   const { data, error } = await supabase
     .from('session_tracking')
     .select('*')
     .eq('employee_id', employeeId)
     .order('session_date', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching sessions:', error);
-    return [];
+  if (!error && data && data.length > 0) {
+    return data as Session[];
   }
 
-  return (data as Session[]) || [];
+  // Fallback: Try by employee_email if provided
+  if (employeeEmail) {
+    const { data: emailData, error: emailError } = await supabase
+      .from('session_tracking')
+      .select('*')
+      .ilike('employee_email', employeeEmail)
+      .order('session_date', { ascending: false });
+
+    if (!emailError && emailData && emailData.length > 0) {
+      return emailData as Session[];
+    }
+  }
+
+  if (error) {
+    console.error('Error fetching sessions:', error);
+  }
+
+  return [];
 }
 
 /**
