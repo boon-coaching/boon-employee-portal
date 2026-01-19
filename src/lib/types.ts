@@ -20,6 +20,7 @@ export interface Employee {
 export interface Session {
   id: string;
   employee_id: string;
+  employee_email: string;
   employee_name: string;
   session_date: string;
   status: 'Completed' | 'Upcoming' | 'Cancelled' | 'No Show';

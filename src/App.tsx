@@ -56,6 +56,16 @@ function ProtectedApp() {
     async function loadData() {
       if (!employee?.id || !employee?.company_email) return;
 
+      // Debug: Log employee data for session lookup debugging
+      console.log('[App.loadData] Employee data:', {
+        id: employee.id,
+        company_email: employee.company_email,
+        coach_id: employee.coach_id,
+        booking_link: employee.booking_link ? 'SET' : 'NOT_SET',
+        program: employee.program,
+        status: employee.status
+      });
+
       setDataLoading(true);
       try {
         const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData] = await Promise.all([
@@ -69,6 +79,12 @@ function ProtectedApp() {
           fetchReflection(employee.company_email),
           fetchCheckpoints(employee.company_email),
         ]);
+
+        // Debug: Log sessions loaded
+        console.log('[App.loadData] Sessions loaded:', {
+          count: sessionsData.length,
+          sessions: sessionsData.map(s => ({ id: s.id, employee_id: s.employee_id, status: s.status, coach_name: s.coach_name }))
+        });
 
         setSessions(sessionsData);
         setProgress(progressData);
@@ -174,6 +190,7 @@ function ProtectedApp() {
   const mockUpcomingSession: Session = {
     id: 'preview-session-upcoming',
     employee_id: employee?.id || '',
+    employee_email: employee?.company_email || '',
     employee_name: employee?.first_name || 'there',
     session_date: (() => {
       const date = new Date();
@@ -204,6 +221,7 @@ function ProtectedApp() {
   const mockCompletedSessions: Session[] = Array.from({ length: 6 }, (_, i) => ({
     id: `preview-session-${i + 1}`,
     employee_id: employee?.id || '',
+    employee_email: employee?.company_email || '',
     employee_name: employee?.first_name || 'there',
     session_date: (() => {
       const date = new Date();

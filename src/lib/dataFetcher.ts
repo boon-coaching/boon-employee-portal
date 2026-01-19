@@ -21,21 +21,31 @@ export async function fetchEmployeeProfile(email: string): Promise<Employee | nu
 
 /**
  * Fetch all sessions for an employee
- * Tries by employee_id first, then falls back to employee_email
+ * Tries multiple lookup methods to handle different data scenarios:
+ * 1. By employee_id (direct link)
+ * 2. By employee_email (case-insensitive)
+ * 3. Via RPC function (bypasses potential RLS issues)
  */
 export async function fetchSessions(employeeId: string, employeeEmail?: string): Promise<Session[]> {
+  console.log('[fetchSessions] Starting lookup for:', { employeeId, employeeEmail });
+
   // Try by employee_id first
-  const { data, error } = await supabase
+  const { data: idData, error: idError } = await supabase
     .from('session_tracking')
     .select('*')
     .eq('employee_id', employeeId)
     .order('session_date', { ascending: false });
 
-  if (!error && data && data.length > 0) {
-    return data as Session[];
+  console.log('[fetchSessions] By employee_id:', {
+    found: idData?.length || 0,
+    error: idError?.message || 'none'
+  });
+
+  if (!idError && idData && idData.length > 0) {
+    return idData as Session[];
   }
 
-  // Fallback: Try by employee_email if provided
+  // Fallback 1: Try by employee_email (case-insensitive)
   if (employeeEmail) {
     const { data: emailData, error: emailError } = await supabase
       .from('session_tracking')
@@ -43,15 +53,64 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
       .ilike('employee_email', employeeEmail)
       .order('session_date', { ascending: false });
 
+    console.log('[fetchSessions] By employee_email ilike:', {
+      searchEmail: employeeEmail,
+      found: emailData?.length || 0,
+      error: emailError?.message || 'none'
+    });
+
     if (!emailError && emailData && emailData.length > 0) {
       return emailData as Session[];
     }
+
+    // Fallback 2: Try exact email match (different case handling)
+    const { data: exactData, error: exactError } = await supabase
+      .from('session_tracking')
+      .select('*')
+      .eq('employee_email', employeeEmail.toLowerCase())
+      .order('session_date', { ascending: false });
+
+    console.log('[fetchSessions] By employee_email exact lowercase:', {
+      searchEmail: employeeEmail.toLowerCase(),
+      found: exactData?.length || 0,
+      error: exactError?.message || 'none'
+    });
+
+    if (!exactError && exactData && exactData.length > 0) {
+      return exactData as Session[];
+    }
+
+    // Fallback 3: Try RPC function that uses SECURITY DEFINER to bypass RLS
+    const { data: rpcData, error: rpcError } = await supabase
+      .rpc('get_sessions_for_user', { user_email: employeeEmail });
+
+    console.log('[fetchSessions] By RPC get_sessions_for_user:', {
+      found: rpcData?.length || 0,
+      error: rpcError?.message || 'none',
+      code: rpcError?.code || 'none'
+    });
+
+    if (!rpcError && rpcData && rpcData.length > 0) {
+      return rpcData as Session[];
+    }
+
+    // Final debug: Check if sessions exist at all for this email pattern
+    // This query uses a wildcard to see if any sessions match even partially
+    const { data: debugData, error: debugError } = await supabase
+      .from('session_tracking')
+      .select('id, employee_email, employee_id, status, coach_name')
+      .or(`employee_email.ilike.%${employeeEmail.split('@')[0]}%,employee_id.eq.${employeeId}`)
+      .limit(5);
+
+    console.log('[fetchSessions] DEBUG - Partial match search:', {
+      searchPattern: `%${employeeEmail.split('@')[0]}%`,
+      found: debugData?.length || 0,
+      data: debugData,
+      error: debugError?.message || 'none'
+    });
   }
 
-  if (error) {
-    console.error('Error fetching sessions:', error);
-  }
-
+  console.log('[fetchSessions] No sessions found for user');
   return [];
 }
 

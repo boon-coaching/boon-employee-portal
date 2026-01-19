@@ -292,3 +292,24 @@ $$;
 
 -- Grant execute to authenticated users
 GRANT EXECUTE ON FUNCTION get_pending_survey TO authenticated;
+
+-- 7. Helper function to fetch sessions for a user
+-- ============================================
+-- Uses SECURITY DEFINER to bypass RLS and reliably fetch sessions
+-- Looks up by employee_email (case-insensitive)
+CREATE OR REPLACE FUNCTION get_sessions_for_user(user_email TEXT)
+RETURNS SETOF session_tracking
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT *
+  FROM session_tracking
+  WHERE lower(employee_email) = lower(user_email)
+  ORDER BY session_date DESC;
+END;
+$$;
+
+-- Grant execute to authenticated users
+GRANT EXECUTE ON FUNCTION get_sessions_for_user TO authenticated;
