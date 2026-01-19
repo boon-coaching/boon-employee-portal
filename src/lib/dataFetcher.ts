@@ -877,3 +877,165 @@ export async function hasCompletedBaselineSurvey(email: string): Promise<boolean
 
   return data && data.length > 0;
 }
+
+// ============================================
+// GROW DASHBOARD DATA FETCHERS
+// ============================================
+
+export interface ProgramInfo {
+  program_title: string | null;
+  program_type: string;
+  sessions_per_employee: number;
+  program_start_date: string | null;
+  program_end_date: string | null;
+}
+
+/**
+ * Fetch program configuration for a participant
+ * Looks up via employee's program field -> programs table
+ */
+export async function fetchProgramInfo(programId: string | null): Promise<ProgramInfo | null> {
+  if (!programId) return null;
+
+  const upperProgram = programId.toUpperCase();
+
+  // Determine program type from name pattern first
+  let programType = 'SCALE';
+  if (upperProgram === 'GROW' || upperProgram.startsWith('GROW ') || upperProgram.startsWith('GROW-')) {
+    programType = 'GROW';
+  } else if (upperProgram === 'EXEC' || upperProgram.startsWith('EXEC ') || upperProgram.startsWith('EXEC-')) {
+    programType = 'EXEC';
+  }
+
+  // Try to look up by ID first (if it looks like a UUID)
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(programId);
+
+  if (isUuid) {
+    const { data, error } = await supabase
+      .from('programs')
+      .select('name, program_type, sessions_per_employee, program_end_date')
+      .eq('id', programId)
+      .single();
+
+    if (!error && data) {
+      return {
+        program_title: data.name || programId,
+        program_type: data.program_type || programType,
+        sessions_per_employee: data.sessions_per_employee || (programType === 'GROW' ? 6 : 36),
+        program_start_date: null,
+        program_end_date: data.program_end_date || null,
+      };
+    }
+  }
+
+  // Try to look up by name/title
+  const { data: byName, error: nameError } = await supabase
+    .from('programs')
+    .select('name, program_type, sessions_per_employee, program_end_date')
+    .ilike('name', `%${programId}%`)
+    .limit(1)
+    .single();
+
+  if (!nameError && byName) {
+    return {
+      program_title: byName.name || programId,
+      program_type: byName.program_type || programType,
+      sessions_per_employee: byName.sessions_per_employee || (programType === 'GROW' ? 6 : 36),
+      program_start_date: null,
+      program_end_date: byName.program_end_date || null,
+    };
+  }
+
+  // Return defaults based on inferred program type
+  return {
+    program_title: programId,
+    program_type: programType,
+    sessions_per_employee: programType === 'GROW' ? 6 : 36,
+    program_start_date: null,
+    program_end_date: null,
+  };
+}
+
+export interface GrowFocusArea {
+  competency_name: string;
+  baseline_score: CompetencyScoreLevel;
+}
+
+/**
+ * Fetch participant's GROW focus areas and baseline scores
+ * Gets the 3 focus areas they selected plus their baseline scores
+ */
+export async function fetchGrowFocusAreas(email: string): Promise<GrowFocusArea[]> {
+  // First, try to get focus areas from survey_submissions (native survey)
+  const { data: surveyData } = await supabase
+    .from('survey_submissions')
+    .select('focus_areas')
+    .ilike('email', email)
+    .eq('survey_type', 'grow_baseline')
+    .order('submitted_at', { ascending: false })
+    .limit(1);
+
+  let focusAreas: string[] = [];
+
+  if (surveyData && surveyData.length > 0 && surveyData[0].focus_areas) {
+    focusAreas = surveyData[0].focus_areas;
+  } else {
+    // Fallback: Try to get from welcome_survey_baseline coaching_priorities
+    const { data: baselineData } = await supabase
+      .from('welcome_survey_baseline')
+      .select('coaching_priorities')
+      .ilike('email', email)
+      .limit(1);
+
+    if (baselineData && baselineData.length > 0 && baselineData[0].coaching_priorities) {
+      // coaching_priorities might be a string or array
+      const priorities = baselineData[0].coaching_priorities;
+      if (Array.isArray(priorities)) {
+        focusAreas = priorities.slice(0, 3);
+      } else if (typeof priorities === 'string') {
+        focusAreas = priorities.split(',').map((p: string) => p.trim()).slice(0, 3);
+      }
+    }
+  }
+
+  if (focusAreas.length === 0) {
+    return [];
+  }
+
+  // Get baseline scores for focus areas from survey_competency_scores
+  const { data: scores } = await supabase
+    .from('survey_competency_scores')
+    .select('competency_name, score')
+    .ilike('email', email)
+    .eq('score_type', 'pre')
+    .in('competency_name', focusAreas);
+
+  // Build result with scores (default to 3 if no score found)
+  return focusAreas.map(competency => {
+    const scoreData = scores?.find(s => s.competency_name === competency);
+    return {
+      competency_name: competency,
+      baseline_score: (scoreData?.score || 3) as CompetencyScoreLevel,
+    };
+  });
+}
+
+/**
+ * Fetch all baseline competency scores for a participant
+ * Used to display full competency profile on GROW dashboard
+ */
+export async function fetchAllBaselineScores(email: string): Promise<SurveyCompetencyScore[]> {
+  const { data, error } = await supabase
+    .from('survey_competency_scores')
+    .select('*')
+    .ilike('email', email)
+    .eq('score_type', 'pre')
+    .order('competency_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching baseline scores:', error);
+    return [];
+  }
+
+  return (data as SurveyCompetencyScore[]) || [];
+}
