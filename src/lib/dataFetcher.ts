@@ -533,7 +533,6 @@ export async function submitCheckpoint(
 import type {
   CoreCompetency,
   PendingSurvey,
-  SurveyType,
   SurveyCompetencyScore,
   CompetencyScoreLevel,
   CoachQuality
@@ -557,12 +556,17 @@ export async function fetchCoreCompetencies(): Promise<CoreCompetency[]> {
   return (data as CoreCompetency[]) || [];
 }
 
+// Program-specific milestone arrays
+const SCALE_MILESTONES = [1, 3, 6, 12, 18, 24, 30, 36];
+const GROW_MILESTONES = [1, 6];
+
 /**
  * Check for pending survey after login
  * Returns the OLDEST session that needs a survey (so users complete in order)
+ * Handles GROW vs SCALE program types with different milestone arrays
  */
 export async function fetchPendingSurvey(email: string, programType?: string | null): Promise<PendingSurvey | null> {
-  // First, try the RPC function
+  // First, try the RPC function (uses the comprehensive pending_surveys view)
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_pending_survey', { user_email: email });
 
@@ -571,6 +575,55 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   }
 
   // Fallback: manual query for pending surveys
+  // Determine program type first
+  const normalizedProgram = programType?.toUpperCase() || '';
+  const isGrow = normalizedProgram === 'GROW' || normalizedProgram.startsWith('GROW');
+  const milestones = isGrow ? GROW_MILESTONES : SCALE_MILESTONES;
+
+  // Get completed sessions count for end-of-program detection
+  const { data: completedCount } = await supabase
+    .from('session_tracking')
+    .select('id', { count: 'exact' })
+    .ilike('employee_email', email)
+    .eq('status', 'Completed');
+
+  const totalCompleted = completedCount?.length || 0;
+
+  // Check for end-of-program survey first
+  // Default sessions_per_employee is 6 for GROW, 36 for SCALE
+  const sessionsPerEmployee = isGrow ? 6 : 36;
+
+  if (totalCompleted >= sessionsPerEmployee) {
+    // Check if they've already submitted an end survey
+    const { data: existingEndSurvey } = await supabase
+      .from('survey_submissions')
+      .select('id')
+      .ilike('email', email)
+      .in('survey_type', ['scale_end', 'grow_end'])
+      .limit(1);
+
+    if (!existingEndSurvey || existingEndSurvey.length === 0) {
+      // Get the most recent session for context
+      const { data: latestSession } = await supabase
+        .from('session_tracking')
+        .select('id, session_date, appointment_number, coach_name')
+        .ilike('employee_email', email)
+        .eq('status', 'Completed')
+        .order('session_date', { ascending: false })
+        .limit(1);
+
+      if (latestSession && latestSession.length > 0) {
+        return {
+          session_id: latestSession[0].id,
+          session_number: latestSession[0].appointment_number,
+          session_date: latestSession[0].session_date,
+          coach_name: latestSession[0].coach_name || 'Your Coach',
+          survey_type: isGrow ? 'grow_end' : 'scale_end',
+        };
+      }
+    }
+  }
+
   // Get completed sessions at survey milestones without matching survey
   // Order by ascending (oldest first) so users complete surveys in order
   const { data: sessions, error: sessionsError } = await supabase
@@ -578,7 +631,7 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
     .select('id, employee_email, session_date, appointment_number, coach_name, program_name')
     .ilike('employee_email', email)
     .eq('status', 'Completed')
-    .in('appointment_number', [1, 3, 6, 12, 18, 24, 30, 36])
+    .in('appointment_number', milestones)
     .order('session_date', { ascending: true });
 
   if (sessionsError || !sessions || sessions.length === 0) {
@@ -595,27 +648,14 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
       .limit(1);
 
     if (!existingSurvey || existingSurvey.length === 0) {
-      // Determine survey type based on program
-      // GROW uses grow surveys, SCALE uses scale_feedback
-      const sessionProgram = session.program_name || programType;
-      const isGrow = sessionProgram?.toUpperCase() === 'GROW';
-
-      // For GROW, check if baseline exists - if not, show baseline survey
-      // Otherwise show regular feedback
-      let surveyType: SurveyType = 'scale_feedback';
-
-      if (isGrow) {
-        // Check if user has completed baseline survey
-        const hasBaseline = await hasCompletedBaselineSurvey(email);
-        surveyType = hasBaseline ? 'scale_feedback' : 'grow_baseline';
-      }
-
+      // All milestone surveys use scale_feedback for now
+      // (GROW and SCALE use same questions for regular feedback)
       return {
         session_id: session.id,
         session_number: session.appointment_number,
         session_date: session.session_date,
         coach_name: session.coach_name || 'Your Coach',
-        survey_type: surveyType,
+        survey_type: 'scale_feedback',
       };
     }
   }
