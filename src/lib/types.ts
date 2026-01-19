@@ -67,9 +67,12 @@ export interface SurveyResponse {
 export interface BaselineSurvey {
   id: string;
   email: string;
+  employee_id?: string;
   created_at: string;
   // Open-ended goals from welcome survey (what they want to work on)
   coaching_goals: string | null;
+  // Match summary - AI-generated description of why coach was matched
+  match_summary?: string | null;
   // Wellbeing metrics (actual column names)
   satisfaction: number | null;
   productivity: number | null;
@@ -94,9 +97,12 @@ export interface BaselineSurvey {
 export interface WelcomeSurveyScale {
   id: string;
   email: string;
+  employee_id?: string;
   created_at: string;
   // Open-ended goals from welcome survey (what they want to work on)
   coaching_goals: string | null;
+  // Match summary - AI-generated description of why coach was matched
+  match_summary?: string | null;
   // 18 Focus area boolean fields
   focus_work_relationships: boolean;
   focus_work_life_balance: boolean;

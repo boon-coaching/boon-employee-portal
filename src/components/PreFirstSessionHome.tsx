@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Employee, Session, BaselineSurvey, WelcomeSurveyScale, ProgramType, View, Coach } from '../lib/types';
 import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 import { supabase } from '../lib/supabase';
-import { fetchCoachByName, fetchCoachById, parseCoachSpecialties, getCoachTitleLine, getCoachBackgroundLine, fetchMatchSummary } from '../lib/dataFetcher';
+import { fetchCoachByName, fetchCoachById, getCoachTitleLine, getCoachBackgroundLine, fetchMatchSummary } from '../lib/dataFetcher';
 
 interface PreFirstSessionHomeProps {
   profile: Employee | null;
@@ -57,26 +57,22 @@ export default function PreFirstSessionHome({
     loadCoachDetails();
   }, [profile?.coach_id, sessions, upcomingSession?.coach_name]);
 
-  // Fetch match summary using employee_id
+  // Fetch match summary using employee_id with email fallback
   useEffect(() => {
     const loadMatchSummary = async () => {
       if (!profile?.id) return;
-      const summary = await fetchMatchSummary(profile.id);
+      const summary = await fetchMatchSummary(profile.id, userEmail);
       setMatchSummary(summary);
     };
 
     loadMatchSummary();
-  }, [profile?.id]);
+  }, [profile?.id, userEmail]);
 
   const coachFirstName = coachName.split(' ')[0];
 
   // Coach display data
   const coachTitleLine = getCoachTitleLine(coach, programType);
   const coachBackgroundLine = getCoachBackgroundLine(coach);
-  const coachSpecialties = coach?.special_services
-    ? parseCoachSpecialties(coach.special_services, 4)
-    : ['Leadership', 'Communication', 'Well-being'];
-  const coachBio = coach?.bio || null;
   const coachPhotoUrl = coach?.photo_url || `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200`;
   const displayMatchSummary = matchSummary || 'Your coach is here to help you achieve your goals.';
 
@@ -358,21 +354,6 @@ export default function PreFirstSessionHome({
             <p className="text-sm text-gray-700 mt-3 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
               {displayMatchSummary}
             </p>
-
-            <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-              {coachBio || `${coachFirstName} specializes in leadership development and emotional intelligence, helping professionals unlock their full potential through personalized coaching.`}
-            </p>
-
-            <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
-              {coachSpecialties.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 text-xs font-bold bg-boon-lightBlue/50 text-boon-blue rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </section>
