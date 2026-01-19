@@ -105,6 +105,9 @@ function hasCoachAssigned(employee: Employee | null, sessions: Session[]): boole
   // Has explicit coach_id
   if (employee?.coach_id) return true;
 
+  // Has booking_link (implies coach assigned)
+  if (employee?.booking_link) return true;
+
   // Has sessions (implies coach assignment)
   if (sessions.length > 0) return true;
 

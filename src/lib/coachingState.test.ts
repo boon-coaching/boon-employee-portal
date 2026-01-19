@@ -29,6 +29,7 @@ const createEmployee = (overrides: Partial<Employee> = {}): Employee => ({
 const createSession = (overrides: Partial<Session> = {}): Session => ({
   id: 'session-1',
   employee_id: 'emp-1',
+  employee_email: 'test@example.com',
   employee_name: 'Test User',
   session_date: '2024-02-01T10:00:00Z',
   status: 'Completed',
@@ -193,14 +194,16 @@ describe('getCoachingState', () => {
       expect(result.hasEndOfProgramScores).toBe(true);
     });
 
-    it('returns COMPLETED_PROGRAM when all 12 GROW sessions completed with no upcoming', () => {
+    it('returns PENDING_REFLECTION when all 12 GROW sessions completed but no reflection', () => {
       const employee = createEmployee({ program: 'GROW - Cohort 1' });
       const sessions = Array.from({ length: 12 }, (_, i) =>
         createSession({ id: `session-${i}`, status: 'Completed' })
       );
       const result = getCoachingState(employee, sessions, createBaseline());
-      expect(result.state).toBe('COMPLETED_PROGRAM');
+      // With no reflection submitted, state should be PENDING_REFLECTION
+      expect(result.state).toBe('PENDING_REFLECTION');
       expect(result.programProgress).toBe(100);
+      expect(result.isPendingReflection).toBe(true);
     });
 
     it('returns ACTIVE_PROGRAM when 12 sessions but has upcoming', () => {
