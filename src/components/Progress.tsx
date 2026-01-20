@@ -170,10 +170,8 @@ export default function ProgressPage({
           })
         : null;
 
-      // Coach info for timeline
-      const coachInfo = upcomingSession?.coach_name
-        ? `${upcomingSession.coach_name}${coachFirstName !== upcomingSession.coach_name ? '' : ''}`
-        : coachFirstName;
+      // Coach info for timeline - use full name, not just first name
+      const coachFullName = upcomingSession?.coach_name || 'Your Coach';
 
       return (
         <div className="space-y-6 animate-fade-in">
@@ -181,10 +179,6 @@ export default function ProgressPage({
           <header className="text-center">
             <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Your Coaching Journey</h1>
             <p className="text-gray-500 mt-2 font-medium">Here's what you're working toward</p>
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-200">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              SCALE Program
-            </div>
           </header>
 
           {/* What You Want to Work On - Dark card */}
@@ -242,7 +236,7 @@ export default function ProgressPage({
                 </div>
                 <div className="pb-8">
                   <h3 className="font-bold text-boon-text">Matched with Your Coach</h3>
-                  <p className="text-sm text-gray-500">{coachInfo}</p>
+                  <p className="text-sm text-gray-500">{coachFullName}</p>
                 </div>
               </div>
 
