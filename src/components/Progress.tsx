@@ -33,6 +33,7 @@ interface ProgressPageProps {
   checkpoints?: Checkpoint[];
   onStartCheckpoint?: () => void;
   coachingWins?: CoachingWin[];
+  onAddWin?: (winText: string) => Promise<boolean>;
 }
 
 // The 12 competencies with their database column keys
@@ -93,10 +94,25 @@ export default function ProgressPage({
   onStartReflection,
   checkpoints = [],
   onStartCheckpoint,
-  coachingWins = []
+  coachingWins = [],
+  onAddWin
 }: ProgressPageProps) {
   const [activeTab, setActiveTab] = useState<'competencies' | 'wellbeing'>('competencies');
   const [expandedCheckpoint, setExpandedCheckpoint] = useState<string | null>(null);
+  const [showAddWinModal, setShowAddWinModal] = useState(false);
+  const [newWinText, setNewWinText] = useState('');
+  const [isSubmittingWin, setIsSubmittingWin] = useState(false);
+
+  const handleAddWin = async () => {
+    if (!newWinText.trim() || !onAddWin) return;
+    setIsSubmittingWin(true);
+    const success = await onAddWin(newWinText.trim());
+    setIsSubmittingWin(false);
+    if (success) {
+      setNewWinText('');
+      setShowAddWinModal(false);
+    }
+  };
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const completedActions = actionItems.filter(a => a.status === 'completed');
@@ -296,17 +312,27 @@ export default function ProgressPage({
                   <span className="text-2xl">🏆</span>
                   <h2 className="text-lg font-extrabold text-boon-text">Your Wins</h2>
                 </div>
-                <span className="text-sm font-medium text-orange-700 bg-white px-3 py-1 rounded-full">
-                  {coachingWins.length} breakthrough{coachingWins.length !== 1 ? 's' : ''}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200">
+                    {coachingWins.length} breakthrough{coachingWins.length !== 1 ? 's' : ''}
+                  </span>
+                  {onAddWin && (
+                    <button
+                      onClick={() => setShowAddWinModal(true)}
+                      className="text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 px-4 py-1.5 rounded-full transition-colors"
+                    >
+                      + Add a win
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="space-y-4">
                 {coachingWins.map((win) => (
-                  <div key={win.id} className="bg-white rounded-xl p-4 border-l-4 border-orange-400">
-                    <p className="text-gray-700 italic">"{win.win_text}"</p>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                  <div key={win.id} className="bg-amber-50 rounded-xl p-5 border-l-4 border-orange-400">
+                    <p className="text-gray-800 italic text-lg leading-relaxed">"{win.win_text}"</p>
+                    <div className="flex items-center gap-3 mt-3 text-sm text-gray-500">
                       {win.session_number && (
-                        <span className="bg-gray-100 px-2 py-1 rounded-full">
+                        <span className="bg-white px-3 py-1 rounded-full border border-gray-200">
                           After Session {win.session_number}
                         </span>
                       )}
@@ -326,10 +352,63 @@ export default function ProgressPage({
             <section className="bg-white rounded-[2rem] p-8 border-2 border-dashed border-gray-200 text-center">
               <div className="text-4xl mb-4">🏆</div>
               <h2 className="text-lg font-extrabold text-boon-text mb-2">Your Wins</h2>
-              <p className="text-gray-500 max-w-md mx-auto text-sm">
+              <p className="text-gray-500 max-w-md mx-auto text-sm mb-4">
                 This is where you'll track breakthroughs and accomplishments as you progress through coaching.
               </p>
+              {onAddWin && (
+                <button
+                  onClick={() => setShowAddWinModal(true)}
+                  className="text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 px-5 py-2 rounded-full transition-colors"
+                >
+                  + Add your first win
+                </button>
+              )}
             </section>
+          )}
+
+          {/* Add Win Modal */}
+          {showAddWinModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-2xl">🏆</span>
+                  <h3 className="text-lg font-extrabold text-boon-text">Add a Win</h3>
+                </div>
+                <p className="text-sm text-gray-500 mb-4">
+                  What breakthrough or accomplishment would you like to celebrate?
+                </p>
+                <textarea
+                  value={newWinText}
+                  onChange={(e) => setNewWinText(e.target.value)}
+                  placeholder="e.g., Had a difficult conversation that went well, got positive feedback, set a boundary..."
+                  className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  rows={4}
+                  maxLength={500}
+                  autoFocus
+                />
+                <div className="flex justify-between items-center mt-2 mb-4">
+                  <span className="text-xs text-gray-400">{newWinText.length}/500</span>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowAddWinModal(false);
+                      setNewWinText('');
+                    }}
+                    className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddWin}
+                    disabled={!newWinText.trim() || isSubmittingWin}
+                    className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl transition-colors"
+                  >
+                    {isSubmittingWin ? 'Saving...' : 'Save Win'}
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Your Starting Point - Metric cards */}
