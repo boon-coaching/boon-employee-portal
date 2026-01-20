@@ -147,7 +147,8 @@ function calculateScaleCheckpointStatus(
   completedSessionCount: number,
   checkpoints: Checkpoint[]
 ): ScaleCheckpointStatus {
-  const CHECKPOINT_INTERVAL = 6;
+  // Check-in schedule: after sessions 1, 3, 6, then every 6 sessions
+  const CHECK_IN_SCHEDULE = [1, 3, 6, 12, 18, 24, 30, 36, 42, 48];
 
   // Get the latest checkpoint if any
   const latestCheckpoint = checkpoints.length > 0
@@ -165,11 +166,12 @@ function calculateScaleCheckpointStatus(
     : 0;
   const sessionsSinceLastCheckpoint = completedSessionCount - sessionsAtLastCheckpoint;
 
-  // Next checkpoint is due at: last checkpoint sessions + 6
-  const nextCheckpointDueAtSession = sessionsAtLastCheckpoint + CHECKPOINT_INTERVAL;
+  // Find next checkpoint milestone from schedule
+  const nextCheckpointDueAtSession = CHECK_IN_SCHEDULE.find(n => n > sessionsAtLastCheckpoint)
+    || (sessionsAtLastCheckpoint + 6);
 
-  // Checkpoint is due when they've completed 6+ sessions since last checkpoint
-  const isCheckpointDue = sessionsSinceLastCheckpoint >= CHECKPOINT_INTERVAL;
+  // Checkpoint is due when completed sessions reaches or exceeds next milestone
+  const isCheckpointDue = completedSessionCount >= nextCheckpointDueAtSession;
 
   return {
     isScaleUser: true,
