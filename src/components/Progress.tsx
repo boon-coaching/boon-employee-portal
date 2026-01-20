@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem, Checkpoint, WelcomeSurveyScale } from '../lib/types';
-import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { isAlumniState, isPreFirstSession, isPendingReflectionState } from '../lib/coachingState';
 import GrowthTimeline from './GrowthTimeline';
