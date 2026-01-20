@@ -234,34 +234,21 @@ export default function PreFirstSessionHome({
             <span className="text-xs font-bold text-boon-blue uppercase tracking-widest">Your First Session</span>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <p className="text-3xl font-extrabold text-boon-text mb-2">
-                {new Date(upcomingSession.session_date).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </p>
-              <p className="text-gray-500 text-lg">
-                {new Date(upcomingSession.session_date).toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })} with {coachName}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-20 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg bg-gray-100">
-                <img
-                  src={coachPhotoUrl}
-                  alt={coachName}
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 15%' }}
-                />
-              </div>
-            </div>
+          <div>
+            <p className="text-3xl font-extrabold text-boon-text mb-2">
+              {new Date(upcomingSession.session_date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+            <p className="text-gray-500 text-lg">
+              {new Date(upcomingSession.session_date).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+              })} with {coachName}
+            </p>
           </div>
 
           {/* Session Actions */}
@@ -300,26 +287,13 @@ export default function PreFirstSessionHome({
             <span className="text-xs font-bold text-boon-blue uppercase tracking-widest">Book Your First Session</span>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <p className="text-2xl font-extrabold text-boon-text mb-2">
-                Ready to meet {coachFirstName}?
-              </p>
-              <p className="text-gray-500 text-lg">
-                Schedule your first coaching session at a time that works for you
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-20 rounded-2xl overflow-hidden ring-4 ring-white shadow-lg bg-gray-100">
-                <img
-                  src={coachPhotoUrl}
-                  alt={coachName}
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 15%' }}
-                />
-              </div>
-            </div>
+          <div>
+            <p className="text-2xl font-extrabold text-boon-text mb-2">
+              Ready to meet {coachFirstName}?
+            </p>
+            <p className="text-gray-500 text-lg">
+              Schedule your first coaching session at a time that works for you
+            </p>
           </div>
 
           <div className="mt-6 pt-6 border-t border-boon-blue/10">

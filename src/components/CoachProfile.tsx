@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Session, Coach, ProgramType } from '../lib/types';
-import { fetchCoachByName, parseCoachSpecialties, fetchMatchSummary } from '../lib/dataFetcher';
+import { fetchCoachByName, fetchMatchSummary } from '../lib/dataFetcher';
 
 interface CoachProfileProps {
   sessions: Session[];
@@ -17,12 +17,6 @@ export default function CoachProfile({ sessions, coachName, programType: _progra
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const coachFirstName = coachName.split(' ')[0];
-
-  // Calculate months of coaching relationship
-  const firstSession = completedSessions[completedSessions.length - 1];
-  const monthsCoaching = firstSession
-    ? Math.max(1, Math.ceil((Date.now() - new Date(firstSession.session_date).getTime()) / (1000 * 60 * 60 * 24 * 30)))
-    : 0;
 
   // Fetch coach details
   useEffect(() => {
@@ -47,28 +41,8 @@ export default function CoachProfile({ sessions, coachName, programType: _progra
     loadMatchSummary();
   }, [employeeId, userEmail]);
 
-  // Get specialties - from coach data or fallback to session themes
-  const specialties = coach?.special_services
-    ? parseCoachSpecialties(coach.special_services, 4)
-    : (() => {
-        const themeCounts = {
-          leadership: completedSessions.filter(s => s.leadership_management_skills).length,
-          communication: completedSessions.filter(s => s.communication_skills).length,
-          wellbeing: completedSessions.filter(s => s.mental_well_being).length,
-        };
-        return [
-          themeCounts.leadership > 0 && 'Leadership',
-          themeCounts.communication > 0 && 'Communication',
-          themeCounts.wellbeing > 0 && 'Well-being',
-          'Executive Coaching',
-        ].filter(Boolean).slice(0, 4) as string[];
-      })();
-
   // Match summary or default text
   const displayMatchSummary = matchSummary || 'Your coach is here to help you achieve your goals.';
-
-  // Coach bio
-  const coachBio = coach?.bio || `${coachFirstName} specializes in leadership development and emotional intelligence, helping professionals unlock their full potential through personalized coaching.`;
 
   // Photo URL - use real URL if available, otherwise placeholder
   const photoUrl = coach?.photo_url || `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200`;
@@ -110,27 +84,9 @@ export default function CoachProfile({ sessions, coachName, programType: _progra
             {displayMatchSummary}
           </p>
 
-          {/* Bio */}
-          <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-            {coachBio}
-          </p>
-
-          {/* Specialties as tags */}
-          <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
-            {specialties.map((specialty, i) => (
-              <span
-                key={i}
-                className="px-3 py-1 text-xs font-bold bg-boon-lightBlue/50 text-boon-blue rounded-full"
-              >
-                {specialty}
-              </span>
-            ))}
-          </div>
-
-          {/* Sessions together */}
+          {/* Sessions together - fix grammar for singular */}
           <p className="text-xs text-gray-400 mt-4 uppercase tracking-wide">
-            {completedSessions.length} sessions together
-            {monthsCoaching > 0 && ` over ${monthsCoaching} month${monthsCoaching > 1 ? 's' : ''}`}
+            {completedSessions.length} {completedSessions.length === 1 ? 'session' : 'sessions'} together
           </p>
 
           {/* Message Button */}

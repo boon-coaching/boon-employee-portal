@@ -52,13 +52,9 @@ export default function ActionItems({ items, onUpdate, onNavigate }: ActionItems
     return { text: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), className: 'text-gray-500 bg-gray-50' };
   }
 
+  // Hide entirely when empty per spec
   if (items.length === 0) {
-    return (
-      <section className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100">
-        <h2 className="text-xl font-extrabold text-boon-text mb-2">Action Items</h2>
-        <p className="text-gray-400 text-sm">Your coach will add action items after your sessions.</p>
-      </section>
-    );
+    return null;
   }
 
   return (
