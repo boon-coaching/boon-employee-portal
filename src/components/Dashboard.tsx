@@ -314,67 +314,70 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
         </section>
       )}
 
-      <div className="grid md:grid-cols-2 gap-8 md:gap-10">
-        {/* Working On */}
-        <section className="space-y-5">
-          <h2 className="text-xl font-extrabold text-boon-text">
-            {isCompleted ? 'Areas of Growth' : 'Themes'}
-          </h2>
-          <div className="space-y-3">
-            {focusAreas.length > 0 ? focusAreas.map((area, i) => (
-              <div
-                key={i}
-                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:border-boon-blue/20 transition-all cursor-pointer group active:scale-[0.98]"
-              >
-                <h3 className="font-bold text-boon-text group-hover:text-boon-blue transition-colors leading-snug">
-                  {area!.label}
-                </h3>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    {area!.count} {area!.count === 1 ? 'session' : 'sessions'}
-                  </span>
-                  <span className="text-gray-200">•</span>
-                  <span className="text-[11px] font-medium text-gray-400">
-                    {isCompleted ? 'Explored' : 'Since'} {new Date(area!.firstDiscussed).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
+      {/* Themes and From Your Coach - only show if content exists */}
+      {(focusAreas.length > 0 || lastSession?.summary) && (
+        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+          {/* Themes - only show if there are focus areas */}
+          {focusAreas.length > 0 && (
+            <section className="space-y-5">
+              <h2 className="text-xl font-extrabold text-boon-text">
+                {isCompleted ? 'Areas of Growth' : 'Themes'}
+              </h2>
+              <div className="space-y-3">
+                {focusAreas.map((area, i) => (
+                  <div
+                    key={i}
+                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:border-boon-blue/20 transition-all cursor-pointer group active:scale-[0.98]"
+                  >
+                    <h3 className="font-bold text-boon-text group-hover:text-boon-blue transition-colors leading-snug">
+                      {area!.label}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        {area!.count} {area!.count === 1 ? 'session' : 'sessions'}
+                      </span>
+                      <span className="text-gray-200">•</span>
+                      <span className="text-[11px] font-medium text-gray-400">
+                        {isCompleted ? 'Explored' : 'Since'} {new Date(area!.firstDiscussed).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )) : (
-              <p className="text-gray-400 italic text-sm">Themes will appear here as you progress.</p>
-            )}
-          </div>
-        </section>
+            </section>
+          )}
 
-        {/* From Your Coach - only show for active users, or completed users with actual summary */}
-        {(!isCompleted || lastSession?.summary) && (
-          <section className="space-y-5">
-            <h2 className="text-xl font-extrabold text-boon-text">
-              {isCompleted ? 'Final Words from Your Coach' : 'From your coach'}
-            </h2>
-            <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative">
-              <div className="absolute top-4 left-6 text-5xl text-boon-blue opacity-10 font-serif">"</div>
-              <p className="text-gray-600 leading-relaxed italic relative z-10 text-[15px]">
-                {lastSession?.summary || "Looking forward to our next session. Keep reflecting on what's working well for you."}
-              </p>
-              <div className="mt-8 flex items-center gap-4 relative z-10">
-                <img
-                  src={`https://picsum.photos/seed/${lastSession?.coach_name || 'coach'}/100/100`}
-                  alt="Coach"
-                  className="w-10 h-10 rounded-full object-cover ring-2 ring-boon-bg shadow-sm"
-                />
-                <div>
-                  <p className="text-[13px] font-bold text-boon-text leading-none">
-                    {lastSession?.coach_name || 'Your Coach'}
-                  </p>
-                  <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
-                    Executive Coach
-                  </p>
+          {/* From Your Coach - only show if there's a real summary */}
+          {lastSession?.summary && (
+            <section className="space-y-5">
+              <h2 className="text-xl font-extrabold text-boon-text">
+                {isCompleted ? 'Final Words from Your Coach' : 'From your coach'}
+              </h2>
+              <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative">
+                <div className="absolute top-4 left-6 text-5xl text-boon-blue opacity-10 font-serif">"</div>
+                <p className="text-gray-600 leading-relaxed italic relative z-10 text-[15px]">
+                  {lastSession.summary}
+                </p>
+                <div className="mt-8 flex items-center gap-4 relative z-10">
+                  <img
+                    src={`https://picsum.photos/seed/${lastSession.coach_name || 'coach'}/100/100`}
+                    alt="Coach"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-boon-bg shadow-sm"
+                  />
+                  <div>
+                    <p className="text-[13px] font-bold text-boon-text leading-none">
+                      {lastSession.coach_name || 'Your Coach'}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
+                      Executive Coach
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
-      </div>
+            </section>
+          )}
+        </div>
+      )}
 
       {/* Action Items for active users, Key Takeaways for completed */}
       {isCompleted ? (
@@ -457,50 +460,6 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
               </p>
             </section>
           )}
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-8 md:gap-10 pb-8">
-          <section className="space-y-5">
-            <h2 className="text-xl font-extrabold text-boon-text">What's Next</h2>
-            <div className="p-8 rounded-[2rem] border shadow-sm flex flex-col justify-between min-h-[160px] bg-boon-lightBlue/20 border-boon-lightBlue/30">
-              <p className="text-boon-text font-bold text-lg leading-snug">
-                {upcomingSession ? (
-                  <>
-                    Next session: {' '}
-                    <span className="text-boon-blue underline decoration-2 underline-offset-4">
-                      {new Date(upcomingSession.session_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-                    </span>
-                  </>
-                ) : "Ready for your next step?"}
-              </p>
-              <p className="text-sm text-gray-600 mt-4 italic font-medium">
-                "Think about one situation this week where you felt your energy shift."
-              </p>
-            </div>
-          </section>
-
-          <section className="space-y-5">
-            <h2 className="text-xl font-extrabold text-boon-text">Latest Summary</h2>
-            <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
-              {lastSession ? (
-                <div className="flex flex-col h-full justify-between">
-                  <div>
-                    <p className="text-[11px] font-black text-boon-blue uppercase tracking-widest mb-1">
-                      {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-                    </p>
-                    <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
-                      {lastSession.summary || 'Session summary will appear here after your coach adds notes.'}
-                    </p>
-                  </div>
-                  <button className="mt-6 text-sm font-black text-boon-blue hover:underline uppercase tracking-widest text-left">
-                    Full Summary →
-                  </button>
-                </div>
-              ) : (
-                <p className="text-gray-400 italic text-sm">No summaries yet.</p>
-              )}
-            </div>
-          </section>
         </div>
       )}
 
