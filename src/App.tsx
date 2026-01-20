@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './lib/AuthContext';
-import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins } from './lib/dataFetcher';
+import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins, addCoachingWin } from './lib/dataFetcher';
 import { getCoachingState, type CoachingStateData, type CoachingState } from './lib/coachingState';
 import type { View, Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, ReflectionResponse, Checkpoint, PendingSurvey, CoachingWin } from './lib/types';
 
@@ -155,10 +155,14 @@ function ProtectedApp() {
   }
 
   // Handle native survey completion
-  function handleSurveyComplete() {
+  async function handleSurveyComplete() {
     setShowSurveyModal(false);
     setPendingSurvey(null);
-    // Optionally refresh data or show a success message
+    // Refresh coaching wins in case user added one during the survey
+    if (employee?.company_email) {
+      const updatedWins = await fetchCoachingWins(employee.company_email);
+      setCoachingWins(updatedWins);
+    }
   }
 
   if (loading) {
@@ -412,6 +416,22 @@ function ProtectedApp() {
   const handleStartReflection = () => setShowReflectionFlow(true);
   const handleStartCheckpoint = () => setShowCheckpointFlow(true);
 
+  const handleAddWin = async (winText: string): Promise<boolean> => {
+    if (!employee) return false;
+    const result = await addCoachingWin(
+      employee.company_email,
+      employee.id,
+      winText
+    );
+    if (result.success) {
+      // Refresh wins list
+      const updatedWins = await fetchCoachingWins(employee.company_email);
+      setCoachingWins(updatedWins);
+      return true;
+    }
+    return false;
+  };
+
   const renderView = () => {
     switch (view) {
       case 'dashboard':
@@ -419,7 +439,7 @@ function ProtectedApp() {
       case 'sessions':
         return <SessionsPage sessions={sessions} coachingState={coachingState} />;
       case 'progress':
-        return <ProgressPage progress={progress} baseline={baseline} welcomeSurveyScale={welcomeSurveyScale} competencyScores={competencyScores} sessions={sessions} actionItems={effectiveActionItems} programType={programType} coachingState={coachingState} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} coachingWins={coachingWins} />;
+        return <ProgressPage progress={progress} baseline={baseline} welcomeSurveyScale={welcomeSurveyScale} competencyScores={competencyScores} sessions={sessions} actionItems={effectiveActionItems} programType={programType} coachingState={coachingState} onStartReflection={handleStartReflection} checkpoints={checkpoints} onStartCheckpoint={handleStartCheckpoint} coachingWins={coachingWins} onAddWin={handleAddWin} />;
       case 'practice':
         const practiceCoachName = sessions.length > 0 ? sessions[0].coach_name : "Your Coach";
         return <Practice sessions={sessions} coachName={practiceCoachName} userEmail={employee?.company_email || ''} coachingState={coachingState} competencyScores={competencyScores} />;
@@ -468,6 +488,7 @@ function ProtectedApp() {
           sessionNumber={pendingSurvey.session_number}
           coachName={pendingSurvey.coach_name}
           userEmail={employee?.company_email || ''}
+          employeeId={employee?.id}
           onComplete={handleSurveyComplete}
         />
       )}
