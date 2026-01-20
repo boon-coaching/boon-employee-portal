@@ -70,18 +70,6 @@ export default function ScaleHome({
             Your personal coaching space
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          {profile?.booking_link && (
-            <a
-              href={profile.booking_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-2xl text-white bg-boon-blue hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-95"
-            >
-              Book a session
-            </a>
-          )}
-        </div>
       </header>
 
       {/* Book Next Session CTA - when no upcoming session */}
@@ -193,47 +181,49 @@ export default function ScaleHome({
         </section>
       )}
 
-      {/* Coaching at a Glance */}
-      <section className="bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-gray-100">
-        <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-8">
-          Your Coaching at a Glance
-        </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Coach - no image, full profile shown below */}
-          <div>
-            <p className="text-lg font-black text-boon-text tracking-tight truncate">
-              {lastSession?.coach_name?.split(' ')[0] || '—'}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
-          </div>
+      {/* Coaching at a Glance - only show after 3+ sessions when stats are meaningful */}
+      {completedSessions.length >= 3 && (
+        <section className="bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-gray-100">
+          <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-8">
+            Your Coaching at a Glance
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Coach - no image, full profile shown below */}
+            <div>
+              <p className="text-lg font-black text-boon-text tracking-tight truncate">
+                {lastSession?.coach_name?.split(' ')[0] || '—'}
+              </p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
+            </div>
 
-          {/* Sessions Completed */}
-          <div>
-            <p className="text-lg font-black text-boon-blue tracking-tight">
-              {completedSessions.length}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Sessions</p>
-          </div>
+            {/* Sessions Completed */}
+            <div>
+              <p className="text-lg font-black text-boon-blue tracking-tight">
+                {completedSessions.length}
+              </p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Sessions</p>
+            </div>
 
-          {/* Time in Program */}
-          <div>
-            <p className="text-lg font-black text-boon-text tracking-tight">
-              {monthsInProgram > 0 ? `${monthsInProgram} mo` : '—'}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-              {lastSession ? `with ${lastSession.coach_name?.split(' ')[0]}` : 'Duration'}
-            </p>
-          </div>
+            {/* Time in Program */}
+            <div>
+              <p className="text-lg font-black text-boon-text tracking-tight">
+                {monthsInProgram > 0 ? `${monthsInProgram} mo` : '—'}
+              </p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">
+                {lastSession ? `with ${lastSession.coach_name?.split(' ')[0]}` : 'Duration'}
+              </p>
+            </div>
 
-          {/* Checkpoints */}
-          <div>
-            <p className="text-lg font-black text-purple-600 tracking-tight">
-              {checkpointStatus.checkpoints.length}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Check-ins</p>
+            {/* Checkpoints */}
+            <div>
+              <p className="text-lg font-black text-purple-600 tracking-tight">
+                {checkpointStatus.checkpoints.length}
+              </p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Check-ins</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Your Coach Profile */}
       {lastSession && (

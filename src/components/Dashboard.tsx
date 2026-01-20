@@ -151,20 +151,6 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
             }
           </p>
         </div>
-        {!isCompleted && (
-          <div className="flex flex-col sm:flex-row gap-3">
-            {profile?.booking_link && (
-              <a
-                href={profile.booking_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-2xl text-white bg-boon-blue hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-95"
-              >
-                Book a session
-              </a>
-            )}
-          </div>
-        )}
       </header>
 
       {/* Book Next Session CTA - when no upcoming session (active users only) */}
@@ -196,11 +182,12 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
         </a>
       )}
 
-      {/* Program Summary */}
-      <section className="bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-gray-100">
-        <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-8">
-          {isCompleted ? 'Program Summary' : 'Your Coaching at a Glance'}
-        </h2>
+      {/* Program Summary - show for completed users, or active users with 3+ sessions */}
+      {(isCompleted || completedSessions.length >= 3) && (
+        <section className="bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-gray-100">
+          <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-8">
+            {isCompleted ? 'Program Summary' : 'Your Coaching at a Glance'}
+          </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Coach - no image, just name (full profile below) */}
           <div>
@@ -285,7 +272,8 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
             </>
           )}
         </div>
-      </section>
+        </section>
+      )}
 
       {/* Growth Story - for completed users */}
       {isCompleted && (
