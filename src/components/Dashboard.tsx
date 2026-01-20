@@ -173,19 +173,12 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
           {isCompleted ? 'Program Summary' : 'Your Coaching at a Glance'}
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Coach */}
-          <div className="flex items-center gap-3">
-            <img
-              src={`https://picsum.photos/seed/${lastSession?.coach_name || 'coach'}/100/100`}
-              alt="Coach"
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
-            />
-            <div>
-              <p className="text-lg font-black text-boon-text tracking-tight truncate">
-                {lastSession?.coach_name?.split(' ')[0] || '—'}
-              </p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
-            </div>
+          {/* Coach - no image, just name (full profile below) */}
+          <div>
+            <p className="text-lg font-black text-boon-text tracking-tight truncate">
+              {lastSession?.coach_name?.split(' ')[0] || '—'}
+            </p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
           </div>
 
           {isCompleted ? (
@@ -221,14 +214,30 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
             </>
           ) : (
             <>
-              {/* Next Session */}
+              {/* Next Session - CTA when none scheduled */}
               <div>
-                <p className="text-lg font-black text-boon-blue tracking-tight">
-                  {upcomingSession
-                    ? new Date(upcomingSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                    : '—'}
-                </p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Next session</p>
+                {upcomingSession ? (
+                  <>
+                    <p className="text-lg font-black text-boon-blue tracking-tight">
+                      {new Date(upcomingSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">Next session</p>
+                  </>
+                ) : profile?.booking_link ? (
+                  <a
+                    href={profile.booking_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-boon-blue text-white text-xs font-bold rounded-lg hover:bg-boon-darkBlue transition-all"
+                  >
+                    Book Next
+                  </a>
+                ) : (
+                  <>
+                    <p className="text-lg font-black text-gray-300 tracking-tight">—</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">Next session</p>
+                  </>
+                )}
               </div>
               {/* Last Session */}
               <div className="hidden sm:block">
@@ -239,10 +248,10 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
                 </p>
                 <p className="text-[10px] text-gray-400 uppercase tracking-widest">Last session</p>
               </div>
-              {/* Progress */}
+              {/* Sessions count instead of meaningless Progress % */}
               <div className="hidden sm:block text-right">
-                <p className="text-lg font-bold text-gray-500">{coachingState.programProgress}%</p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Progress</p>
+                <p className="text-lg font-bold text-boon-text">{completedSessions.length}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Sessions</p>
               </div>
             </>
           )}
