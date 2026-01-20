@@ -626,7 +626,7 @@ export default function ProgressPage({
     const nextCheckInSession = checkInSchedule.find(n => n > completedSessions.length) || (completedSessions.length + 6);
 
     // Build journey timeline steps
-    const journeySteps = [
+    const journeySteps: Array<{ key: string; label: string; detail: string; completed: boolean; isCurrent?: boolean }> = [
       {
         key: 'welcome',
         label: 'Welcome Survey',
@@ -759,7 +759,7 @@ export default function ProgressPage({
           <div className="space-y-0">
             {journeySteps.map((step, idx) => {
               const isLast = idx === journeySteps.length - 1;
-              const isCurrent = (step as any).isCurrent;
+              const isCurrent = step.isCurrent;
               return (
                 <div key={step.key} className="flex gap-4">
                   <div className="flex flex-col items-center">
