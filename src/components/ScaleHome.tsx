@@ -25,12 +25,13 @@ export default function ScaleHome({
   checkpointStatus,
   onActionUpdate,
   userEmail,
-  onNavigate,
+  onNavigate: _onNavigate,
   onStartCheckpoint,
   onDismissCheckpoint,
 }: ScaleHomeProps) {
-  // baseline prop reserved for future use
+  // Unused props reserved for future use
   void _baseline;
+  void _onNavigate;
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
