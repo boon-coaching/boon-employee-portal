@@ -170,19 +170,12 @@ export default function ScaleHome({
           Your Coaching at a Glance
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Coach */}
-          <div className="flex items-center gap-3">
-            <img
-              src={`https://picsum.photos/seed/${lastSession?.coach_name || 'coach'}/100/100`}
-              alt="Coach"
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
-            />
-            <div>
-              <p className="text-lg font-black text-boon-text tracking-tight truncate">
-                {lastSession?.coach_name?.split(' ')[0] || '—'}
-              </p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
-            </div>
+          {/* Coach - no image, full profile shown below */}
+          <div>
+            <p className="text-lg font-black text-boon-text tracking-tight truncate">
+              {lastSession?.coach_name?.split(' ')[0] || '—'}
+            </p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
           </div>
 
           {/* Sessions Completed */}
