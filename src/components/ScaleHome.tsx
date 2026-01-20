@@ -25,13 +25,12 @@ export default function ScaleHome({
   checkpointStatus,
   onActionUpdate,
   userEmail,
-  onNavigate: _onNavigate,
+  onNavigate,
   onStartCheckpoint,
   onDismissCheckpoint,
 }: ScaleHomeProps) {
   // Unused props reserved for future use
   void _baseline;
-  void _onNavigate;
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
@@ -254,20 +253,16 @@ export default function ScaleHome({
         </section>
       )}
 
-      {/* Your Goals - from most recent session */}
+      {/* Where You Left Off - from most recent session, amber styling like GROW */}
       {lastSession?.goals && !currentFocus && (
-        <section className="bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 rounded-[2rem] p-8 border border-boon-blue/10">
+        <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
           <div className="flex items-start justify-between mb-4">
-            <h2 className="text-xl font-extrabold text-boon-text">Your Goals</h2>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              From {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where You Left Off</h2>
+            <span className="text-xs font-medium text-gray-400">
+              {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>
-          <div className="prose prose-sm max-w-none">
-            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {lastSession.goals}
-            </div>
-          </div>
+          <p className="font-serif text-gray-700 leading-relaxed whitespace-pre-line">{lastSession.goals}</p>
         </section>
       )}
 
@@ -338,6 +333,28 @@ export default function ScaleHome({
         coachName={lastSession?.coach_name || 'Your Coach'}
         userEmail={userEmail}
       />
+
+      {/* Practice Space */}
+      <section className="bg-gradient-to-br from-purple-50 to-boon-bg rounded-[2rem] p-8 border border-purple-100/50 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-boon-text mb-2">Practice Space</h3>
+        <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+          Prepare for challenging conversations with AI-powered scenarios.
+        </p>
+        <button
+          onClick={() => onNavigate?.('practice')}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
+        >
+          Explore scenarios
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </section>
     </div>
   );
 }
