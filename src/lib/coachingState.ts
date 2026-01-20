@@ -187,6 +187,8 @@ function calculateScaleCheckpointStatus(
 /**
  * Main state determination function
  * Single source of truth for coaching state
+ *
+ * @param fetchedProgramType - Optional program type from database lookup (takes precedence over pattern matching)
  */
 export function getCoachingState(
   employee: Employee | null,
@@ -195,7 +197,8 @@ export function getCoachingState(
   competencyScores: CompetencyScore[] = [],
   reflection: ReflectionResponse | null = null,
   checkpoints: Checkpoint[] = [],
-  welcomeSurveyScale: WelcomeSurveyScale | null = null
+  welcomeSurveyScale: WelcomeSurveyScale | null = null,
+  fetchedProgramType: string | null = null
 ): CoachingStateData {
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled') || null;
@@ -211,7 +214,8 @@ export function getCoachingState(
   const hasCompletedSessions = completedSessions.length > 0;
   const hasUpcomingSession = !!upcomingSession;
 
-  const programType = extractProgramType(employee?.program || null);
+  // Use fetched programType (from database lookup) if available, otherwise pattern match
+  const programType = fetchedProgramType || extractProgramType(employee?.program || null);
   const isGrowOrExec = programType === 'GROW' || programType === 'EXEC';
   const isScale = programType === 'SCALE';
   const totalExpectedSessions = programType ? PROGRAM_SESSION_COUNTS[programType] || 12 : 12;
