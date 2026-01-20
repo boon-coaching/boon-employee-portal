@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem, Checkpoint, WelcomeSurveyScale } from '../lib/types';
+import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem, Checkpoint, WelcomeSurveyScale, CoachingWin } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { isAlumniState, isPreFirstSession, isPendingReflectionState } from '../lib/coachingState';
 import GrowthTimeline from './GrowthTimeline';
@@ -32,6 +32,7 @@ interface ProgressPageProps {
   onStartReflection?: () => void;
   checkpoints?: Checkpoint[];
   onStartCheckpoint?: () => void;
+  coachingWins?: CoachingWin[];
 }
 
 // The 12 competencies with their database column keys
@@ -91,7 +92,8 @@ export default function ProgressPage({
   coachingState,
   onStartReflection,
   checkpoints = [],
-  onStartCheckpoint
+  onStartCheckpoint,
+  coachingWins = []
 }: ProgressPageProps) {
   const [activeTab, setActiveTab] = useState<'competencies' | 'wellbeing'>('competencies');
   const [expandedCheckpoint, setExpandedCheckpoint] = useState<string | null>(null);
@@ -286,14 +288,49 @@ export default function ProgressPage({
             </div>
           </section>
 
-          {/* Your Wins - Empty state */}
-          <section className="bg-white rounded-[2rem] p-8 border-2 border-dashed border-gray-200 text-center">
-            <div className="text-4xl mb-4">🏆</div>
-            <h2 className="text-lg font-extrabold text-boon-text mb-2">Your Wins</h2>
-            <p className="text-gray-500 max-w-md mx-auto text-sm">
-              This is where you'll track breakthroughs and accomplishments as you progress through coaching.
-            </p>
-          </section>
+          {/* Your Wins */}
+          {coachingWins.length > 0 ? (
+            <section className="rounded-[2rem] p-8 border border-orange-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🏆</span>
+                  <h2 className="text-lg font-extrabold text-boon-text">Your Wins</h2>
+                </div>
+                <span className="text-sm font-medium text-orange-700 bg-white px-3 py-1 rounded-full">
+                  {coachingWins.length} breakthrough{coachingWins.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="space-y-4">
+                {coachingWins.map((win) => (
+                  <div key={win.id} className="bg-white rounded-xl p-4 border-l-4 border-orange-400">
+                    <p className="text-gray-700 italic">"{win.win_text}"</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                      {win.session_number && (
+                        <span className="bg-gray-100 px-2 py-1 rounded-full">
+                          After Session {win.session_number}
+                        </span>
+                      )}
+                      <span>
+                        {new Date(win.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="bg-white rounded-[2rem] p-8 border-2 border-dashed border-gray-200 text-center">
+              <div className="text-4xl mb-4">🏆</div>
+              <h2 className="text-lg font-extrabold text-boon-text mb-2">Your Wins</h2>
+              <p className="text-gray-500 max-w-md mx-auto text-sm">
+                This is where you'll track breakthroughs and accomplishments as you progress through coaching.
+              </p>
+            </section>
+          )}
 
           {/* Your Starting Point - Metric cards */}
           <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
