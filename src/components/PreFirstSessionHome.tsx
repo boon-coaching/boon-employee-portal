@@ -75,12 +75,10 @@ export default function PreFirstSessionHome({
   const displayMatchSummary = matchSummary || 'Your coach is here to help you achieve your goals.';
 
   // Debug: Log coach data to verify headline and notable_credentials
-  console.log('[PreFirstSessionHome] Coach data:', {
-    name: coach?.name,
-    headline: coach?.headline,
-    notable_credentials: coach?.notable_credentials,
-    photo_url: coach?.photo_url,
-  });
+  console.log('[PreFirstSessionHome] Coach name:', coach?.name);
+  console.log('[PreFirstSessionHome] Coach headline:', coach?.headline);
+  console.log('[PreFirstSessionHome] Coach notable_credentials:', coach?.notable_credentials);
+  console.log('[PreFirstSessionHome] Coach photo_url:', coach?.photo_url ? 'EXISTS' : 'NULL');
 
   // Pre-session note state
   const [preSessionNote, setPreSessionNote] = useState('');
