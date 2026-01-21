@@ -744,71 +744,182 @@ export async function submitReflection(
 // ============================================
 
 /**
- * Fetch all checkpoints for a SCALE user
+ * Fetch all checkpoints (check-ins) for a SCALE user from survey_submissions
+ * Includes first_session, feedback, and touchpoint survey types
  */
 export async function fetchCheckpoints(email: string): Promise<Checkpoint[]> {
   const { data, error } = await supabase
-    .from('checkpoints')
+    .from('survey_submissions')
     .select('*')
     .ilike('email', email)
-    .order('checkpoint_number', { ascending: true });
+    .in('survey_type', ['first_session', 'feedback', 'touchpoint'])
+    .order('session_number', { ascending: true });
 
   if (error) {
-    // Table might not exist yet
-    if (error.code !== '42P01' && error.code !== 'PGRST116') {
+    if (error.code !== 'PGRST116') {
       console.error('Error fetching checkpoints:', error);
     }
     return [];
   }
 
-  return (data as Checkpoint[]) || [];
+  // Map survey_submissions to Checkpoint type
+  return (data || []).map((s: Record<string, unknown>) => ({
+    id: s.id as string,
+    email: s.email as string,
+    checkpoint_number: s.session_number as number,
+    session_count_at_checkpoint: s.session_number as number,
+    competency_scores: {
+      adaptability_and_resilience: s.coach_satisfaction as number || 0,
+      building_relationships_at_work: 0,
+      change_management: 0,
+      delegation_and_accountability: 0,
+      effective_communication: 0,
+      effective_planning_and_execution: 0,
+      emotional_intelligence: 0,
+      giving_and_receiving_feedback: 0,
+      persuasion_and_influence: 0,
+      self_confidence_and_imposter_syndrome: 0,
+      strategic_thinking: 0,
+      time_management_and_productivity: 0,
+    },
+    reflection_text: s.feedback_text as string | null,
+    focus_area: null,
+    nps_score: s.nps as number | null,
+    testimonial_consent: s.open_to_testimonial as boolean || false,
+    created_at: s.submitted_at as string || s.created_at as string,
+  })) as Checkpoint[];
 }
 
 /**
- * Fetch the latest checkpoint for a SCALE user
+ * Fetch the latest checkpoint (check-in) for a SCALE user
  */
 export async function fetchLatestCheckpoint(email: string): Promise<Checkpoint | null> {
   const { data, error } = await supabase
-    .from('checkpoints')
+    .from('survey_submissions')
     .select('*')
     .ilike('email', email)
-    .order('checkpoint_number', { ascending: false })
+    .in('survey_type', ['first_session', 'feedback', 'touchpoint'])
+    .order('session_number', { ascending: false })
     .limit(1);
 
   if (error) {
-    // Table might not exist yet
-    if (error.code !== '42P01' && error.code !== 'PGRST116') {
+    if (error.code !== 'PGRST116') {
       console.error('Error fetching latest checkpoint:', error);
     }
     return null;
   }
 
-  return (data && data.length > 0) ? data[0] as Checkpoint : null;
+  if (!data || data.length === 0) return null;
+
+  const s = data[0];
+  return {
+    id: s.id,
+    email: s.email,
+    checkpoint_number: s.session_number,
+    session_count_at_checkpoint: s.session_number,
+    competency_scores: {
+      adaptability_and_resilience: s.coach_satisfaction || 0,
+      building_relationships_at_work: 0,
+      change_management: 0,
+      delegation_and_accountability: 0,
+      effective_communication: 0,
+      effective_planning_and_execution: 0,
+      emotional_intelligence: 0,
+      giving_and_receiving_feedback: 0,
+      persuasion_and_influence: 0,
+      self_confidence_and_imposter_syndrome: 0,
+      strategic_thinking: 0,
+      time_management_and_productivity: 0,
+    },
+    reflection_text: s.feedback_text,
+    focus_area: null,
+    nps_score: s.nps,
+    testimonial_consent: s.open_to_testimonial || false,
+    created_at: s.submitted_at || s.created_at,
+  } as Checkpoint;
 }
 
 /**
- * Submit a SCALE checkpoint
+ * Submit a SCALE check-in to survey_submissions
  */
+export interface ScaleCheckinData {
+  sessionId: string;
+  sessionNumber: number;
+  coachName: string;
+  sessionRating: number;      // 1-10
+  coachMatchRating: number;   // 1-10
+  feedbackText: string | null; // Combined: low score feedback + wins + anything else
+  nps: number;                // 0-10
+  testimonialConsent: boolean;
+}
+
 export async function submitCheckpoint(
   email: string,
-  checkpoint: Omit<Checkpoint, 'id' | 'email' | 'created_at'>
+  data: ScaleCheckinData
 ): Promise<{ success: boolean; data?: Checkpoint; error?: string }> {
-  const { data, error } = await supabase
-    .from('checkpoints')
+  // Determine survey_type based on session number
+  // Session 1 → first_session, Session 3 → feedback, Session 6+ → touchpoint
+  let surveyType: string;
+  if (data.sessionNumber === 1) {
+    surveyType = 'first_session';
+  } else if (data.sessionNumber === 3) {
+    surveyType = 'feedback';
+  } else {
+    surveyType = 'touchpoint';
+  }
+
+  const { data: result, error } = await supabase
+    .from('survey_submissions')
     .insert({
       email: email.toLowerCase(),
-      ...checkpoint,
-      created_at: new Date().toISOString(),
+      survey_type: surveyType,
+      session_id: data.sessionId,
+      session_number: data.sessionNumber,
+      coach_name: data.coachName,
+      coach_satisfaction: data.sessionRating,
+      // Store coach match in outcomes field for now
+      outcomes: data.coachMatchRating ? `Coach match: ${data.coachMatchRating}/10` : null,
+      feedback_text: data.feedbackText,
+      nps: data.nps,
+      open_to_testimonial: data.testimonialConsent,
+      submitted_at: new Date().toISOString(),
     })
     .select()
     .single();
 
   if (error) {
-    console.error('Error submitting checkpoint:', error);
+    console.error('Error submitting check-in:', error);
     return { success: false, error: error.message };
   }
 
-  return { success: true, data: data as Checkpoint };
+  // Map back to Checkpoint type for compatibility
+  const checkpoint: Checkpoint = {
+    id: result.id,
+    email: result.email,
+    checkpoint_number: result.session_number,
+    session_count_at_checkpoint: result.session_number,
+    competency_scores: {
+      adaptability_and_resilience: result.coach_satisfaction || 0,
+      building_relationships_at_work: data.coachMatchRating || 0,
+      change_management: 0,
+      delegation_and_accountability: 0,
+      effective_communication: 0,
+      effective_planning_and_execution: 0,
+      emotional_intelligence: 0,
+      giving_and_receiving_feedback: 0,
+      persuasion_and_influence: 0,
+      self_confidence_and_imposter_syndrome: 0,
+      strategic_thinking: 0,
+      time_management_and_productivity: 0,
+    },
+    reflection_text: result.feedback_text,
+    focus_area: null,
+    nps_score: result.nps,
+    testimonial_consent: result.open_to_testimonial || false,
+    created_at: result.submitted_at,
+  };
+
+  return { success: true, data: checkpoint };
 }
 
 // ============================================

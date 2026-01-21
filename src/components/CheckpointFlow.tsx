@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import type { Checkpoint } from '../lib/types';
-import { submitCheckpoint } from '../lib/dataFetcher';
+import { submitCheckpoint, type ScaleCheckinData } from '../lib/dataFetcher';
 
 interface CheckpointFlowProps {
   userEmail: string;
-  checkpointNumber: number;
-  sessionCount: number;
+  sessionId: string;
+  sessionNumber: number;
   coachName: string;
   onComplete: (checkpoint: Checkpoint) => void;
   onClose: () => void;
@@ -15,8 +15,8 @@ type Step = 'session_rating' | 'coach_match' | 'low_score_feedback' | 'wins' | '
 
 export default function CheckpointFlow({
   userEmail,
-  checkpointNumber,
-  sessionCount,
+  sessionId,
+  sessionNumber,
   coachName,
   onComplete,
   onClose,
@@ -35,7 +35,7 @@ export default function CheckpointFlow({
   const needsLowScoreFeedback = (sessionRating !== null && sessionRating <= 8) ||
                                  (coachMatchRating !== null && coachMatchRating <= 8);
 
-  const isFirstCheckpoint = checkpointNumber === 1;
+  const isFirstCheckpoint = sessionNumber === 1;
   const coachFirstName = coachName?.split(' ')[0] || 'your coach';
 
   // Calculate progress (adjust based on whether low score feedback is needed)
@@ -55,37 +55,25 @@ export default function CheckpointFlow({
     setStep('submitting');
     setError(null);
 
-    // Store ratings in competency_scores for now (can be moved to dedicated columns later)
-    const checkpointData: Omit<Checkpoint, 'id' | 'email' | 'created_at'> = {
-      checkpoint_number: checkpointNumber,
-      session_count_at_checkpoint: sessionCount,
-      competency_scores: {
-        // Store session/coach ratings in competency fields for now
-        adaptability_and_resilience: sessionRating || 0,
-        building_relationships_at_work: coachMatchRating || 0,
-        change_management: 0,
-        delegation_and_accountability: 0,
-        effective_communication: 0,
-        effective_planning_and_execution: 0,
-        emotional_intelligence: 0,
-        giving_and_receiving_feedback: 0,
-        persuasion_and_influence: 0,
-        self_confidence_and_imposter_syndrome: 0,
-        strategic_thinking: 0,
-        time_management_and_productivity: 0,
-      },
-      // Combine all text feedback
-      reflection_text: [
-        lowScoreFeedback ? `Feedback: ${lowScoreFeedback}` : '',
-        winsText ? `Wins: ${winsText}` : '',
-        anythingElseText ? `Other: ${anythingElseText}` : '',
-      ].filter(Boolean).join('\n\n') || null,
-      focus_area: null,
-      nps_score: npsScore,
-      testimonial_consent: testimonialConsent,
+    // Build combined feedback text
+    const feedbackParts = [
+      lowScoreFeedback ? `Feedback: ${lowScoreFeedback}` : '',
+      winsText ? `Wins: ${winsText}` : '',
+      anythingElseText ? `Other: ${anythingElseText}` : '',
+    ].filter(Boolean);
+
+    const checkinData: ScaleCheckinData = {
+      sessionId,
+      sessionNumber,
+      coachName,
+      sessionRating: sessionRating || 0,
+      coachMatchRating: coachMatchRating || 0,
+      feedbackText: feedbackParts.length > 0 ? feedbackParts.join('\n\n') : null,
+      nps: npsScore || 0,
+      testimonialConsent,
     };
 
-    const result = await submitCheckpoint(userEmail, checkpointData);
+    const result = await submitCheckpoint(userEmail, checkinData);
 
     if (result.success && result.data) {
       setStep('complete');
@@ -115,7 +103,7 @@ export default function CheckpointFlow({
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-2xl font-extrabold text-boon-text">
-                  {isFirstCheckpoint ? 'Quick Check-In' : `Check-In ${checkpointNumber}`}
+                  {isFirstCheckpoint ? 'Quick Check-In' : `Check-In ${sessionNumber}`}
                 </h2>
                 <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
                   ~1 min
