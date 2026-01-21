@@ -1116,7 +1116,7 @@ export async function fetchSurveyContext(sessionId: string): Promise<{
  */
 export async function submitScaleFeedbackSurvey(
   email: string,
-  sessionId: string,
+  _sessionId: string, // Kept for API compatibility, stored in outcomes instead
   sessionNumber: number,
   coachName: string,
   data: {
