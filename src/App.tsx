@@ -495,16 +495,24 @@ function ProtectedApp() {
         />
       )}
       {/* Checkpoint Flow Modal (for SCALE users) */}
-      {showCheckpointFlow && (
-        <CheckpointFlow
-          userEmail={employee?.company_email || ''}
-          checkpointNumber={coachingState.scaleCheckpointStatus.currentCheckpointNumber}
-          sessionCount={coachingState.completedSessionCount}
-          coachName={sessions[0]?.coach_name || 'your coach'}
-          onComplete={handleCheckpointComplete}
-          onClose={() => setShowCheckpointFlow(false)}
-        />
-      )}
+      {showCheckpointFlow && (() => {
+        // Get the most recent completed session for the check-in
+        const completedSessions = sessions.filter(s => s.status === 'Completed');
+        const lastSession = completedSessions.length > 0
+          ? completedSessions.sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime())[0]
+          : null;
+
+        return (
+          <CheckpointFlow
+            userEmail={employee?.company_email || ''}
+            sessionId={lastSession?.id || ''}
+            sessionNumber={lastSession?.appointment_number || coachingState.completedSessionCount}
+            coachName={lastSession?.coach_name || sessions[0]?.coach_name || 'your coach'}
+            onComplete={handleCheckpointComplete}
+            onClose={() => setShowCheckpointFlow(false)}
+          />
+        );
+      })()}
       {/* Native Survey Modal (for pending feedback surveys) */}
       {showSurveyModal && pendingSurvey && (
         <SurveyModal
