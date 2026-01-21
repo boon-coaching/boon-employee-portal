@@ -1,29 +1,29 @@
 // Nudge Scheduler Edge Function
 // Runs on a cron schedule to send coaching nudges via Slack
 //
-// Deploy with cron: supabase functions deploy nudge-scheduler --schedule "*/15 * * * *"
-// (Runs every 15 minutes)
+// Deploy with cron: supabase functions deploy nudge-scheduler --schedule "0 * * * *"
+// (Runs every hour to catch users in their preferred time windows)
 
 import { getSupabaseClient } from '../_shared/supabase.ts';
 import { sendSlackMessage, renderBlocks } from '../_shared/slack.ts';
 
-interface ActionItem {
-  action_id: string;
-  email: string;
+interface PendingActionItem {
+  id: string;
   action_text: string;
-  due_date: string;
   coach_name: string | null;
-  first_name: string;
+  created_at: string;
 }
 
-interface SlackConnection {
+interface EmployeeWithActions {
+  email: string;
+  first_name: string;
   slack_user_id: string;
   slack_dm_channel_id: string;
-  nudge_enabled: boolean;
   nudge_frequency: string;
   preferred_time: string;
   timezone: string;
   bot_token: string;
+  pending_actions: PendingActionItem[];
 }
 
 interface NudgeTemplate {
@@ -39,7 +39,8 @@ Deno.serve(async (req) => {
 
   const startTime = Date.now();
   const results = {
-    action_reminders_sent: 0,
+    daily_digests_sent: 0,
+    weekly_digests_sent: 0,
     goal_checkins_sent: 0,
     session_preps_sent: 0,
     errors: 0,
@@ -47,6 +48,8 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = getSupabaseClient();
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday
 
     // Get nudge templates
     const { data: templates } = await supabase
@@ -58,78 +61,304 @@ Deno.serve(async (req) => {
     templates?.forEach((t: NudgeTemplate) => templateMap.set(t.nudge_type, t));
 
     // ============================================
-    // 1. ACTION ITEM REMINDERS
+    // 1. DAILY ACTION ITEM DIGEST
+    // For users with nudge_frequency = 'daily'
     // ============================================
-    const { data: dueActions } = await supabase.rpc('get_due_action_items', {
-      days_ahead: 2,
-    }) as { data: ActionItem[] | null };
+    const { data: dailyUsers } = await supabase
+      .from('employee_slack_connections')
+      .select(`
+        employee_email,
+        slack_user_id,
+        slack_dm_channel_id,
+        nudge_frequency,
+        preferred_time,
+        timezone
+      `)
+      .eq('nudge_enabled', true)
+      .eq('nudge_frequency', 'daily');
 
-    if (dueActions && dueActions.length > 0) {
-      console.log(`Found ${dueActions.length} action items due soon`);
+    if (dailyUsers && dailyUsers.length > 0) {
+      console.log(`Processing ${dailyUsers.length} daily digest users`);
 
-      for (const action of dueActions) {
+      for (const user of dailyUsers) {
         try {
-          // Get employee's Slack connection
-          const { data: connections } = await supabase.rpc('get_employee_slack_connection', {
-            lookup_email: action.email,
-          }) as { data: SlackConnection[] | null };
-
-          const connection = connections?.[0];
-          if (!connection || !connection.nudge_enabled) {
+          // Check if it's the right time for this user
+          if (!isAppropriateTime(user.preferred_time, user.timezone)) {
             continue;
           }
 
-          // Check if it's an appropriate time for this user
-          if (!isAppropriateTime(connection.preferred_time, connection.timezone)) {
-            continue;
+          // Check if we already sent a daily digest today
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
+          const { data: existingNudge } = await supabase
+            .from('slack_nudges')
+            .select('id')
+            .eq('employee_email', user.employee_email.toLowerCase())
+            .eq('nudge_type', 'daily_digest')
+            .gte('sent_at', todayStart.toISOString())
+            .limit(1);
+
+          if (existingNudge && existingNudge.length > 0) {
+            continue; // Already sent today
           }
 
-          // Get template and render
-          const template = templateMap.get('action_reminder');
-          if (!template) continue;
+          // Get pending action items for this user
+          const { data: pendingActions } = await supabase
+            .from('action_items')
+            .select('id, action_text, coach_name, created_at')
+            .ilike('email', user.employee_email)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(5);
 
-          const blocks = renderBlocks(template.message_blocks.blocks, {
-            first_name: action.first_name,
-            coach_name: action.coach_name || 'your coach',
-            action_text: action.action_text,
-            due_date: formatDueDate(action.due_date),
-            action_id: action.action_id,
-          });
+          if (!pendingActions || pendingActions.length === 0) {
+            continue; // No pending actions
+          }
+
+          // Get bot token from installation
+          const { data: slackTeam } = await supabase
+            .from('employee_slack_connections')
+            .select('slack_team_id')
+            .eq('employee_email', user.employee_email)
+            .single();
+
+          if (!slackTeam) continue;
+
+          const { data: installation } = await supabase
+            .from('slack_installations')
+            .select('bot_token')
+            .eq('team_id', slackTeam.slack_team_id)
+            .single();
+
+          if (!installation?.bot_token) continue;
+
+          // Get user's first name
+          const { data: employee } = await supabase
+            .from('employee_manager')
+            .select('first_name')
+            .ilike('company_email', user.employee_email)
+            .single();
+
+          const firstName = employee?.first_name || 'there';
+
+          // Build action items list
+          const actionsList = pendingActions
+            .map((a, i) => `${i + 1}. ${a.action_text}`)
+            .join('\n');
+
+          // Get template or use inline blocks
+          const template = templateMap.get('daily_digest');
+          let blocks;
+
+          if (template) {
+            blocks = renderBlocks(template.message_blocks.blocks, {
+              first_name: firstName,
+              actions_list: actionsList,
+              action_count: pendingActions.length,
+            });
+          } else {
+            // Fallback inline template
+            blocks = [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Good morning, ${firstName}!* :sun_small_cloud:\n\nHere's your coaching action items for today:`,
+                },
+              },
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: actionsList,
+                },
+              },
+              {
+                type: 'context',
+                elements: [
+                  {
+                    type: 'mrkdwn',
+                    text: `${pendingActions.length} pending item${pendingActions.length > 1 ? 's' : ''} • <${Deno.env.get('PORTAL_URL') || 'https://portal.booncoaching.com'}|Open Portal>`,
+                  },
+                ],
+              },
+            ];
+          }
 
           // Send the message
-          const result = await sendSlackMessage(connection.bot_token, {
-            channel: connection.slack_dm_channel_id,
+          const result = await sendSlackMessage(installation.bot_token, {
+            channel: user.slack_dm_channel_id,
             blocks,
-            text: `Reminder: ${action.action_text}`,
+            text: `You have ${pendingActions.length} pending coaching action items`,
           });
 
           if (result.ok && result.ts) {
-            // Record the nudge
-            await supabase.rpc('record_nudge', {
-              p_employee_email: action.email,
-              p_nudge_type: 'action_reminder',
-              p_reference_id: action.action_id,
-              p_reference_type: 'action_item',
-              p_message_ts: result.ts,
-              p_channel_id: connection.slack_dm_channel_id,
-            });
+            await supabase
+              .from('slack_nudges')
+              .insert({
+                employee_email: user.employee_email.toLowerCase(),
+                nudge_type: 'daily_digest',
+                reference_id: null,
+                reference_type: 'action_items',
+                message_ts: result.ts,
+                channel_id: user.slack_dm_channel_id,
+              });
 
-            results.action_reminders_sent++;
-            console.log(`Sent action reminder to ${action.email}`);
+            results.daily_digests_sent++;
+            console.log(`Sent daily digest to ${user.employee_email}`);
           } else {
-            console.error(`Failed to send to ${action.email}:`, result.error);
+            console.error(`Failed to send to ${user.employee_email}:`, result.error);
             results.errors++;
           }
 
         } catch (error) {
-          console.error(`Error processing action for ${action.email}:`, error);
+          console.error(`Error processing daily digest for ${user.employee_email}:`, error);
           results.errors++;
         }
       }
     }
 
     // ============================================
-    // 2. GOAL CHECK-INS (3 days post-session)
+    // 2. WEEKLY DIGEST (Monday only)
+    // For users with nudge_frequency = 'weekly'
+    // ============================================
+    if (dayOfWeek === 1) { // Monday
+      const { data: weeklyUsers } = await supabase
+        .from('employee_slack_connections')
+        .select(`
+          employee_email,
+          slack_user_id,
+          slack_dm_channel_id,
+          slack_team_id,
+          nudge_frequency,
+          preferred_time,
+          timezone
+        `)
+        .eq('nudge_enabled', true)
+        .eq('nudge_frequency', 'weekly');
+
+      if (weeklyUsers && weeklyUsers.length > 0) {
+        console.log(`Processing ${weeklyUsers.length} weekly digest users`);
+
+        for (const user of weeklyUsers) {
+          try {
+            if (!isAppropriateTime(user.preferred_time, user.timezone)) {
+              continue;
+            }
+
+            // Check if we already sent this week
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+
+            const { data: existingNudge } = await supabase
+              .from('slack_nudges')
+              .select('id')
+              .eq('employee_email', user.employee_email.toLowerCase())
+              .eq('nudge_type', 'weekly_digest')
+              .gte('sent_at', weekStart.toISOString())
+              .limit(1);
+
+            if (existingNudge && existingNudge.length > 0) {
+              continue;
+            }
+
+            // Get pending action items
+            const { data: pendingActions } = await supabase
+              .from('action_items')
+              .select('id, action_text, coach_name, created_at')
+              .ilike('email', user.employee_email)
+              .eq('status', 'pending')
+              .order('created_at', { ascending: false })
+              .limit(5);
+
+            if (!pendingActions || pendingActions.length === 0) {
+              continue;
+            }
+
+            // Get bot token
+            const { data: installation } = await supabase
+              .from('slack_installations')
+              .select('bot_token')
+              .eq('team_id', user.slack_team_id)
+              .single();
+
+            if (!installation?.bot_token) continue;
+
+            // Get first name
+            const { data: employee } = await supabase
+              .from('employee_manager')
+              .select('first_name')
+              .ilike('company_email', user.employee_email)
+              .single();
+
+            const firstName = employee?.first_name || 'there';
+            const actionsList = pendingActions
+              .map((a, i) => `${i + 1}. ${a.action_text}`)
+              .join('\n');
+
+            const blocks = [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Happy Monday, ${firstName}!* :wave:\n\nHere's your coaching focus for the week:`,
+                },
+              },
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: actionsList,
+                },
+              },
+              {
+                type: 'context',
+                elements: [
+                  {
+                    type: 'mrkdwn',
+                    text: `${pendingActions.length} action item${pendingActions.length > 1 ? 's' : ''} to work on this week`,
+                  },
+                ],
+              },
+            ];
+
+            const result = await sendSlackMessage(installation.bot_token, {
+              channel: user.slack_dm_channel_id,
+              blocks,
+              text: `Weekly coaching digest: ${pendingActions.length} action items`,
+            });
+
+            if (result.ok && result.ts) {
+              await supabase
+                .from('slack_nudges')
+                .insert({
+                  employee_email: user.employee_email.toLowerCase(),
+                  nudge_type: 'weekly_digest',
+                  reference_id: null,
+                  reference_type: 'action_items',
+                  message_ts: result.ts,
+                  channel_id: user.slack_dm_channel_id,
+                });
+
+              results.weekly_digests_sent++;
+              console.log(`Sent weekly digest to ${user.employee_email}`);
+            } else {
+              results.errors++;
+            }
+
+          } catch (error) {
+            console.error(`Error processing weekly digest:`, error);
+            results.errors++;
+          }
+        }
+      }
+    }
+
+    // ============================================
+    // 3. GOAL CHECK-INS (3 days post-session)
+    // For all users with nudges enabled
     // ============================================
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
@@ -166,47 +395,70 @@ Deno.serve(async (req) => {
             .select('id')
             .eq('employee_email', email.toLowerCase())
             .eq('nudge_type', 'goal_checkin')
-            .eq('reference_id', session.id)
+            .eq('reference_id', String(session.id))
             .single();
 
           if (existingNudge) continue;
 
           // Get Slack connection
-          const { data: connections } = await supabase.rpc('get_employee_slack_connection', {
-            lookup_email: email,
-          }) as { data: SlackConnection[] | null };
+          const { data: connection } = await supabase
+            .from('employee_slack_connections')
+            .select('slack_dm_channel_id, slack_team_id, nudge_enabled, preferred_time, timezone')
+            .ilike('employee_email', email)
+            .single();
 
-          const connection = connections?.[0];
           if (!connection || !connection.nudge_enabled) continue;
-
           if (!isAppropriateTime(connection.preferred_time, connection.timezone)) continue;
+
+          // Get bot token
+          const { data: installation } = await supabase
+            .from('slack_installations')
+            .select('bot_token')
+            .eq('team_id', connection.slack_team_id)
+            .single();
+
+          if (!installation?.bot_token) continue;
 
           // Render and send
           const template = templateMap.get('goal_checkin');
-          if (!template) continue;
+          let blocks;
 
-          const blocks = renderBlocks(template.message_blocks.blocks, {
-            first_name: employee.first_name,
-            coach_name: session.coach_name || 'your coach',
-            goals: session.goals,
-            session_id: String(session.id),
-          });
+          if (template) {
+            blocks = renderBlocks(template.message_blocks.blocks, {
+              first_name: employee.first_name,
+              coach_name: session.coach_name || 'your coach',
+              goals: session.goals,
+              session_id: String(session.id),
+            });
+          } else {
+            blocks = [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Hey ${employee.first_name}!* :wave:\n\nA few days ago you set this goal with ${session.coach_name || 'your coach'}:\n\n_"${session.goals}"_\n\nHow's it going?`,
+                },
+              },
+            ];
+          }
 
-          const result = await sendSlackMessage(connection.bot_token, {
+          const result = await sendSlackMessage(installation.bot_token, {
             channel: connection.slack_dm_channel_id,
             blocks,
             text: 'How\'s progress on your coaching goals?',
           });
 
           if (result.ok && result.ts) {
-            await supabase.rpc('record_nudge', {
-              p_employee_email: email,
-              p_nudge_type: 'goal_checkin',
-              p_reference_id: session.id,
-              p_reference_type: 'session',
-              p_message_ts: result.ts,
-              p_channel_id: connection.slack_dm_channel_id,
-            });
+            await supabase
+              .from('slack_nudges')
+              .insert({
+                employee_email: email.toLowerCase(),
+                nudge_type: 'goal_checkin',
+                reference_id: String(session.id),
+                reference_type: 'session',
+                message_ts: result.ts,
+                channel_id: connection.slack_dm_channel_id,
+              });
 
             results.goal_checkins_sent++;
             console.log(`Sent goal check-in to ${email}`);
@@ -222,7 +474,7 @@ Deno.serve(async (req) => {
     }
 
     // ============================================
-    // 3. SESSION PREP REMINDERS (24h before)
+    // 4. SESSION PREP REMINDERS (24h before)
     // ============================================
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -255,47 +507,78 @@ Deno.serve(async (req) => {
             .select('id')
             .eq('employee_email', email.toLowerCase())
             .eq('nudge_type', 'session_prep')
-            .eq('reference_id', session.id)
+            .eq('reference_id', String(session.id))
             .single();
 
           if (existingNudge) continue;
 
-          const { data: connections } = await supabase.rpc('get_employee_slack_connection', {
-            lookup_email: email,
-          }) as { data: SlackConnection[] | null };
+          const { data: connection } = await supabase
+            .from('employee_slack_connections')
+            .select('slack_dm_channel_id, slack_team_id, nudge_enabled, preferred_time, timezone')
+            .ilike('employee_email', email)
+            .single();
 
-          const connection = connections?.[0];
           if (!connection || !connection.nudge_enabled) continue;
-
           if (!isAppropriateTime(connection.preferred_time, connection.timezone)) continue;
 
+          const { data: installation } = await supabase
+            .from('slack_installations')
+            .select('bot_token')
+            .eq('team_id', connection.slack_team_id)
+            .single();
+
+          if (!installation?.bot_token) continue;
+
           const template = templateMap.get('session_prep');
-          if (!template) continue;
+          const portalUrl = Deno.env.get('PORTAL_URL') || 'https://portal.booncoaching.com';
 
-          const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
+          let blocks;
+          if (template) {
+            blocks = renderBlocks(template.message_blocks.blocks, {
+              first_name: employee.first_name,
+              coach_name: session.coach_name || 'your coach',
+              session_id: String(session.id),
+              portal_url: portalUrl,
+            });
+          } else {
+            blocks = [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Hey ${employee.first_name}!* :calendar:\n\nYou have a coaching session with ${session.coach_name || 'your coach'} tomorrow!\n\nTake a moment to think about what you want to focus on.`,
+                },
+              },
+              {
+                type: 'actions',
+                elements: [
+                  {
+                    type: 'button',
+                    text: { type: 'plain_text', text: 'Prepare for Session' },
+                    url: portalUrl,
+                  },
+                ],
+              },
+            ];
+          }
 
-          const blocks = renderBlocks(template.message_blocks.blocks, {
-            first_name: employee.first_name,
-            coach_name: session.coach_name || 'your coach',
-            session_id: String(session.id),
-            portal_url: portalUrl,
-          });
-
-          const result = await sendSlackMessage(connection.bot_token, {
+          const result = await sendSlackMessage(installation.bot_token, {
             channel: connection.slack_dm_channel_id,
             blocks,
             text: 'You have a coaching session tomorrow!',
           });
 
           if (result.ok && result.ts) {
-            await supabase.rpc('record_nudge', {
-              p_employee_email: email,
-              p_nudge_type: 'session_prep',
-              p_reference_id: session.id,
-              p_reference_type: 'session',
-              p_message_ts: result.ts,
-              p_channel_id: connection.slack_dm_channel_id,
-            });
+            await supabase
+              .from('slack_nudges')
+              .insert({
+                employee_email: email.toLowerCase(),
+                nudge_type: 'session_prep',
+                reference_id: String(session.id),
+                reference_type: 'session',
+                message_ts: result.ts,
+                channel_id: connection.slack_dm_channel_id,
+              });
 
             results.session_preps_sent++;
             console.log(`Sent session prep to ${email}`);
@@ -314,7 +597,8 @@ Deno.serve(async (req) => {
 
     console.log('='.repeat(40));
     console.log('Nudge Scheduler Complete');
-    console.log(`Action reminders sent: ${results.action_reminders_sent}`);
+    console.log(`Daily digests sent: ${results.daily_digests_sent}`);
+    console.log(`Weekly digests sent: ${results.weekly_digests_sent}`);
     console.log(`Goal check-ins sent: ${results.goal_checkins_sent}`);
     console.log(`Session preps sent: ${results.session_preps_sent}`);
     console.log(`Errors: ${results.errors}`);
@@ -362,30 +646,5 @@ function isAppropriateTime(preferredTime: string, timezone: string): boolean {
   } catch {
     // Default to allowing if timezone parsing fails
     return true;
-  }
-}
-
-/**
- * Format due date for display
- */
-function formatDueDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const dateOnly = new Date(date);
-  dateOnly.setHours(0, 0, 0, 0);
-
-  if (dateOnly.getTime() < today.getTime()) {
-    return `*Overdue* (${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
-  } else if (dateOnly.getTime() === today.getTime()) {
-    return '*Today*';
-  } else if (dateOnly.getTime() === tomorrow.getTime()) {
-    return '*Tomorrow*';
-  } else {
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
 }
