@@ -500,8 +500,7 @@ function ProtectedApp() {
           userEmail={employee?.company_email || ''}
           checkpointNumber={coachingState.scaleCheckpointStatus.currentCheckpointNumber}
           sessionCount={coachingState.completedSessionCount}
-          baseline={baseline}
-          previousCheckpoint={coachingState.scaleCheckpointStatus.latestCheckpoint}
+          coachName={sessions[0]?.coach_name || 'your coach'}
           onComplete={handleCheckpointComplete}
           onClose={() => setShowCheckpointFlow(false)}
         />
