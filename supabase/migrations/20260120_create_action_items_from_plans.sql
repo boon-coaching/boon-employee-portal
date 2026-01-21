@@ -12,7 +12,7 @@ WITH latest_sessions AS (
     st.plan,
     st.session_date
   FROM session_tracking st
-  JOIN employees e ON e.id = st.employee_id
+  JOIN employee_manager e ON e.id = st.employee_id
   WHERE st.status = 'Completed'
     AND st.plan IS NOT NULL
     AND trim(st.plan) != ''
