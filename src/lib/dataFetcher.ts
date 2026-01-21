@@ -29,17 +29,33 @@ export async function fetchEmployeeProfile(email: string): Promise<Employee | nu
 export async function fetchSessions(employeeId: string, employeeEmail?: string): Promise<Session[]> {
   console.log('[fetchSessions] Starting lookup for:', { employeeId, employeeEmail });
 
-  // Helper to deduplicate sessions by ID
-  const deduplicateSessions = (sessions: Session[]): Session[] => {
+  // Helper to normalize status to title case (e.g., "COMPLETED" -> "Completed")
+  const normalizeStatus = (status: string): string => {
+    if (!status) return status;
+    const lower = status.toLowerCase();
+    if (lower === 'completed') return 'Completed';
+    if (lower === 'upcoming') return 'Upcoming';
+    if (lower === 'scheduled') return 'Scheduled';
+    if (lower === 'cancelled' || lower === 'canceled') return 'Cancelled';
+    return status; // Return as-is if not recognized
+  };
+
+  // Helper to deduplicate and normalize sessions
+  const processSessions = (sessions: Session[]): Session[] => {
     const seen = new Set<string>();
-    return sessions.filter(s => {
-      if (seen.has(s.id)) {
-        console.log('[fetchSessions] Removing duplicate session:', s.id);
-        return false;
-      }
-      seen.add(s.id);
-      return true;
-    });
+    return sessions
+      .filter(s => {
+        if (seen.has(s.id)) {
+          console.log('[fetchSessions] Removing duplicate session:', s.id);
+          return false;
+        }
+        seen.add(s.id);
+        return true;
+      })
+      .map(s => ({
+        ...s,
+        status: normalizeStatus(s.status) as Session['status']
+      }));
   };
 
   // Try by employee_id first
@@ -55,7 +71,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
   });
 
   if (!idError && idData && idData.length > 0) {
-    return deduplicateSessions(idData as Session[]);
+    return processSessions(idData as Session[]);
   }
 
   // Fallback 1: Try by employee_email (case-insensitive)
@@ -73,7 +89,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     });
 
     if (!emailError && emailData && emailData.length > 0) {
-      return emailData as Session[];
+      return processSessions(emailData as Session[]);
     }
 
     // Fallback 2: Try exact email match (different case handling)
@@ -90,7 +106,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     });
 
     if (!exactError && exactData && exactData.length > 0) {
-      return exactData as Session[];
+      return processSessions(exactData as Session[]);
     }
 
     // Fallback 3: Try RPC function that uses SECURITY DEFINER to bypass RLS
@@ -104,7 +120,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     });
 
     if (!rpcError && rpcData && rpcData.length > 0) {
-      return rpcData as Session[];
+      return processSessions(rpcData as Session[]);
     }
 
     // Final debug: Check if sessions exist at all for this email pattern
