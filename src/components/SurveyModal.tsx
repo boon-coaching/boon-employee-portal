@@ -218,7 +218,7 @@ export default function SurveyModal({
             coach_qualities: selectedQualities,
             has_booked_next_session: hasBookedNext!,
             nps: nps!,
-            feedback_text: feedbackText || undefined,
+            feedback_suggestions: feedbackText || undefined,
             outcomes: surveyType === 'scale_end' ? outcomes : undefined,
             open_to_testimonial: surveyType === 'scale_end' ? openToTestimonial || false : undefined,
           },
