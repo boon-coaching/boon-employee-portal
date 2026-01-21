@@ -103,7 +103,7 @@ export default function CheckpointFlow({
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <h2 className="text-2xl font-extrabold text-boon-text">
-                  {isFirstCheckpoint ? 'Quick Check-In' : `Check-In ${checkpointNumber}`}
+                  {isFirstCheckpoint ? 'Quick Check-In' : `Check-In ${sessionNumber}`}
                 </h2>
                 <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
                   ~1 min
