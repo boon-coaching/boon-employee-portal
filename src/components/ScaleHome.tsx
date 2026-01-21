@@ -131,12 +131,12 @@ export default function ScaleHome({
                 <h2 className="text-2xl font-extrabold text-boon-text mb-2">
                   {checkpointStatus.currentCheckpointNumber === 1
                     ? 'Time for your first check-in'
-                    : '6 sessions in. See what\'s shifted.'}
+                    : `${completedSessions.length} sessions in. See what's shifted.`}
                 </h2>
                 <p className="text-gray-600 mb-6">
                   {checkpointStatus.currentCheckpointNumber === 1
                     ? 'Establish your baseline and start tracking your evolution over time.'
-                    : 'Take 2 minutes to reflect on your progress and set your focus for the next 6 sessions.'}
+                    : 'Take 2 minutes to reflect on your progress and set your focus for the next phase.'}
                 </p>
                 <button
                   onClick={onStartCheckpoint}
