@@ -753,7 +753,7 @@ export async function fetchCheckpoints(email: string): Promise<Checkpoint[]> {
     .select('*')
     .ilike('email', email)
     .in('survey_type', ['first_session', 'feedback', 'touchpoint'])
-    .order('session_number', { ascending: true });
+    .order('submitted_at', { ascending: true });
 
   if (error) {
     if (error.code !== 'PGRST116') {
@@ -762,32 +762,42 @@ export async function fetchCheckpoints(email: string): Promise<Checkpoint[]> {
     return [];
   }
 
+  // Helper to extract session number from outcomes field (format: "Session X, ...")
+  const extractSessionNumber = (outcomes: string | null): number => {
+    if (!outcomes) return 1;
+    const match = outcomes.match(/Session\s+(\d+)/i);
+    return match ? parseInt(match[1], 10) : 1;
+  };
+
   // Map survey_submissions to Checkpoint type
-  return (data || []).map((s: Record<string, unknown>) => ({
-    id: s.id as string,
-    email: s.email as string,
-    checkpoint_number: s.session_number as number,
-    session_count_at_checkpoint: s.session_number as number,
-    competency_scores: {
-      adaptability_and_resilience: s.coach_satisfaction as number || 0,
-      building_relationships_at_work: 0,
-      change_management: 0,
-      delegation_and_accountability: 0,
-      effective_communication: 0,
-      effective_planning_and_execution: 0,
-      emotional_intelligence: 0,
-      giving_and_receiving_feedback: 0,
-      persuasion_and_influence: 0,
-      self_confidence_and_imposter_syndrome: 0,
-      strategic_thinking: 0,
-      time_management_and_productivity: 0,
-    },
-    reflection_text: s.feedback_suggestions as string | null,
-    focus_area: null,
-    nps_score: s.nps as number | null,
-    testimonial_consent: s.open_to_testimonial as boolean || false,
-    created_at: s.submitted_at as string || s.created_at as string,
-  })) as Checkpoint[];
+  return (data || []).map((s: Record<string, unknown>) => {
+    const sessionNum = extractSessionNumber(s.outcomes as string | null);
+    return {
+      id: s.id as string,
+      email: s.email as string,
+      checkpoint_number: sessionNum,
+      session_count_at_checkpoint: sessionNum,
+      competency_scores: {
+        adaptability_and_resilience: s.coach_satisfaction as number || 0,
+        building_relationships_at_work: 0,
+        change_management: 0,
+        delegation_and_accountability: 0,
+        effective_communication: 0,
+        effective_planning_and_execution: 0,
+        emotional_intelligence: 0,
+        giving_and_receiving_feedback: 0,
+        persuasion_and_influence: 0,
+        self_confidence_and_imposter_syndrome: 0,
+        strategic_thinking: 0,
+        time_management_and_productivity: 0,
+      },
+      reflection_text: s.feedback_suggestions as string | null,
+      focus_area: null,
+      nps_score: s.nps as number | null,
+      testimonial_consent: s.open_to_testimonial as boolean || false,
+      created_at: s.submitted_at as string || s.created_at as string,
+    };
+  }) as Checkpoint[];
 }
 
 /**
@@ -799,7 +809,7 @@ export async function fetchLatestCheckpoint(email: string): Promise<Checkpoint |
     .select('*')
     .ilike('email', email)
     .in('survey_type', ['first_session', 'feedback', 'touchpoint'])
-    .order('session_number', { ascending: false })
+    .order('submitted_at', { ascending: false })
     .limit(1);
 
   if (error) {
@@ -811,12 +821,20 @@ export async function fetchLatestCheckpoint(email: string): Promise<Checkpoint |
 
   if (!data || data.length === 0) return null;
 
+  // Helper to extract session number from outcomes field (format: "Session X, ...")
+  const extractSessionNumber = (outcomes: string | null): number => {
+    if (!outcomes) return 1;
+    const match = outcomes.match(/Session\s+(\d+)/i);
+    return match ? parseInt(match[1], 10) : 1;
+  };
+
   const s = data[0];
+  const sessionNum = extractSessionNumber(s.outcomes);
   return {
     id: s.id,
     email: s.email,
-    checkpoint_number: s.session_number,
-    session_count_at_checkpoint: s.session_number,
+    checkpoint_number: sessionNum,
+    session_count_at_checkpoint: sessionNum,
     competency_scores: {
       adaptability_and_resilience: s.coach_satisfaction || 0,
       building_relationships_at_work: 0,
@@ -868,17 +886,19 @@ export async function submitCheckpoint(
     surveyType = 'touchpoint';
   }
 
+  // Build outcomes to include session info and coach match rating
+  const outcomesParts: string[] = [];
+  if (data.sessionNumber) outcomesParts.push(`Session ${data.sessionNumber}`);
+  if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
+
   const { data: result, error } = await supabase
     .from('survey_submissions')
     .insert({
       email: email.toLowerCase(),
       survey_type: surveyType,
-      session_id: data.sessionId,
-      session_number: data.sessionNumber,
       coach_name: data.coachName,
       coach_satisfaction: data.sessionRating,
-      // Store coach match in outcomes field for now
-      outcomes: data.coachMatchRating ? `Coach match: ${data.coachMatchRating}/10` : null,
+      outcomes: outcomesParts.length > 0 ? outcomesParts.join(', ') : null,
       feedback_suggestions: data.feedbackText,
       nps: data.nps,
       open_to_testimonial: data.testimonialConsent,
@@ -1035,12 +1055,14 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   }
 
   // Check which sessions don't have a survey yet
+  // Since session_id column doesn't exist, check by matching outcomes field pattern
   for (const session of sessions) {
+    const sessionPattern = `Session ${session.appointment_number}`;
     const { data: existingSurvey } = await supabase
       .from('survey_submissions')
       .select('id')
       .ilike('email', email)
-      .eq('session_id', session.id)
+      .ilike('outcomes', `%${sessionPattern}%`)
       .limit(1);
 
     if (!existingSurvey || existingSurvey.length === 0) {
@@ -1094,7 +1116,7 @@ export async function fetchSurveyContext(sessionId: string): Promise<{
  */
 export async function submitScaleFeedbackSurvey(
   email: string,
-  sessionId: string,
+  _sessionId: string, // Kept for API compatibility, stored in outcomes instead
   sessionNumber: number,
   coachName: string,
   data: {
@@ -1111,13 +1133,15 @@ export async function submitScaleFeedbackSurvey(
   },
   surveyType: 'scale_feedback' | 'scale_end' = 'scale_feedback'
 ): Promise<{ success: boolean; error?: string }> {
+  // Build outcomes to include session info
+  const outcomesParts: string[] = [`Session ${sessionNumber}`];
+  if (data.outcomes) outcomesParts.push(data.outcomes);
+
   const { error } = await supabase
     .from('survey_submissions')
     .insert({
       email: email.toLowerCase(),
       survey_type: surveyType,
-      session_id: sessionId,
-      session_number: sessionNumber,
       coach_name: coachName,
       coach_satisfaction: data.coach_satisfaction,
       wants_rematch: data.wants_rematch || false,
@@ -1126,7 +1150,7 @@ export async function submitScaleFeedbackSurvey(
       has_booked_next_session: data.has_booked_next_session,
       nps: data.nps,
       feedback_suggestions: data.feedback_suggestions || null,
-      outcomes: data.outcomes || null,
+      outcomes: outcomesParts.join(', '),
       open_to_testimonial: data.open_to_testimonial || false,
       submitted_at: new Date().toISOString(),
     });
