@@ -46,6 +46,89 @@ function renderBlocks(
   return JSON.parse(json);
 }
 
+// Helper: Get appropriate greeting based on user's timezone
+function getGreeting(timezone: string): string {
+  try {
+    const userTime = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hour12: false,
+    }).format(new Date());
+    const hour = parseInt(userTime, 10);
+
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    if (hour < 21) return 'Good evening';
+    return 'Hey';
+  } catch {
+    return 'Hey'; // Fallback if timezone parsing fails
+  }
+}
+
+// Helper: Build interactive action items blocks
+function buildActionItemBlocks(
+  firstName: string,
+  timezone: string,
+  pendingActions: PendingActionItem[],
+  portalUrl: string
+): unknown[] {
+  const greeting = getGreeting(timezone);
+
+  const blocks: unknown[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `*${greeting}, ${firstName}!* :wave:\n\nHere are your coaching action items:`,
+      },
+    },
+    {
+      type: 'divider',
+    },
+  ];
+
+  // Add each action item with a "Done" button
+  for (const action of pendingActions) {
+    blocks.push({
+      type: 'section',
+      block_id: `action_${action.id}`,
+      text: {
+        type: 'mrkdwn',
+        text: `☐ ${action.action_text}`,
+      },
+      accessory: {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: '✓ Done',
+          emoji: true,
+        },
+        style: 'primary',
+        action_id: 'complete_action_item',
+        value: action.id,
+      },
+    });
+  }
+
+  // Add footer
+  blocks.push(
+    {
+      type: 'divider',
+    },
+    {
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `${pendingActions.length} pending item${pendingActions.length > 1 ? 's' : ''} • <${portalUrl}|Open Portal>`,
+        },
+      ],
+    }
+  );
+
+  return blocks;
+}
+
 interface PendingActionItem {
   id: string;
   action_text: string;
@@ -180,50 +263,15 @@ Deno.serve(async (req) => {
             .single();
 
           const firstName = employee?.first_name || 'there';
+          const portalUrl = Deno.env.get('PORTAL_URL') || 'https://portal.booncoaching.com';
 
-          // Build action items list
-          const actionsList = pendingActions
-            .map((a, i) => `${i + 1}. ${a.action_text}`)
-            .join('\n');
-
-          // Get template or use inline blocks
-          const template = templateMap.get('daily_digest');
-          let blocks;
-
-          if (template) {
-            blocks = renderBlocks(template.message_blocks.blocks, {
-              first_name: firstName,
-              actions_list: actionsList,
-              action_count: pendingActions.length,
-            });
-          } else {
-            // Fallback inline template
-            blocks = [
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Good morning, ${firstName}!* :sun_small_cloud:\n\nHere's your coaching action items for today:`,
-                },
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: actionsList,
-                },
-              },
-              {
-                type: 'context',
-                elements: [
-                  {
-                    type: 'mrkdwn',
-                    text: `${pendingActions.length} pending item${pendingActions.length > 1 ? 's' : ''} • <${Deno.env.get('PORTAL_URL') || 'https://portal.booncoaching.com'}|Open Portal>`,
-                  },
-                ],
-              },
-            ];
-          }
+          // Build interactive action items blocks
+          const blocks = buildActionItemBlocks(
+            firstName,
+            user.timezone || 'America/New_York',
+            pendingActions,
+            portalUrl
+          );
 
           // Send the message
           const result = await sendSlackMessage(installation.bot_token, {
@@ -333,35 +381,15 @@ Deno.serve(async (req) => {
               .single();
 
             const firstName = employee?.first_name || 'there';
-            const actionsList = pendingActions
-              .map((a, i) => `${i + 1}. ${a.action_text}`)
-              .join('\n');
+            const portalUrl = Deno.env.get('PORTAL_URL') || 'https://portal.booncoaching.com';
 
-            const blocks = [
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Happy Monday, ${firstName}!* :wave:\n\nHere's your coaching focus for the week:`,
-                },
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: actionsList,
-                },
-              },
-              {
-                type: 'context',
-                elements: [
-                  {
-                    type: 'mrkdwn',
-                    text: `${pendingActions.length} action item${pendingActions.length > 1 ? 's' : ''} to work on this week`,
-                  },
-                ],
-              },
-            ];
+            // Build interactive action items blocks (same format, greeting adjusts to timezone)
+            const blocks = buildActionItemBlocks(
+              firstName,
+              user.timezone || 'America/New_York',
+              pendingActions,
+              portalUrl
+            );
 
             const result = await sendSlackMessage(installation.bot_token, {
               channel: user.slack_dm_channel_id,
