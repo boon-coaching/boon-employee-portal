@@ -110,11 +110,13 @@ function ProtectedApp() {
         setWelcomeSurveyScale(welcomeSurveyScaleData);
         setCompetencyScores(competencyData);
 
-        // Derive program type from sessions if employee.program is null
+        // Derive program type - multiple fallback strategies
         let finalProgramType = programTypeData;
+
+        // Fallback 1: Check session program_name
         if (!finalProgramType && sessionsData.length > 0) {
           const sessionProgramName = sessionsData[0]?.program_name?.toUpperCase() || '';
-          console.log('[App.loadData] Fallback: checking session program_name:', sessionProgramName);
+          console.log('[App.loadData] Fallback 1: checking session program_name:', sessionProgramName);
           if (sessionProgramName.includes('SCALE') || sessionProgramName.includes('SLX')) {
             finalProgramType = 'SCALE';
             console.log('[App.loadData] Derived SCALE from session program_name');
@@ -126,6 +128,13 @@ function ProtectedApp() {
             console.log('[App.loadData] Derived EXEC from session program_name');
           }
         }
+
+        // Fallback 2: If user has welcome_survey_scale data, they're SCALE
+        if (!finalProgramType && welcomeSurveyScaleData) {
+          console.log('[App.loadData] Fallback 2: User has welcome_survey_scale, deriving SCALE');
+          finalProgramType = 'SCALE';
+        }
+
         setProgramType(finalProgramType);
         setActionItems(actionItemsData);
         setReflection(reflectionData);
