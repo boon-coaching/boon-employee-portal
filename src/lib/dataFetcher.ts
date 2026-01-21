@@ -1055,12 +1055,14 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   }
 
   // Check which sessions don't have a survey yet
+  // Since session_id column doesn't exist, check by matching outcomes field pattern
   for (const session of sessions) {
+    const sessionPattern = `Session ${session.appointment_number}`;
     const { data: existingSurvey } = await supabase
       .from('survey_submissions')
       .select('id')
       .ilike('email', email)
-      .eq('session_id', session.id)
+      .ilike('outcomes', `%${sessionPattern}%`)
       .limit(1);
 
     if (!existingSurvey || existingSurvey.length === 0) {
@@ -1131,13 +1133,15 @@ export async function submitScaleFeedbackSurvey(
   },
   surveyType: 'scale_feedback' | 'scale_end' = 'scale_feedback'
 ): Promise<{ success: boolean; error?: string }> {
+  // Build outcomes to include session info
+  const outcomesParts: string[] = [`Session ${sessionNumber}`];
+  if (data.outcomes) outcomesParts.push(data.outcomes);
+
   const { error } = await supabase
     .from('survey_submissions')
     .insert({
       email: email.toLowerCase(),
       survey_type: surveyType,
-      session_id: sessionId,
-      session_number: sessionNumber,
       coach_name: coachName,
       coach_satisfaction: data.coach_satisfaction,
       wants_rematch: data.wants_rematch || false,
@@ -1146,7 +1150,7 @@ export async function submitScaleFeedbackSurvey(
       has_booked_next_session: data.has_booked_next_session,
       nps: data.nps,
       feedback_suggestions: data.feedback_suggestions || null,
-      outcomes: data.outcomes || null,
+      outcomes: outcomesParts.join(', '),
       open_to_testimonial: data.open_to_testimonial || false,
       submitted_at: new Date().toISOString(),
     });

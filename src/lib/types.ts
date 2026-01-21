@@ -377,7 +377,7 @@ export interface NativeSurveySubmission {
   // Next session
   has_booked_next_session: boolean | null;
   // Open-ended
-  feedback_text: string | null;
+  feedback_suggestions: string | null;
   outcomes: string | null;
   // Testimonial
   open_to_testimonial: boolean | null;
@@ -404,7 +404,7 @@ export interface ScaleFeedbackFormData {
   coach_qualities: CoachQuality[];
   has_booked_next_session: boolean;
   nps: number;
-  feedback_text?: string;
+  feedback_suggestions?: string;
 }
 
 export interface ScaleEndFormData extends ScaleFeedbackFormData {
