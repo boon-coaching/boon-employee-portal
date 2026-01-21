@@ -751,7 +751,7 @@ export async function fetchCheckpoints(email: string): Promise<Checkpoint[]> {
     .from('survey_submissions')
     .select('*')
     .ilike('email', email)
-    .eq('survey_type', 'scale_checkin')
+    .eq('survey_type', 'checkin')
     .order('session_number', { ascending: true });
 
   if (error) {
@@ -797,7 +797,7 @@ export async function fetchLatestCheckpoint(email: string): Promise<Checkpoint |
     .from('survey_submissions')
     .select('*')
     .ilike('email', email)
-    .eq('survey_type', 'scale_checkin')
+    .eq('survey_type', 'checkin')
     .order('session_number', { ascending: false })
     .limit(1);
 
@@ -860,7 +860,7 @@ export async function submitCheckpoint(
     .from('survey_submissions')
     .insert({
       email: email.toLowerCase(),
-      survey_type: 'scale_checkin',
+      survey_type: 'checkin',
       session_id: data.sessionId,
       session_number: data.sessionNumber,
       coach_name: data.coachName,
