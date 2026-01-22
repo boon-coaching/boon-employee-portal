@@ -914,15 +914,16 @@ export async function submitCheckpoint(
   console.log('[submitCheckpoint] Employee lookup result:', emp ? {
     first_name: emp.first_name,
     last_name: emp.last_name,
-    account_name: emp.account_name,
+    company_name: emp.company_name,
+    coaching_program: emp.coaching_program,
   } : 'not found');
+  // Map employee_manager columns to survey_submissions columns
   const employeeFields = emp ? {
     first_name: emp.first_name,
     last_name: emp.last_name,
     participant_name: [emp.first_name, emp.last_name].filter(Boolean).join(' ') || null,
-    account_name: emp.account_name,
-    program_title: emp.program_title,
-    program_type: emp.program_type,
+    account_name: emp.company_name,        // employee_manager.company_name → survey_submissions.account_name
+    program_type: emp.coaching_program,    // employee_manager.coaching_program → survey_submissions.program_type
   } : {};
 
   // Insert with all data including employee fields
