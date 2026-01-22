@@ -908,12 +908,19 @@ export async function submitCheckpoint(
   if (data.sessionNumber) outcomesParts.push(`Session ${data.sessionNumber}`);
   if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
 
-  // Look up employee data to populate name/account fields
-  const { data: empData } = await supabase
-    .from('employees')
-    .select('first_name, last_name, account_name, program_title, program_type')
-    .ilike('company_email', email)
-    .single();
+  // Look up employee data to populate name/account fields (don't block if lookup fails)
+  let empData: { first_name?: string; last_name?: string; account_name?: string; program_title?: string; program_type?: string } | null = null;
+  try {
+    const { data } = await supabase
+      .from('employees')
+      .select('first_name, last_name, account_name, program_title, program_type')
+      .ilike('company_email', email)
+      .limit(1)
+      .maybeSingle();
+    empData = data;
+  } catch (e) {
+    console.log('Employee lookup failed, continuing without employee data:', e);
+  }
 
   const participantName = empData?.first_name && empData?.last_name
     ? `${empData.first_name} ${empData.last_name}`
