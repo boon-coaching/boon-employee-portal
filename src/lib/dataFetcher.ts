@@ -909,12 +909,7 @@ export async function submitCheckpoint(
   if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
 
   // Use RPC function to bypass RLS issues
-  // Try with new parameters first, fall back to old signature if it fails
-  let result;
-  let error;
-
-  // First try with new parameters (if migration has been run)
-  const rpcResult = await supabase
+  const { data: result, error } = await supabase
     .rpc('submit_survey_for_user', {
       user_email: email.toLowerCase(),
       p_survey_type: surveyType,
@@ -924,32 +919,7 @@ export async function submitCheckpoint(
       p_feedback_suggestions: data.feedbackText,
       p_nps: data.nps,
       p_open_to_testimonial: data.testimonialConsent,
-      p_match_rating: data.coachMatchRating,
-      p_next_session_booked: data.nextSessionBooked,
-      p_not_booked_reasons: data.notBookedReasons,
-      p_open_to_followup: data.openToFollowup,
     });
-
-  result = rpcResult.data;
-  error = rpcResult.error;
-
-  // If it failed (possibly due to missing new parameters), try old signature
-  if (error && error.message?.includes('function')) {
-    console.log('Falling back to old RPC signature...');
-    const fallbackResult = await supabase
-      .rpc('submit_survey_for_user', {
-        user_email: email.toLowerCase(),
-        p_survey_type: surveyType,
-        p_coach_name: data.coachName,
-        p_coach_satisfaction: data.sessionRating,
-        p_outcomes: outcomesParts.length > 0 ? outcomesParts.join(', ') : null,
-        p_feedback_suggestions: data.feedbackText,
-        p_nps: data.nps,
-        p_open_to_testimonial: data.testimonialConsent,
-      });
-    result = fallbackResult.data;
-    error = fallbackResult.error;
-  }
 
   if (error) {
     console.error('Error submitting check-in:', error);
