@@ -908,7 +908,7 @@ export async function submitCheckpoint(
   if (data.sessionNumber) outcomesParts.push(`Session ${data.sessionNumber}`);
   if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
 
-  // Insert directly into survey_submissions (skip employee lookup for now)
+  // Insert directly into survey_submissions
   const { data: result, error } = await supabase
     .from('survey_submissions')
     .insert({
@@ -932,6 +932,35 @@ export async function submitCheckpoint(
     console.error('Error submitting check-in:', error);
     return { success: false, error: error.message };
   }
+
+  // Update with employee data (fire and forget - don't block on this)
+  (async () => {
+    try {
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('first_name, last_name, account_name, program_title, program_type')
+        .ilike('company_email', email)
+        .limit(1);
+
+      if (empData && empData[0]) {
+        const emp = empData[0];
+        await supabase
+          .from('survey_submissions')
+          .update({
+            first_name: emp.first_name,
+            last_name: emp.last_name,
+            participant_name: [emp.first_name, emp.last_name].filter(Boolean).join(' ') || null,
+            account_name: emp.account_name,
+            program_title: emp.program_title,
+            program_type: emp.program_type,
+          })
+          .eq('id', result.id);
+        console.log('Updated survey with employee data');
+      }
+    } catch (e) {
+      console.log('Employee data update failed:', e);
+    }
+  })();
 
   // Map back to Checkpoint type for compatibility
   const checkpoint: Checkpoint = {
