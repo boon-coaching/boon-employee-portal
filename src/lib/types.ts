@@ -15,6 +15,9 @@ export interface Employee {
   program: string | null; // Links to programs table
   booking_link: string | null;
   created_at: string;
+  account_name: string | null;
+  program_title: string | null;
+  program_type: string | null;
 }
 
 export interface Session {
