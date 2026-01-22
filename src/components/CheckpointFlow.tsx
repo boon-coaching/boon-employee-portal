@@ -46,7 +46,8 @@ export default function CheckpointFlow({
   const [continueWithCoach, setContinueWithCoach] = useState<'yes' | 'explore' | null>(null);
   const [betterMatchText, setBetterMatchText] = useState('');
   const [bookedNext, setBookedNext] = useState<'yes' | 'no' | null>(null);
-  const [whatsInTheWayText, setWhatsInTheWayText] = useState('');
+  const [whatsInTheWayOption, setWhatsInTheWayOption] = useState<string | null>(null);
+  const [whatsInTheWayOtherText, setWhatsInTheWayOtherText] = useState('');
   const [anythingElseText, setAnythingElseText] = useState('');
   const [npsScore, setNpsScore] = useState<number | null>(null);
   const [openToChat, setOpenToChat] = useState<'yes' | 'no' | null>(null);
@@ -106,8 +107,11 @@ export default function CheckpointFlow({
     if (bookedNext) {
       feedbackParts.push(`Booked next session: ${bookedNext === 'yes' ? 'Yes' : 'No'}`);
     }
-    if (whatsInTheWayText) {
-      feedbackParts.push(`What's in the way: ${whatsInTheWayText}`);
+    if (whatsInTheWayOption) {
+      const inTheWay = whatsInTheWayOption === 'other'
+        ? `Other: ${whatsInTheWayOtherText}`
+        : whatsInTheWayOption;
+      feedbackParts.push(`What's in the way: ${inTheWay}`);
     }
     if (anythingElseText) {
       feedbackParts.push(`Other feedback: ${anythingElseText}`);
@@ -249,7 +253,10 @@ export default function CheckpointFlow({
       case 'booked_next':
         return bookedNext !== null;
       case 'whats_in_the_way':
-        return whatsInTheWayText.trim().length > 0;
+        if (whatsInTheWayOption === 'other') {
+          return whatsInTheWayOtherText.trim().length > 0;
+        }
+        return whatsInTheWayOption !== null;
       case 'anything_else':
         return true; // optional
       case 'nps':
@@ -518,21 +525,53 @@ export default function CheckpointFlow({
           {/* Q7b: What's in the way (if not booked) */}
           {step === 'whats_in_the_way' && (
             <div className="space-y-6 py-4">
-              <div>
-                <label className="block text-lg font-bold text-boon-text mb-3 text-center">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-extrabold text-boon-text mb-2">
                   What's in the way?
-                </label>
-                <p className="text-gray-500 text-sm text-center mb-4">
+                </h3>
+                <p className="text-gray-500 text-sm">
                   We might be able to help
                 </p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { value: 'no_time', label: "Haven't had time to book" },
+                  { value: 'hard_to_find_time', label: 'Hard to find a time that works' },
+                  { value: 'not_sure_how', label: 'Not sure how to book' },
+                  { value: 'waiting_to_decide', label: 'Waiting to see if I want to continue' },
+                  { value: 'other', label: 'Other' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setWhatsInTheWayOption(option.value)}
+                    className={`w-full p-4 rounded-2xl text-left transition-all border-2 ${
+                      whatsInTheWayOption === option.value
+                        ? 'border-boon-blue bg-boon-lightBlue/30'
+                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        whatsInTheWayOption === option.value ? 'border-boon-blue bg-boon-blue' : 'border-gray-300'
+                      }`}>
+                        {whatsInTheWayOption === option.value && (
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        )}
+                      </div>
+                      <span className="font-medium text-boon-text">{option.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {whatsInTheWayOption === 'other' && (
                 <textarea
-                  value={whatsInTheWayText}
-                  onChange={(e) => setWhatsInTheWayText(e.target.value)}
-                  placeholder="Schedule conflicts, unsure about value, other priorities..."
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
+                  value={whatsInTheWayOtherText}
+                  onChange={(e) => setWhatsInTheWayOtherText(e.target.value)}
+                  placeholder="Tell us more..."
+                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-24 mt-2"
                   autoFocus
                 />
-              </div>
+              )}
             </div>
           )}
 
