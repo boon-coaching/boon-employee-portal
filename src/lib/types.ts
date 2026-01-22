@@ -15,9 +15,9 @@ export interface Employee {
   program: string | null; // Links to programs table
   booking_link: string | null;
   created_at: string;
-  account_name: string | null;
-  program_title: string | null;
-  program_type: string | null;
+  // Actual column names in employee_manager table
+  company_name: string | null;
+  coaching_program: string | null;
 }
 
 export interface Session {
