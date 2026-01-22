@@ -908,7 +908,32 @@ export async function submitCheckpoint(
   if (data.sessionNumber) outcomesParts.push(`Session ${data.sessionNumber}`);
   if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
 
-  // Insert directly into survey_submissions
+  // First, fetch employee data so we can include it in the initial insert
+  console.log('[submitCheckpoint] Looking up employee data for:', email);
+  const { data: empData, error: empError } = await supabase
+    .from('employee_manager')
+    .select('first_name, last_name, account_name, program_title, program_type')
+    .ilike('company_email', email)
+    .limit(1);
+
+  console.log('[submitCheckpoint] Employee lookup result:', {
+    found: empData?.length || 0,
+    error: empError?.message || 'none',
+    data: empData?.[0] || null
+  });
+
+  // Prepare employee fields (null if not found)
+  const emp = empData?.[0] || null;
+  const employeeFields = emp ? {
+    first_name: emp.first_name,
+    last_name: emp.last_name,
+    participant_name: [emp.first_name, emp.last_name].filter(Boolean).join(' ') || null,
+    account_name: emp.account_name,
+    program_title: emp.program_title,
+    program_type: emp.program_type,
+  } : {};
+
+  // Insert with all data including employee fields
   const { data: result, error } = await supabase
     .from('survey_submissions')
     .insert({
@@ -924,69 +949,21 @@ export async function submitCheckpoint(
       next_session_booked: data.nextSessionBooked,
       not_booked_reasons: data.notBookedReasons,
       open_to_followup: data.openToFollowup,
+      ...employeeFields,
     })
     .select()
     .single();
 
   if (error) {
-    console.error('Error submitting check-in:', error);
+    console.error('[submitCheckpoint] Error submitting check-in:', error);
     return { success: false, error: error.message };
   }
 
-  // Update with employee data (fire and forget - don't block on this)
-  (async () => {
-    try {
-      console.log('[submitCheckpoint] Starting employee data lookup for email:', email);
-
-      const { data: empData, error: empError } = await supabase
-        .from('employee_manager')
-        .select('first_name, last_name, account_name, program_title, program_type')
-        .ilike('company_email', email)
-        .limit(1);
-
-      console.log('[submitCheckpoint] Employee lookup result:', {
-        found: empData?.length || 0,
-        error: empError?.message || 'none',
-        errorCode: empError?.code || 'none'
-      });
-
-      if (empError) {
-        console.error('[submitCheckpoint] Employee lookup failed:', empError);
-        return;
-      }
-
-      if (empData && empData[0]) {
-        const emp = empData[0];
-        console.log('[submitCheckpoint] Found employee data:', {
-          first_name: emp.first_name,
-          last_name: emp.last_name,
-          account_name: emp.account_name,
-        });
-
-        const { error: updateError } = await supabase
-          .from('survey_submissions')
-          .update({
-            first_name: emp.first_name,
-            last_name: emp.last_name,
-            participant_name: [emp.first_name, emp.last_name].filter(Boolean).join(' ') || null,
-            account_name: emp.account_name,
-            program_title: emp.program_title,
-            program_type: emp.program_type,
-          })
-          .eq('id', result.id);
-
-        if (updateError) {
-          console.error('[submitCheckpoint] Survey update failed:', updateError);
-        } else {
-          console.log('[submitCheckpoint] Successfully updated survey with employee data');
-        }
-      } else {
-        console.log('[submitCheckpoint] No employee found for email:', email);
-      }
-    } catch (e) {
-      console.error('[submitCheckpoint] Employee data update exception:', e);
-    }
-  })();
+  console.log('[submitCheckpoint] Survey saved successfully with employee data:', {
+    id: result.id,
+    first_name: result.first_name,
+    account_name: result.account_name,
+  });
 
   // Map back to Checkpoint type for compatibility
   const checkpoint: Checkpoint = {
