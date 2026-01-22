@@ -936,15 +936,34 @@ export async function submitCheckpoint(
   // Update with employee data (fire and forget - don't block on this)
   (async () => {
     try {
-      const { data: empData } = await supabase
+      console.log('[submitCheckpoint] Starting employee data lookup for email:', email);
+
+      const { data: empData, error: empError } = await supabase
         .from('employee_manager')
         .select('first_name, last_name, account_name, program_title, program_type')
         .ilike('company_email', email)
         .limit(1);
 
+      console.log('[submitCheckpoint] Employee lookup result:', {
+        found: empData?.length || 0,
+        error: empError?.message || 'none',
+        errorCode: empError?.code || 'none'
+      });
+
+      if (empError) {
+        console.error('[submitCheckpoint] Employee lookup failed:', empError);
+        return;
+      }
+
       if (empData && empData[0]) {
         const emp = empData[0];
-        await supabase
+        console.log('[submitCheckpoint] Found employee data:', {
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          account_name: emp.account_name,
+        });
+
+        const { error: updateError } = await supabase
           .from('survey_submissions')
           .update({
             first_name: emp.first_name,
@@ -955,10 +974,17 @@ export async function submitCheckpoint(
             program_type: emp.program_type,
           })
           .eq('id', result.id);
-        console.log('Updated survey with employee data');
+
+        if (updateError) {
+          console.error('[submitCheckpoint] Survey update failed:', updateError);
+        } else {
+          console.log('[submitCheckpoint] Successfully updated survey with employee data');
+        }
+      } else {
+        console.log('[submitCheckpoint] No employee found for email:', email);
       }
     } catch (e) {
-      console.log('Employee data update failed:', e);
+      console.error('[submitCheckpoint] Employee data update exception:', e);
     }
   })();
 
