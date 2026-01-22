@@ -908,22 +908,14 @@ export async function submitCheckpoint(
   if (data.sessionNumber) outcomesParts.push(`Session ${data.sessionNumber}`);
   if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
 
-  // First, fetch employee data so we can include it in the initial insert
+  // First, fetch employee data using the existing function (which we know works)
   console.log('[submitCheckpoint] Looking up employee data for:', email);
-  const { data: empData, error: empError } = await supabase
-    .from('employee_manager')
-    .select('first_name, last_name, account_name, program_title, program_type')
-    .ilike('company_email', email)
-    .limit(1);
-
-  console.log('[submitCheckpoint] Employee lookup result:', {
-    found: empData?.length || 0,
-    error: empError?.message || 'none',
-    data: empData?.[0] || null
-  });
-
-  // Prepare employee fields (null if not found)
-  const emp = empData?.[0] || null;
+  const emp = await fetchEmployeeProfile(email);
+  console.log('[submitCheckpoint] Employee lookup result:', emp ? {
+    first_name: emp.first_name,
+    last_name: emp.last_name,
+    account_name: emp.account_name,
+  } : 'not found');
   const employeeFields = emp ? {
     first_name: emp.first_name,
     last_name: emp.last_name,
