@@ -877,11 +877,15 @@ export interface ScaleCheckinData {
   sessionId: string;
   sessionNumber: number;
   coachName: string;
-  sessionRating: number;      // 1-10
-  coachMatchRating: number;   // 1-10
-  feedbackText: string | null; // Combined: low score feedback + wins + anything else
-  nps: number;                // 0-10
+  sessionRating: number;         // 1-10 (experience rating)
+  coachMatchRating: number;      // 1-10
+  feedbackText: string | null;   // Combined text feedback
+  nps: number;                   // 0-10
   testimonialConsent: boolean;
+  // New fields for proper column mapping
+  nextSessionBooked: boolean | null;
+  notBookedReasons: string[] | null;
+  openToFollowup: boolean | null;
 }
 
 export async function submitCheckpoint(
@@ -915,6 +919,10 @@ export async function submitCheckpoint(
       p_feedback_suggestions: data.feedbackText,
       p_nps: data.nps,
       p_open_to_testimonial: data.testimonialConsent,
+      p_match_rating: data.coachMatchRating,
+      p_next_session_booked: data.nextSessionBooked,
+      p_not_booked_reasons: data.notBookedReasons,
+      p_open_to_followup: data.openToFollowup,
     });
 
   if (error) {

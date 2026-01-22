@@ -107,10 +107,18 @@ export default function CheckpointFlow({
     if (bookedNext) {
       feedbackParts.push(`Booked next session: ${bookedNext === 'yes' ? 'Yes' : 'No'}`);
     }
+    // Map option values to human-readable labels for feedback text
+    const whatsInTheWayLabels: Record<string, string> = {
+      'no_time': "Haven't had time to book",
+      'hard_to_find_time': 'Hard to find a time that works',
+      'not_sure_how': 'Not sure how to book',
+      'waiting_to_decide': 'Waiting to see if I want to continue',
+      'other': 'Other',
+    };
     if (whatsInTheWayOption) {
       const inTheWay = whatsInTheWayOption === 'other'
         ? `Other: ${whatsInTheWayOtherText}`
-        : whatsInTheWayOption;
+        : whatsInTheWayLabels[whatsInTheWayOption] || whatsInTheWayOption;
       feedbackParts.push(`What's in the way: ${inTheWay}`);
     }
     if (anythingElseText) {
@@ -118,6 +126,16 @@ export default function CheckpointFlow({
     }
     if (openToChat !== null) {
       feedbackParts.push(`Open to quick chat: ${openToChat === 'yes' ? 'Yes' : 'No'}`);
+    }
+
+    // Build not_booked_reasons array
+    let notBookedReasons: string[] | null = null;
+    if (bookedNext === 'no' && whatsInTheWayOption) {
+      if (whatsInTheWayOption === 'other') {
+        notBookedReasons = [`Other: ${whatsInTheWayOtherText}`];
+      } else {
+        notBookedReasons = [whatsInTheWayLabels[whatsInTheWayOption] || whatsInTheWayOption];
+      }
     }
 
     const checkinData: ScaleCheckinData = {
@@ -129,6 +147,9 @@ export default function CheckpointFlow({
       feedbackText: feedbackParts.length > 0 ? feedbackParts.join('\n\n') : null,
       nps: npsScore || 0,
       testimonialConsent: openToChat === 'yes',
+      nextSessionBooked: bookedNext === 'yes' ? true : bookedNext === 'no' ? false : null,
+      notBookedReasons,
+      openToFollowup: openToChat === 'yes' ? true : openToChat === 'no' ? false : null,
     };
 
     const result = await submitCheckpoint(userEmail, checkinData);
