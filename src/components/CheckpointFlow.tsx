@@ -13,6 +13,7 @@ interface CheckpointFlowProps {
   lastName: string | null;
   companyName: string | null;
   coachingProgram: string | null;
+  clientId: string | null;
   onComplete: (checkpoint: Checkpoint) => void;
   onClose: () => void;
 }
@@ -42,6 +43,7 @@ export default function CheckpointFlow({
   lastName,
   companyName,
   coachingProgram,
+  clientId,
   onComplete,
   onClose,
 }: CheckpointFlowProps) {
@@ -164,6 +166,7 @@ export default function CheckpointFlow({
       lastName,
       companyName,
       coachingProgram,
+      clientId,
     };
 
     try {

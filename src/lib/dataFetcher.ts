@@ -890,7 +890,8 @@ export interface ScaleCheckinData {
   firstName: string | null;
   lastName: string | null;
   companyName: string | null;      // Maps to survey_submissions.account_name
-  coachingProgram: string | null;  // Maps to survey_submissions.program_type
+  coachingProgram: string | null;  // Maps to survey_submissions.program_title
+  clientId: string | null;         // Maps to survey_submissions.company_id
 }
 
 export async function submitCheckpoint(
@@ -942,7 +943,8 @@ export async function submitCheckpoint(
       last_name: data.lastName,
       // participant_name is auto-generated from first_name + last_name
       account_name: data.companyName,
-      program_type: data.coachingProgram,
+      program_title: data.coachingProgram,
+      company_id: data.clientId,
     })
     .select()
     .single();

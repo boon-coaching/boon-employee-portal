@@ -515,6 +515,7 @@ function ProtectedApp() {
             lastName={employee?.last_name || null}
             companyName={employee?.company_name || null}
             coachingProgram={employee?.coaching_program || null}
+            clientId={employee?.client_id || null}
             onComplete={handleCheckpointComplete}
             onClose={() => setShowCheckpointFlow(false)}
           />
