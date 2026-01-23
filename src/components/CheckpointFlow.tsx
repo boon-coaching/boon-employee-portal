@@ -226,6 +226,16 @@ export default function CheckpointFlow({
       companyName,
       coachingProgram,
       companyId,
+      // Session 6+ wellbeing data (dedicated columns)
+      wellbeingSatisfaction: isSession6Plus ? jobSatisfaction : null,
+      wellbeingProductivity: isSession6Plus ? productivity : null,
+      wellbeingBalance: isSession6Plus ? workLifeBalance : null,
+      // Session 6+ benefits (dedicated boolean columns)
+      benefitProductive: selectedBenefits.includes('more_productive'),
+      benefitStress: selectedBenefits.includes('manage_stress'),
+      benefitPresent: selectedBenefits.includes('more_present'),
+      benefitTalents: selectedBenefits.includes('more_confident'),
+      benefitOptimistic: selectedBenefits.includes('more_optimistic'),
     };
 
     try {
