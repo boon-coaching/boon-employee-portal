@@ -8,6 +8,21 @@
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
+interface PracticeHistory {
+  totalSessions: number;
+  averageScore: number | null;
+  recentScenarios: Array<{ title: string; score: number | null; date: string }>;
+  commonStrengths: string[];
+  commonAreasToImprove: string[];
+}
+
+interface ScenarioHistory {
+  score: number | null;
+  strengths: string[] | null;
+  areas_to_improve: string[] | null;
+  created_at: string;
+}
+
 interface GeneratePlanRequest {
   action: 'generate-plan';
   scenario: {
@@ -17,6 +32,8 @@ interface GeneratePlanRequest {
     basePrompt: string;
   };
   context: string;
+  practiceHistory?: PracticeHistory | null;
+  scenarioHistory?: ScenarioHistory[] | null;
 }
 
 interface RoleplayRequest {
@@ -28,6 +45,7 @@ interface RoleplayRequest {
   };
   messages: Array<{ role: 'user' | 'model'; text: string }>;
   plan?: string;
+  practiceHistory?: PracticeHistory | null;
 }
 
 interface EvaluateRequest {
@@ -38,6 +56,8 @@ interface EvaluateRequest {
   };
   messages: Array<{ role: 'user' | 'model'; text: string }>;
   plan?: string;
+  practiceHistory?: PracticeHistory | null;
+  scenarioHistory?: ScenarioHistory[] | null;
 }
 
 type RequestBody = GeneratePlanRequest | RoleplayRequest | EvaluateRequest;
@@ -115,14 +135,53 @@ async function callClaudeWithHistory(
   return data.content[0].text;
 }
 
-function generatePlanPrompt(scenario: GeneratePlanRequest['scenario'], context: string): { system: string; user: string } {
+function formatHistoryContext(practiceHistory?: PracticeHistory | null, scenarioHistory?: ScenarioHistory[] | null): string {
+  const parts: string[] = [];
+
+  if (practiceHistory && practiceHistory.totalSessions > 0) {
+    parts.push(`**User's Practice History:**`);
+    parts.push(`- Total practice sessions: ${practiceHistory.totalSessions}`);
+    if (practiceHistory.averageScore) {
+      parts.push(`- Average score: ${practiceHistory.averageScore}/5`);
+    }
+    if (practiceHistory.commonStrengths.length > 0) {
+      parts.push(`- Demonstrated strengths: ${practiceHistory.commonStrengths.join(', ')}`);
+    }
+    if (practiceHistory.commonAreasToImprove.length > 0) {
+      parts.push(`- Areas they're working on: ${practiceHistory.commonAreasToImprove.join(', ')}`);
+    }
+  }
+
+  if (scenarioHistory && scenarioHistory.length > 0) {
+    parts.push(`\n**Previous attempts at this scenario:**`);
+    scenarioHistory.forEach((attempt, i) => {
+      const date = new Date(attempt.created_at).toLocaleDateString();
+      parts.push(`- Attempt ${i + 1} (${date}): Score ${attempt.score || 'N/A'}/5`);
+      if (attempt.areas_to_improve && attempt.areas_to_improve.length > 0) {
+        parts.push(`  Needed work on: ${attempt.areas_to_improve.slice(0, 2).join(', ')}`);
+      }
+    });
+  }
+
+  return parts.length > 0 ? parts.join('\n') : '';
+}
+
+function generatePlanPrompt(
+  scenario: GeneratePlanRequest['scenario'],
+  context: string,
+  practiceHistory?: PracticeHistory | null,
+  scenarioHistory?: ScenarioHistory[] | null
+): { system: string; user: string } {
+  const historyContext = formatHistoryContext(practiceHistory, scenarioHistory);
+
   const system = `You are a leadership and management coach helping professionals prepare for difficult workplace conversations and situations. You provide practical, actionable advice grounded in proven management frameworks.
 
 Your responses should be:
 - Direct and practical, not academic
 - Focused on specific language and behaviors
 - Empathetic but professional
-- Structured for easy reference during actual conversations`;
+- Structured for easy reference during actual conversations
+${historyContext ? `\n${historyContext}\n\nUse this history to personalize your advice. If they have specific areas to improve, emphasize those in your plan. If they've attempted this scenario before, acknowledge their progress and focus on what they struggled with previously.` : ''}`;
 
   const user = `I need help preparing for this situation:
 
@@ -161,7 +220,21 @@ A condensed "cheat sheet" version - just the key phrases and sequence you can qu
   return { system, user };
 }
 
-function roleplaySystemPrompt(scenario: RoleplayRequest['scenario'], plan?: string): string {
+function roleplaySystemPrompt(
+  scenario: RoleplayRequest['scenario'],
+  plan?: string,
+  practiceHistory?: PracticeHistory | null
+): string {
+  // If user has history showing they're struggling, be slightly more forgiving to build confidence
+  // If they're doing well, maintain realistic challenge level
+  const difficultyNote = practiceHistory?.averageScore !== null && practiceHistory?.averageScore !== undefined
+    ? practiceHistory.averageScore < 2.5
+      ? `\nNote: This user is still developing their skills (avg score: ${practiceHistory.averageScore}/5). Be realistic but give them reasonable openings to practice the right techniques.`
+      : practiceHistory.averageScore >= 4
+        ? `\nNote: This is an experienced practitioner (avg score: ${practiceHistory.averageScore}/5). You can be more challenging and nuanced in your responses.`
+        : ''
+    : '';
+
   return `You are playing the role of a person in a workplace scenario for practice purposes. The scenario is:
 
 **${scenario.title}**
@@ -179,14 +252,18 @@ Guidelines:
 - Keep responses conversational (2-4 sentences typically)
 - Use *asterisks* sparingly for actions/emotions when it adds context
 - If they handle things well, show gradual openness
-- If they handle things poorly, show realistic pushback`;
+- If they handle things poorly, show realistic pushback${difficultyNote}`;
 }
 
 function evaluationPrompt(
   scenario: EvaluateRequest['scenario'],
   messages: EvaluateRequest['messages'],
-  plan?: string
+  plan?: string,
+  practiceHistory?: PracticeHistory | null,
+  scenarioHistory?: ScenarioHistory[] | null
 ): { system: string; user: string } {
+  const historyContext = formatHistoryContext(practiceHistory, scenarioHistory);
+
   const system = `You are a brutally honest leadership coach evaluating a practice conversation. Your job is to give accurate, critical feedback - not to make the person feel good.
 
 Scoring guide:
@@ -196,7 +273,8 @@ Scoring guide:
 - 4/5: Good - solid execution with minor areas to polish
 - 5/5: Excellent - masterful handling, would use as a training example
 
-Most conversations should score 2-3. Only give 4+ if they genuinely demonstrated skill. Be specific about what was missing.`;
+Most conversations should score 2-3. Only give 4+ if they genuinely demonstrated skill. Be specific about what was missing.
+${historyContext ? `\n${historyContext}\n\nUse this history to provide context-aware feedback. Note if they've improved on previously identified weaknesses, or if they're repeating the same mistakes. Acknowledge growth where you see it.` : ''}`;
 
   const conversationText = messages
     .map(m => `${m.role === 'user' ? 'MANAGER' : 'OTHER PERSON'}: ${m.text}`)
@@ -249,7 +327,12 @@ Deno.serve(async (req) => {
 
     switch (body.action) {
       case 'generate-plan': {
-        const { system, user } = generatePlanPrompt(body.scenario, body.context);
+        const { system, user } = generatePlanPrompt(
+          body.scenario,
+          body.context,
+          body.practiceHistory,
+          body.scenarioHistory
+        );
         const plan = await callClaude(system, user);
         return new Response(
           JSON.stringify({ success: true, plan }),
@@ -258,7 +341,7 @@ Deno.serve(async (req) => {
       }
 
       case 'roleplay': {
-        const systemPrompt = roleplaySystemPrompt(body.scenario, body.plan);
+        const systemPrompt = roleplaySystemPrompt(body.scenario, body.plan, body.practiceHistory);
 
         // Convert messages to Claude format
         const claudeMessages = body.messages.map(m => ({
@@ -282,7 +365,13 @@ Deno.serve(async (req) => {
       }
 
       case 'evaluate': {
-        const { system, user } = evaluationPrompt(body.scenario, body.messages, body.plan);
+        const { system, user } = evaluationPrompt(
+          body.scenario,
+          body.messages,
+          body.plan,
+          body.practiceHistory,
+          body.scenarioHistory
+        );
         const evaluation = await callClaude(system, user);
         return new Response(
           JSON.stringify({ success: true, evaluation }),

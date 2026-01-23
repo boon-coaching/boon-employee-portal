@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { PracticeScenario } from '../data/scenarios';
 import { generatePlan, getRoleplayResponse, evaluateRoleplay, type ChatMessage } from '../lib/practiceService';
-import { savePlan, type TeamMember } from '../lib/storageService';
+import { savePlan, saveEvaluation, type TeamMember } from '../lib/storageService';
 
 interface PracticeModalProps {
   scenario: PracticeScenario;
@@ -67,7 +67,7 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
       fullContext = `About ${teamMember.name}${teamMember.role ? ` (${teamMember.role})` : ''}: ${teamMember.context || 'No additional context.'}\n\nSituation: ${context}`;
     }
 
-    const { plan, error: apiError } = await generatePlan(scenario, fullContext);
+    const { plan, error: apiError } = await generatePlan(scenario, fullContext, userEmail);
 
     if (apiError) {
       setError(apiError);
@@ -106,7 +106,7 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
     if (roleplayMessages.length === 0) {
       setIsRoleplayLoading(true);
       // Get the AI's initial response to start the conversation
-      const { response, error: apiError } = await getRoleplayResponse(scenario, [], generatedPlan || undefined);
+      const { response, error: apiError } = await getRoleplayResponse(scenario, [], generatedPlan || undefined, userEmail);
       setIsRoleplayLoading(false);
 
       if (apiError || !response) {
@@ -132,7 +132,8 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
     const { response, error: apiError } = await getRoleplayResponse(
       scenario,
       updatedMessages,
-      generatedPlan || undefined
+      generatedPlan || undefined,
+      userEmail
     );
 
     if (apiError || !response) {
@@ -154,7 +155,8 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
     const { evaluation: evalResult, error: apiError } = await evaluateRoleplay(
       scenario,
       roleplayMessages,
-      generatedPlan || undefined
+      generatedPlan || undefined,
+      userEmail
     );
 
     if (apiError || !evalResult) {
@@ -166,9 +168,18 @@ We couldn't generate an evaluation at this time. Please try again.
 **Next Step:** Discuss this scenario with ${coachName} in your next session to get personalized feedback.`);
     } else {
       // Append coach reference to evaluation
-      setEvaluation(`${evalResult}
+      const fullEvaluation = `${evalResult}
 
-**Next Step:** Discuss this scenario with ${coachName} in your next session to get personalized feedback.`);
+**Next Step:** Discuss this scenario with ${coachName} in your next session to get personalized feedback.`;
+      setEvaluation(fullEvaluation);
+
+      // Save evaluation to database for learning/memory
+      await saveEvaluation(userEmail, {
+        scenario_id: scenario.id,
+        scenario_title: scenario.title,
+        feedback: evalResult,
+        conversation: roleplayMessages,
+      });
     }
     setIsEvaluating(false);
   };
@@ -177,7 +188,7 @@ We couldn't generate an evaluation at this time. Please try again.
     setEvaluation(null);
     setIsRoleplayLoading(true);
 
-    const { response, error: apiError } = await getRoleplayResponse(scenario, [], generatedPlan || undefined);
+    const { response, error: apiError } = await getRoleplayResponse(scenario, [], generatedPlan || undefined, userEmail);
     setIsRoleplayLoading(false);
 
     if (apiError || !response) {
