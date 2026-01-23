@@ -250,28 +250,25 @@ export default function PreFirstSessionHome({
           </div>
 
           {/* Session Actions */}
-          <div className="mt-6 pt-6 border-t border-boon-blue/10 flex gap-4">
-            {showJoinButton && upcomingSession?.zoom_join_link ? (
+          {upcomingSession?.zoom_join_link && (
+            <div className="mt-6 pt-6 border-t border-boon-blue/10">
               <a
                 href={upcomingSession.zoom_join_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all shadow-lg"
+                className={`inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all shadow-lg ${
+                  showJoinButton
+                    ? 'text-white bg-green-600 hover:bg-green-700'
+                    : 'text-boon-blue bg-boon-lightBlue hover:bg-boon-lightBlue/80'
+                }`}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                Join Session
+                {showJoinButton ? 'Join Session' : 'Join Link'}
               </a>
-            ) : (
-              <button className="inline-flex items-center gap-2 text-sm font-bold text-boon-blue hover:underline">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add to calendar
-              </button>
-            )}
-          </div>
+            </div>
+          )}
         </section>
       ) : profile?.booking_link ? (
         /* No upcoming session yet - show Book Your Session CTA */

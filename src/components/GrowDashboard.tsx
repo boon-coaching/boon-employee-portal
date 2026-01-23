@@ -232,27 +232,22 @@ export default function GrowDashboard({
                 </p>
               </div>
 
-              {showJoinButton ? (
+              {upcomingSession.zoom_join_link && (
                 <a
-                  href={upcomingSession.zoom_join_link!}
+                  href={upcomingSession.zoom_join_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-boon-blue rounded-xl hover:bg-boon-darkBlue transition-all shadow-lg"
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all ${
+                    showJoinButton
+                      ? 'text-white bg-green-600 hover:bg-green-700 shadow-lg'
+                      : 'text-boon-blue bg-boon-lightBlue hover:bg-boon-lightBlue/80'
+                  }`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
-                  Join Session
+                  {showJoinButton ? 'Join Session' : 'Join Link'}
                 </a>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <button className="text-sm font-bold text-boon-blue hover:underline">
-                    Add to calendar
-                  </button>
-                  <button className="text-sm text-gray-400 hover:text-gray-600">
-                    Reschedule
-                  </button>
-                </div>
               )}
             </>
           ) : (
