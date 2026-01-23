@@ -897,6 +897,16 @@ export interface ScaleCheckinData {
   companyName: string | null;      // Maps to survey_submissions.account_name
   coachingProgram: string | null;  // Maps to survey_submissions.program_title
   companyId: string | null;        // Maps to survey_submissions.company_id
+  // Session 6+ wellbeing data (maps to dedicated columns)
+  wellbeingSatisfaction: number | null;
+  wellbeingProductivity: number | null;
+  wellbeingBalance: number | null;
+  // Session 6+ benefits (maps to dedicated boolean columns)
+  benefitProductive: boolean;
+  benefitStress: boolean;
+  benefitPresent: boolean;
+  benefitTalents: boolean;      // "More confident in my abilities"
+  benefitOptimistic: boolean;
 }
 
 export async function submitCheckpoint(
@@ -950,6 +960,16 @@ export async function submitCheckpoint(
       account_name: data.companyName,
       program_title: data.coachingProgram,
       company_id: data.companyId,
+      // Session 6+ wellbeing data (dedicated columns for analytics)
+      wellbeing_satisfaction: data.wellbeingSatisfaction,
+      wellbeing_productivity: data.wellbeingProductivity,
+      wellbeing_balance: data.wellbeingBalance,
+      // Session 6+ benefits (dedicated boolean columns)
+      benefit_productive: data.benefitProductive || null,
+      benefit_stress: data.benefitStress || null,
+      benefit_present: data.benefitPresent || null,
+      benefit_talents: data.benefitTalents || null,
+      benefit_optimistic: data.benefitOptimistic || null,
     })
     .select()
     .single();
