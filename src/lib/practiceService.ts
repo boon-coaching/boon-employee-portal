@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { PracticeScenario } from '../data/scenarios';
+import { getPracticeHistorySummary, getEvaluationsForScenario } from './storageService';
 
 interface GeneratePlanResponse {
   success: boolean;
@@ -29,9 +30,28 @@ export interface ChatMessage {
  */
 export async function generatePlan(
   scenario: PracticeScenario,
-  context: string
+  context: string,
+  userEmail?: string
 ): Promise<{ plan: string | null; error: string | null }> {
   try {
+    // Fetch practice history if user email provided
+    let practiceHistory = null;
+    let scenarioHistory = null;
+
+    if (userEmail) {
+      const [historyResult, scenarioResult] = await Promise.all([
+        getPracticeHistorySummary(userEmail),
+        getEvaluationsForScenario(userEmail, scenario.id),
+      ]);
+      practiceHistory = historyResult;
+      scenarioHistory = scenarioResult.map(e => ({
+        score: e.score,
+        strengths: e.strengths,
+        areas_to_improve: e.areas_to_improve,
+        created_at: e.created_at,
+      }));
+    }
+
     const { data, error } = await supabase.functions.invoke<GeneratePlanResponse>('practice-ai', {
       body: {
         action: 'generate-plan',
@@ -42,6 +62,8 @@ export async function generatePlan(
           basePrompt: scenario.basePrompt,
         },
         context,
+        practiceHistory,
+        scenarioHistory: scenarioHistory && scenarioHistory.length > 0 ? scenarioHistory : null,
       },
     });
 
@@ -67,9 +89,16 @@ export async function generatePlan(
 export async function getRoleplayResponse(
   scenario: PracticeScenario,
   messages: ChatMessage[],
-  plan?: string
+  plan?: string,
+  userEmail?: string
 ): Promise<{ response: string | null; error: string | null }> {
   try {
+    // Fetch practice history for adaptive difficulty
+    let practiceHistory = null;
+    if (userEmail) {
+      practiceHistory = await getPracticeHistorySummary(userEmail);
+    }
+
     const { data, error } = await supabase.functions.invoke<RoleplayResponse>('practice-ai', {
       body: {
         action: 'roleplay',
@@ -80,6 +109,7 @@ export async function getRoleplayResponse(
         },
         messages,
         plan,
+        practiceHistory,
       },
     });
 
@@ -105,9 +135,28 @@ export async function getRoleplayResponse(
 export async function evaluateRoleplay(
   scenario: PracticeScenario,
   messages: ChatMessage[],
-  plan?: string
+  plan?: string,
+  userEmail?: string
 ): Promise<{ evaluation: string | null; error: string | null }> {
   try {
+    // Fetch history for context-aware evaluation
+    let practiceHistory = null;
+    let scenarioHistory = null;
+
+    if (userEmail) {
+      const [historyResult, scenarioResult] = await Promise.all([
+        getPracticeHistorySummary(userEmail),
+        getEvaluationsForScenario(userEmail, scenario.id),
+      ]);
+      practiceHistory = historyResult;
+      scenarioHistory = scenarioResult.map(e => ({
+        score: e.score,
+        strengths: e.strengths,
+        areas_to_improve: e.areas_to_improve,
+        created_at: e.created_at,
+      }));
+    }
+
     const { data, error } = await supabase.functions.invoke<EvaluateResponse>('practice-ai', {
       body: {
         action: 'evaluate',
@@ -117,6 +166,8 @@ export async function evaluateRoleplay(
         },
         messages,
         plan,
+        practiceHistory,
+        scenarioHistory: scenarioHistory && scenarioHistory.length > 0 ? scenarioHistory : null,
       },
     });
 
