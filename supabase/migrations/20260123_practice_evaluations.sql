@@ -28,7 +28,7 @@ ALTER TABLE practice_evaluations ENABLE ROW LEVEL SECURITY;
 -- Users can read their own evaluations
 CREATE POLICY "Users can read own evaluations"
   ON practice_evaluations FOR SELECT
-  USING (lower(email) = lower(auth.jwt()->>'email') OR lower(employee_email) = lower(auth.jwt()->>'email'));
+  USING (lower(employee_email) = lower(auth.jwt()->>'email'));
 
 -- Users can insert their own evaluations
 CREATE POLICY "Users can insert own evaluations"
