@@ -1278,25 +1278,50 @@ export async function submitScaleFeedbackSurvey(
   coachName: string,
   data: {
     coach_satisfaction: number;
+    experience_rating?: number;
     wants_rematch?: boolean;
     rematch_reason?: string;
+    whats_not_working?: string;
     coach_qualities: CoachQuality[];
     has_booked_next_session: boolean;
+    booking_blockers?: string[];
     nps: number;
     feedback_suggestions?: string;
     // Extra fields for SCALE_END
     outcomes?: string;
     open_to_testimonial?: boolean;
+    open_to_chat?: boolean;
   },
   surveyType: 'scale_feedback' | 'scale_end' | 'grow_midpoint' = 'scale_feedback'
 ): Promise<{ success: boolean; error?: string }> {
-  // Build outcomes to include session info
+  // Build outcomes to include session info and additional survey data
   const outcomesParts: string[] = [`Session ${sessionNumber}`];
   if (data.outcomes) outcomesParts.push(data.outcomes);
 
+  // Build comprehensive feedback that includes all the new fields
+  const feedbackParts: string[] = [];
+  if (data.experience_rating) {
+    feedbackParts.push(`Experience: ${data.experience_rating}/10`);
+  }
+  if (data.whats_not_working) {
+    feedbackParts.push(`Issues: ${data.whats_not_working}`);
+  }
+  if (data.wants_rematch) {
+    feedbackParts.push(`Wants rematch: ${data.rematch_reason || 'Yes'}`);
+  }
+  if (data.booking_blockers && data.booking_blockers.length > 0) {
+    feedbackParts.push(`Booking blockers: ${data.booking_blockers.join(', ')}`);
+  }
+  if (data.open_to_chat) {
+    feedbackParts.push('Open to chat: Yes');
+  }
+  if (data.feedback_suggestions) {
+    feedbackParts.push(data.feedback_suggestions);
+  }
+
+  const combinedFeedback = feedbackParts.join(' | ');
+
   // Use RPC function to bypass RLS issues
-  // Note: wants_rematch, rematch_reason, coach_qualities, has_booked_next_session
-  // columns don't exist in the database - store important info in outcomes instead
   const { error } = await supabase
     .rpc('submit_survey_for_user', {
       user_email: email.toLowerCase(),
@@ -1304,7 +1329,7 @@ export async function submitScaleFeedbackSurvey(
       p_coach_name: coachName,
       p_coach_satisfaction: data.coach_satisfaction,
       p_outcomes: outcomesParts.join(', '),
-      p_feedback_suggestions: data.feedback_suggestions || null,
+      p_feedback_suggestions: combinedFeedback || null,
       p_nps: data.nps,
       p_open_to_testimonial: data.open_to_testimonial || false,
     });
