@@ -1134,15 +1134,32 @@ export async function fetchPendingSurvey(
   }
 
   // Filter to completed sessions at milestone numbers
+  // Note: appointment_number may come as string from database despite TypeScript type
   const completedSessions = loadedSessions.filter(s => s.status === 'Completed');
+
+  console.log('[fetchPendingSurvey] Completed sessions:', completedSessions.map(s => ({
+    id: s.id,
+    appointment_number: s.appointment_number,
+    appointment_number_type: typeof s.appointment_number,
+    status: s.status
+  })));
+
   const milestoneSessions = completedSessions
-    .filter(s => s.appointment_number !== null && milestones.includes(s.appointment_number))
+    .filter(s => {
+      if (s.appointment_number === null || s.appointment_number === undefined) return false;
+      // Convert to number in case it's stored as string in DB
+      const apptNum = typeof s.appointment_number === 'string'
+        ? parseInt(s.appointment_number, 10)
+        : s.appointment_number;
+      return !isNaN(apptNum) && milestones.includes(apptNum);
+    })
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime());
 
   console.log('[fetchPendingSurvey] Sessions at milestones:', {
     total: loadedSessions.length,
     completed: completedSessions.length,
     atMilestones: milestoneSessions.length,
+    milestoneSessionIds: milestoneSessions.map(s => s.id),
   });
 
   if (milestoneSessions.length === 0) {
@@ -1161,9 +1178,13 @@ export async function fetchPendingSurvey(
 
     if (!existingEndSurvey || existingEndSurvey.length === 0) {
       const latestSession = completedSessions[0]; // Already sorted desc in app
+      // Convert appointment_number to number (may come as string from DB)
+      const sessionNum = typeof latestSession.appointment_number === 'string'
+        ? parseInt(latestSession.appointment_number, 10)
+        : (latestSession.appointment_number ?? 1);
       return {
         session_id: latestSession.id,
-        session_number: latestSession.appointment_number ?? 1,
+        session_number: isNaN(sessionNum) ? 1 : sessionNum,
         session_date: latestSession.session_date,
         coach_name: latestSession.coach_name || 'Your Coach',
         survey_type: isGrow ? 'grow_end' : 'scale_end',
@@ -1189,16 +1210,22 @@ export async function fetchPendingSurvey(
     console.log('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
 
     if (!existingSurvey || existingSurvey.length === 0) {
+      // Convert appointment_number to number (may come as string from DB)
+      const sessionNum = typeof session.appointment_number === 'string'
+        ? parseInt(session.appointment_number, 10)
+        : (session.appointment_number ?? 1);
+      const finalSessionNum = isNaN(sessionNum) ? 1 : sessionNum;
+
       // Determine survey type based on program and session number
       // For GROW, midpoint is dynamically calculated (e.g., 4 for 8 sessions, 6 for 12 sessions)
       let surveyType: 'scale_feedback' | 'grow_midpoint' = 'scale_feedback';
-      if (isGrow && session.appointment_number === growMidpoint) {
+      if (isGrow && finalSessionNum === growMidpoint) {
         surveyType = 'grow_midpoint';
       }
 
       const pending = {
         session_id: session.id,
-        session_number: session.appointment_number ?? 1,
+        session_number: finalSessionNum,
         session_date: session.session_date,
         coach_name: session.coach_name || 'Your Coach',
         survey_type: surveyType,
