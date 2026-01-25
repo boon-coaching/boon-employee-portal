@@ -1066,8 +1066,22 @@ export async function fetchCoreCompetencies(): Promise<CoreCompetency[]> {
 }
 
 // Program-specific milestone arrays
+// SCALE: feedback at sessions 1, 3, 6, 12, 18, 24, 30, 36
 const SCALE_MILESTONES = [1, 3, 6, 12, 18, 24, 30, 36];
-const GROW_MILESTONES = [1, 6];
+// GROW: feedback at sessions 1, midpoint (dynamically calculated), end (handled separately)
+
+/**
+ * Calculate GROW milestones based on total sessions
+ * Midpoint = Math.floor(totalSessions / 2)
+ * e.g., 8 sessions → midpoint at 4, 12 sessions → midpoint at 6
+ */
+function getGrowMilestones(totalSessions: number): { milestones: number[]; midpoint: number } {
+  const midpoint = Math.floor(totalSessions / 2);
+  return {
+    milestones: [1, midpoint],
+    midpoint,
+  };
+}
 
 /**
  * Check for pending survey after login
@@ -1075,11 +1089,16 @@ const GROW_MILESTONES = [1, 6];
  * Handles GROW vs SCALE program types with different milestone arrays
  */
 export async function fetchPendingSurvey(email: string, programType?: string | null): Promise<PendingSurvey | null> {
+  console.log('[fetchPendingSurvey] Checking for pending survey:', { email, programType });
+
   // First, try the RPC function (uses the comprehensive pending_surveys view)
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_pending_survey', { user_email: email });
 
+  console.log('[fetchPendingSurvey] RPC result:', { rpcData, rpcError });
+
   if (!rpcError && rpcData && rpcData.length > 0) {
+    console.log('[fetchPendingSurvey] Found via RPC:', rpcData[0]);
     return rpcData[0] as PendingSurvey;
   }
 
@@ -1087,7 +1106,27 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   // Determine program type first
   const normalizedProgram = programType?.toUpperCase() || '';
   const isGrow = normalizedProgram === 'GROW' || normalizedProgram.startsWith('GROW');
-  const milestones = isGrow ? GROW_MILESTONES : SCALE_MILESTONES;
+
+  // For GROW programs, fetch actual total sessions from program enrollment
+  let sessionsPerEmployee = isGrow ? 12 : 36; // defaults
+  let growMidpoint = 6; // default midpoint for 12 sessions
+
+  if (isGrow) {
+    const { data: enrollment } = await supabase
+      .from('program_enrollments')
+      .select('sessions_per_employee')
+      .ilike('employee_email', email)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (enrollment && enrollment.length > 0 && enrollment[0].sessions_per_employee) {
+      sessionsPerEmployee = enrollment[0].sessions_per_employee;
+    }
+    const growConfig = getGrowMilestones(sessionsPerEmployee);
+    growMidpoint = growConfig.midpoint;
+  }
+
+  const milestones = isGrow ? getGrowMilestones(sessionsPerEmployee).milestones : SCALE_MILESTONES;
 
   // Get completed sessions count for end-of-program detection
   const { data: completedCount } = await supabase
@@ -1098,10 +1137,7 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
 
   const totalCompleted = completedCount?.length || 0;
 
-  // Check for end-of-program survey first
-  // Default sessions_per_employee is 6 for GROW, 36 for SCALE
-  const sessionsPerEmployee = isGrow ? 6 : 36;
-
+  // Check for end-of-program survey first (sessionsPerEmployee already calculated above)
   if (totalCompleted >= sessionsPerEmployee) {
     // Check if they've already submitted an end survey
     const { data: existingEndSurvey } = await supabase
@@ -1135,6 +1171,13 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
 
   // Get completed sessions at survey milestones without matching survey
   // Order by ascending (oldest first) so users complete surveys in order
+  console.log('[fetchPendingSurvey] Checking milestones:', {
+    milestones,
+    isGrow,
+    sessionsPerEmployee,
+    growMidpoint: isGrow ? growMidpoint : 'N/A',
+  });
+
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_tracking')
     .select('id, employee_email, session_date, appointment_number, coach_name, program_name')
@@ -1143,7 +1186,10 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
     .in('appointment_number', milestones)
     .order('session_date', { ascending: true });
 
+  console.log('[fetchPendingSurvey] Sessions at milestones:', { sessions, sessionsError });
+
   if (sessionsError || !sessions || sessions.length === 0) {
+    console.log('[fetchPendingSurvey] No milestone sessions found');
     return null;
   }
 
@@ -1151,6 +1197,8 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   // Since session_id column doesn't exist, check by matching outcomes field pattern
   for (const session of sessions) {
     const sessionPattern = `Session ${session.appointment_number}`;
+    console.log('[fetchPendingSurvey] Checking for existing survey:', { sessionPattern, sessionId: session.id });
+
     const { data: existingSurvey } = await supabase
       .from('survey_submissions')
       .select('id')
@@ -1158,16 +1206,25 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
       .ilike('outcomes', `%${sessionPattern}%`)
       .limit(1);
 
+    console.log('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
+
     if (!existingSurvey || existingSurvey.length === 0) {
-      // All milestone surveys use scale_feedback for now
-      // (GROW and SCALE use same questions for regular feedback)
-      return {
+      // Determine survey type based on program and session number
+      // For GROW, midpoint is dynamically calculated (e.g., 4 for 8 sessions, 6 for 12 sessions)
+      let surveyType: 'scale_feedback' | 'grow_midpoint' = 'scale_feedback';
+      if (isGrow && session.appointment_number === growMidpoint) {
+        surveyType = 'grow_midpoint';
+      }
+
+      const pending = {
         session_id: session.id,
         session_number: session.appointment_number,
         session_date: session.session_date,
         coach_name: session.coach_name || 'Your Coach',
-        survey_type: 'scale_feedback',
+        survey_type: surveyType,
       };
+      console.log('[fetchPendingSurvey] Found pending survey:', pending);
+      return pending;
     }
   }
 
@@ -1224,7 +1281,7 @@ export async function submitScaleFeedbackSurvey(
     outcomes?: string;
     open_to_testimonial?: boolean;
   },
-  surveyType: 'scale_feedback' | 'scale_end' = 'scale_feedback'
+  surveyType: 'scale_feedback' | 'scale_end' | 'grow_midpoint' = 'scale_feedback'
 ): Promise<{ success: boolean; error?: string }> {
   // Build outcomes to include session info
   const outcomesParts: string[] = [`Session ${sessionNumber}`];
@@ -1431,7 +1488,7 @@ export async function fetchProgramInfo(programId: string | null): Promise<Progra
       return {
         program_title: data.name || programId,
         program_type: data.program_type || programType,
-        sessions_per_employee: data.sessions_per_employee || (programType === 'GROW' ? 6 : 36),
+        sessions_per_employee: data.sessions_per_employee || (programType === 'GROW' ? 12 : 36),
         program_start_date: null,
         program_end_date: data.program_end_date || null,
       };
@@ -1460,7 +1517,7 @@ export async function fetchProgramInfo(programId: string | null): Promise<Progra
   return {
     program_title: programId,
     program_type: programType,
-    sessions_per_employee: programType === 'GROW' ? 6 : 36,
+    sessions_per_employee: programType === 'GROW' ? 12 : 36,
     program_start_date: null,
     program_end_date: null,
   };
@@ -1475,6 +1532,22 @@ export interface GrowFocusArea {
  * Fetch participant's GROW focus areas and baseline scores
  * Gets the 3 focus areas they selected plus their baseline scores
  */
+// Map of focus_* field names to display labels
+const GROW_FOCUS_AREA_LABELS: Record<string, string> = {
+  focus_effective_communication: 'Effective Communication',
+  focus_persuasion_and_influence: 'Persuasion & Influence',
+  focus_giving_and_receiving_feedback: 'Giving & Receiving Feedback',
+  focus_building_relationships: 'Building Relationships',
+  focus_delegation_and_accountability: 'Delegation & Accountability',
+  focus_planning_and_execution: 'Planning & Execution',
+  focus_change_management: 'Change Management',
+  focus_emotional_intelligence: 'Emotional Intelligence',
+  focus_self_confidence: 'Self Confidence',
+  focus_adaptability_and_resilience: 'Adaptability & Resilience',
+  focus_strategic_thinking: 'Strategic Thinking',
+  focus_time_management: 'Time Management',
+};
+
 export async function fetchGrowFocusAreas(email: string): Promise<GrowFocusArea[]> {
   // First, try to get focus areas from survey_submissions (native survey)
   const { data: surveyData } = await supabase
@@ -1490,20 +1563,36 @@ export async function fetchGrowFocusAreas(email: string): Promise<GrowFocusArea[
   if (surveyData && surveyData.length > 0 && surveyData[0].focus_areas) {
     focusAreas = surveyData[0].focus_areas;
   } else {
-    // Fallback: Try to get from welcome_survey_baseline coaching_priorities
+    // Fallback: Try to get from welcome_survey_baseline
     const { data: baselineData } = await supabase
       .from('welcome_survey_baseline')
-      .select('coaching_priorities')
+      .select('coaching_priorities, focus_effective_communication, focus_persuasion_and_influence, focus_giving_and_receiving_feedback, focus_building_relationships, focus_delegation_and_accountability, focus_planning_and_execution, focus_change_management, focus_emotional_intelligence, focus_self_confidence, focus_adaptability_and_resilience, focus_strategic_thinking, focus_time_management')
       .ilike('email', email)
       .limit(1);
 
-    if (baselineData && baselineData.length > 0 && baselineData[0].coaching_priorities) {
-      // coaching_priorities might be a string or array
-      const priorities = baselineData[0].coaching_priorities;
-      if (Array.isArray(priorities)) {
-        focusAreas = priorities.slice(0, 3);
-      } else if (typeof priorities === 'string') {
-        focusAreas = priorities.split(',').map((p: string) => p.trim()).slice(0, 3);
+    if (baselineData && baselineData.length > 0) {
+      const baseline = baselineData[0];
+
+      // First try coaching_priorities
+      if (baseline.coaching_priorities) {
+        const priorities = baseline.coaching_priorities;
+        if (Array.isArray(priorities)) {
+          focusAreas = priorities.slice(0, 3);
+        } else if (typeof priorities === 'string') {
+          focusAreas = priorities.split(',').map((p: string) => p.trim()).slice(0, 3);
+        }
+      }
+
+      // If no coaching_priorities, check focus_* boolean fields
+      if (focusAreas.length === 0) {
+        const selectedFocusAreas: string[] = [];
+        for (const [fieldName, label] of Object.entries(GROW_FOCUS_AREA_LABELS)) {
+          const value = (baseline as Record<string, unknown>)[fieldName];
+          if (value === true || value === 'true') {
+            selectedFocusAreas.push(label);
+          }
+        }
+        focusAreas = selectedFocusAreas.slice(0, 3);
       }
     }
   }
