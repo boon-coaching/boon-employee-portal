@@ -1066,8 +1066,10 @@ export async function fetchCoreCompetencies(): Promise<CoreCompetency[]> {
 }
 
 // Program-specific milestone arrays
+// SCALE: feedback at sessions 1, 3, 6, 12, 18, 24, 30, 36
 const SCALE_MILESTONES = [1, 3, 6, 12, 18, 24, 30, 36];
-const GROW_MILESTONES = [1, 6];
+// GROW: feedback after every session (12 sessions total)
+const GROW_MILESTONES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /**
  * Check for pending survey after login
@@ -1075,11 +1077,16 @@ const GROW_MILESTONES = [1, 6];
  * Handles GROW vs SCALE program types with different milestone arrays
  */
 export async function fetchPendingSurvey(email: string, programType?: string | null): Promise<PendingSurvey | null> {
+  console.log('[fetchPendingSurvey] Checking for pending survey:', { email, programType });
+
   // First, try the RPC function (uses the comprehensive pending_surveys view)
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_pending_survey', { user_email: email });
 
+  console.log('[fetchPendingSurvey] RPC result:', { rpcData, rpcError });
+
   if (!rpcError && rpcData && rpcData.length > 0) {
+    console.log('[fetchPendingSurvey] Found via RPC:', rpcData[0]);
     return rpcData[0] as PendingSurvey;
   }
 
@@ -1099,8 +1106,8 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   const totalCompleted = completedCount?.length || 0;
 
   // Check for end-of-program survey first
-  // Default sessions_per_employee is 6 for GROW, 36 for SCALE
-  const sessionsPerEmployee = isGrow ? 6 : 36;
+  // Default sessions_per_employee is 12 for GROW, 36 for SCALE
+  const sessionsPerEmployee = isGrow ? 12 : 36;
 
   if (totalCompleted >= sessionsPerEmployee) {
     // Check if they've already submitted an end survey
@@ -1135,6 +1142,8 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
 
   // Get completed sessions at survey milestones without matching survey
   // Order by ascending (oldest first) so users complete surveys in order
+  console.log('[fetchPendingSurvey] Checking milestones:', { milestones, isGrow });
+
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_tracking')
     .select('id, employee_email, session_date, appointment_number, coach_name, program_name')
@@ -1143,7 +1152,10 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
     .in('appointment_number', milestones)
     .order('session_date', { ascending: true });
 
+  console.log('[fetchPendingSurvey] Sessions at milestones:', { sessions, sessionsError });
+
   if (sessionsError || !sessions || sessions.length === 0) {
+    console.log('[fetchPendingSurvey] No milestone sessions found');
     return null;
   }
 
@@ -1151,6 +1163,8 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
   // Since session_id column doesn't exist, check by matching outcomes field pattern
   for (const session of sessions) {
     const sessionPattern = `Session ${session.appointment_number}`;
+    console.log('[fetchPendingSurvey] Checking for existing survey:', { sessionPattern, sessionId: session.id });
+
     const { data: existingSurvey } = await supabase
       .from('survey_submissions')
       .select('id')
@@ -1158,16 +1172,20 @@ export async function fetchPendingSurvey(email: string, programType?: string | n
       .ilike('outcomes', `%${sessionPattern}%`)
       .limit(1);
 
+    console.log('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
+
     if (!existingSurvey || existingSurvey.length === 0) {
       // All milestone surveys use scale_feedback for now
       // (GROW and SCALE use same questions for regular feedback)
-      return {
+      const pending = {
         session_id: session.id,
         session_number: session.appointment_number,
         session_date: session.session_date,
         coach_name: session.coach_name || 'Your Coach',
-        survey_type: 'scale_feedback',
+        survey_type: 'scale_feedback' as const,
       };
+      console.log('[fetchPendingSurvey] Found pending survey:', pending);
+      return pending;
     }
   }
 
@@ -1431,7 +1449,7 @@ export async function fetchProgramInfo(programId: string | null): Promise<Progra
       return {
         program_title: data.name || programId,
         program_type: data.program_type || programType,
-        sessions_per_employee: data.sessions_per_employee || (programType === 'GROW' ? 6 : 36),
+        sessions_per_employee: data.sessions_per_employee || (programType === 'GROW' ? 12 : 36),
         program_start_date: null,
         program_end_date: data.program_end_date || null,
       };
@@ -1460,7 +1478,7 @@ export async function fetchProgramInfo(programId: string | null): Promise<Progra
   return {
     program_title: programId,
     program_type: programType,
-    sessions_per_employee: programType === 'GROW' ? 6 : 36,
+    sessions_per_employee: programType === 'GROW' ? 12 : 36,
     program_start_date: null,
     program_end_date: null,
   };
@@ -1475,6 +1493,22 @@ export interface GrowFocusArea {
  * Fetch participant's GROW focus areas and baseline scores
  * Gets the 3 focus areas they selected plus their baseline scores
  */
+// Map of focus_* field names to display labels
+const GROW_FOCUS_AREA_LABELS: Record<string, string> = {
+  focus_effective_communication: 'Effective Communication',
+  focus_persuasion_and_influence: 'Persuasion & Influence',
+  focus_giving_and_receiving_feedback: 'Giving & Receiving Feedback',
+  focus_building_relationships: 'Building Relationships',
+  focus_delegation_and_accountability: 'Delegation & Accountability',
+  focus_planning_and_execution: 'Planning & Execution',
+  focus_change_management: 'Change Management',
+  focus_emotional_intelligence: 'Emotional Intelligence',
+  focus_self_confidence: 'Self Confidence',
+  focus_adaptability_and_resilience: 'Adaptability & Resilience',
+  focus_strategic_thinking: 'Strategic Thinking',
+  focus_time_management: 'Time Management',
+};
+
 export async function fetchGrowFocusAreas(email: string): Promise<GrowFocusArea[]> {
   // First, try to get focus areas from survey_submissions (native survey)
   const { data: surveyData } = await supabase
@@ -1490,20 +1524,36 @@ export async function fetchGrowFocusAreas(email: string): Promise<GrowFocusArea[
   if (surveyData && surveyData.length > 0 && surveyData[0].focus_areas) {
     focusAreas = surveyData[0].focus_areas;
   } else {
-    // Fallback: Try to get from welcome_survey_baseline coaching_priorities
+    // Fallback: Try to get from welcome_survey_baseline
     const { data: baselineData } = await supabase
       .from('welcome_survey_baseline')
-      .select('coaching_priorities')
+      .select('coaching_priorities, focus_effective_communication, focus_persuasion_and_influence, focus_giving_and_receiving_feedback, focus_building_relationships, focus_delegation_and_accountability, focus_planning_and_execution, focus_change_management, focus_emotional_intelligence, focus_self_confidence, focus_adaptability_and_resilience, focus_strategic_thinking, focus_time_management')
       .ilike('email', email)
       .limit(1);
 
-    if (baselineData && baselineData.length > 0 && baselineData[0].coaching_priorities) {
-      // coaching_priorities might be a string or array
-      const priorities = baselineData[0].coaching_priorities;
-      if (Array.isArray(priorities)) {
-        focusAreas = priorities.slice(0, 3);
-      } else if (typeof priorities === 'string') {
-        focusAreas = priorities.split(',').map((p: string) => p.trim()).slice(0, 3);
+    if (baselineData && baselineData.length > 0) {
+      const baseline = baselineData[0];
+
+      // First try coaching_priorities
+      if (baseline.coaching_priorities) {
+        const priorities = baseline.coaching_priorities;
+        if (Array.isArray(priorities)) {
+          focusAreas = priorities.slice(0, 3);
+        } else if (typeof priorities === 'string') {
+          focusAreas = priorities.split(',').map((p: string) => p.trim()).slice(0, 3);
+        }
+      }
+
+      // If no coaching_priorities, check focus_* boolean fields
+      if (focusAreas.length === 0) {
+        const selectedFocusAreas: string[] = [];
+        for (const [fieldName, label] of Object.entries(GROW_FOCUS_AREA_LABELS)) {
+          const value = (baseline as Record<string, unknown>)[fieldName];
+          if (value === true || value === 'true') {
+            selectedFocusAreas.push(label);
+          }
+        }
+        focusAreas = selectedFocusAreas.slice(0, 3);
       }
     }
   }
