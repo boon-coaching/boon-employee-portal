@@ -45,11 +45,20 @@ export default function GrowDashboard({
     const loadGrowData = async () => {
       if (!profile?.program || !userEmail) return;
 
+      console.log('[GrowDashboard] Loading data for:', { userEmail, coachName, program: profile.program });
+
       const [progInfo, areas, coach] = await Promise.all([
         fetchProgramInfo(profile.program),
         fetchGrowFocusAreas(userEmail),
         coachName !== 'Your Coach' ? fetchCoachByName(coachName) : Promise.resolve(null),
       ]);
+
+      console.log('[GrowDashboard] Coach fetch result:', {
+        coachName,
+        coachFound: !!coach,
+        coachPhotoUrl: coach?.photo_url,
+        fullCoachData: coach
+      });
 
       if (progInfo) setProgramInfo(progInfo);
       if (areas) setFocusAreas(areas);
@@ -74,6 +83,14 @@ export default function GrowDashboard({
 
   // Action items for "Things You're Working On"
   const pendingActions = actionItems.filter(a => a.status === 'pending');
+
+  // Debug: Log action items
+  console.log('[GrowDashboard] Action items:', {
+    totalReceived: actionItems.length,
+    pendingCount: pendingActions.length,
+    allItems: actionItems,
+    completedSessionsCount: completedSessions.length
+  });
 
   // Session prep reflection state
   const [reflection, setReflection] = useState('');

@@ -325,6 +325,8 @@ export async function fetchLatestSurveyResponse(email: string): Promise<SurveyRe
  * Fetch action items for an employee
  */
 export async function fetchActionItems(email: string): Promise<ActionItem[]> {
+  console.log('[fetchActionItems] Fetching for email:', email);
+
   const { data, error } = await supabase
     .from('action_items')
     .select('*')
@@ -332,6 +334,11 @@ export async function fetchActionItems(email: string): Promise<ActionItem[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
+    console.log('[fetchActionItems] Error:', {
+      errorCode: error.code,
+      errorMessage: error.message,
+      searchedEmail: email
+    });
     // Table might not exist yet
     if (error.code !== '42P01') {
       console.error('Error fetching action items:', error);
@@ -339,6 +346,10 @@ export async function fetchActionItems(email: string): Promise<ActionItem[]> {
     return [];
   }
 
+  console.log('[fetchActionItems] Found items:', {
+    count: data?.length || 0,
+    items: data
+  });
   return (data as ActionItem[]) || [];
 }
 
@@ -396,6 +407,8 @@ export async function submitSessionFeedback(
  * Fetch coach details by name
  */
 export async function fetchCoachByName(coachName: string): Promise<Coach | null> {
+  console.log('[fetchCoachByName] Searching for coach:', coachName);
+
   const { data, error } = await supabase
     .from('coaches')
     .select('*')
@@ -403,6 +416,11 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
     .single();
 
   if (error) {
+    console.log('[fetchCoachByName] Error or no match:', {
+      errorCode: error.code,
+      errorMessage: error.message,
+      searchedName: coachName
+    });
     // Coaches table might not exist
     if (error.code !== 'PGRST116') {
       console.error('Error fetching coach by name:', error);
@@ -410,6 +428,11 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
     return null;
   }
 
+  console.log('[fetchCoachByName] Found coach:', {
+    name: data?.name,
+    hasPhotoUrl: !!data?.photo_url,
+    photoUrl: data?.photo_url
+  });
   return data as Coach;
 }
 
