@@ -1217,14 +1217,14 @@ export async function fetchPendingSurvey(
       const finalSessionNum = isNaN(sessionNum) ? 1 : sessionNum;
 
       // Determine survey type based on program and session number
-      // For GROW: session 1 = grow_first_session, midpoint = grow_midpoint
-      // For SCALE: all milestones = scale_feedback
-      let surveyType: 'scale_feedback' | 'grow_first_session' | 'grow_midpoint' = 'scale_feedback';
+      // For GROW: session 1 = first_session, midpoint = midpoint
+      // For SCALE: all milestones = feedback
+      let surveyType: 'feedback' | 'first_session' | 'midpoint' = 'feedback';
       if (isGrow) {
         if (finalSessionNum === 1) {
-          surveyType = 'grow_first_session';
+          surveyType = 'first_session';
         } else if (finalSessionNum === growMidpoint) {
-          surveyType = 'grow_midpoint';
+          surveyType = 'midpoint';
         }
       }
 
@@ -1496,7 +1496,7 @@ export async function submitGrowFirstSessionSurvey(
   const { error } = await supabase
     .rpc('submit_survey_for_user', {
       user_email: email.toLowerCase(),
-      p_survey_type: 'grow_first_session',
+      p_survey_type: 'first_session',
       p_coach_name: coachName,
       p_coach_satisfaction: data.coach_match_rating, // Use coach match rating
       p_outcomes: outcomesParts.join(', '),
