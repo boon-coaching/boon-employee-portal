@@ -373,7 +373,7 @@ export default function GrowDashboard({
             <img
               src={getCoachPhotoUrl()}
               alt={coachName}
-              className="w-16 h-16 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
+              className="w-16 h-20 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
             />
             <div className="flex-1">
               <h3 className="text-lg font-bold text-boon-text">{coachName}</h3>
