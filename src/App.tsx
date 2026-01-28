@@ -12,6 +12,7 @@ import NoEmployeeFound from './pages/NoEmployeeFound';
 import WelcomePage from './pages/WelcomePage';
 import MatchingPage from './pages/MatchingPage';
 import FeedbackPage from './pages/FeedbackPage';
+import WelcomeCompletePage from './pages/WelcomeCompletePage';
 
 // Components
 import Layout from './components/Layout';
@@ -602,6 +603,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/welcome-complete" element={<WelcomeCompletePage />} />
       <Route
         path="/feedback"
         element={
