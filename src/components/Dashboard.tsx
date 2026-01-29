@@ -96,6 +96,7 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
         profile={profile}
         sessions={sessions}
         actionItems={actionItems}
+        baseline={baseline}
         coachingState={coachingState}
         onActionUpdate={onActionUpdate}
         userEmail={userEmail}

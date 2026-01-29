@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Employee, Session, ActionItem, View, Coach } from '../lib/types';
+import type { Employee, Session, ActionItem, View, Coach, BaselineSurvey } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { supabase } from '../lib/supabase';
@@ -62,6 +62,28 @@ function extractCoachSummary(matchSummary: string | null, coachName: string): st
 }
 
 /**
+ * Create a personalized coach description based on the employee's coaching goals.
+ */
+function createPersonalizedDescription(coachFirstName: string, coachingGoals: string | null): string | null {
+  if (!coachingGoals) return null;
+
+  // Truncate goals if too long (keep first ~150 chars at sentence boundary)
+  let truncatedGoals = coachingGoals;
+  if (coachingGoals.length > 150) {
+    const truncated = coachingGoals.substring(0, 150);
+    const lastPeriod = truncated.lastIndexOf('.');
+    if (lastPeriod > 80) {
+      truncatedGoals = coachingGoals.substring(0, lastPeriod + 1);
+    } else {
+      const lastSpace = truncated.lastIndexOf(' ');
+      truncatedGoals = lastSpace > 0 ? coachingGoals.substring(0, lastSpace) + '...' : truncated + '...';
+    }
+  }
+
+  return `Based on your goal to ${truncatedGoals.toLowerCase().replace(/^i want to |^i'd like to |^i would like to /i, '').replace(/\.$/, '')}, ${coachFirstName} will partner with you to develop strategies and build the skills you need to succeed.`;
+}
+
+/**
  * Truncate text to approximately N characters, ending at a sentence boundary.
  */
 function truncateBio(text: string | null, maxLength: number = 280): string | null {
@@ -93,6 +115,7 @@ interface GrowDashboardProps {
   profile: Employee | null;
   sessions: Session[];
   actionItems: ActionItem[];
+  baseline: BaselineSurvey | null;
   coachingState: CoachingStateData;
   onActionUpdate: () => void;
   userEmail: string;
@@ -103,6 +126,7 @@ export default function GrowDashboard({
   profile,
   sessions,
   actionItems,
+  baseline,
   coachingState,
   onActionUpdate,
   userEmail,
@@ -122,6 +146,7 @@ export default function GrowDashboard({
   const [focusAreas, setFocusAreas] = useState<GrowFocusArea[]>([]);
   const [coachProfile, setCoachProfile] = useState<Coach | null>(null);
   const [matchSummary, setMatchSummary] = useState<string | null>(null);
+  const [isLoadingCoachData, setIsLoadingCoachData] = useState(true);
 
   // Load GROW-specific data
   useEffect(() => {
@@ -129,6 +154,7 @@ export default function GrowDashboard({
       // Only require userEmail - profile.program may be null if derived from session
       if (!userEmail) return;
 
+      setIsLoadingCoachData(true);
       console.log('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.program });
 
       // Fetch program info and focus areas in parallel (program info is optional)
@@ -176,6 +202,7 @@ export default function GrowDashboard({
       if (areas) setFocusAreas(areas);
       if (coach) setCoachProfile(coach as Coach);
       if (summary) setMatchSummary(summary);
+      setIsLoadingCoachData(false);
     };
 
     loadGrowData();
@@ -220,35 +247,38 @@ export default function GrowDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Load existing reflection for upcoming session
+  // Load existing reflection for upcoming session from session_tracking
   useEffect(() => {
     const loadReflection = async () => {
-      if (!upcomingSession || !userEmail) return;
+      if (!upcomingSession?.id) return;
 
       try {
         const { data, error } = await supabase
-          .from('session_prep')
-          .select('intention')
-          .eq('email', userEmail.toLowerCase())
-          .eq('session_id', upcomingSession.id)
+          .from('session_tracking')
+          .select('employee_pre_session_note')
+          .eq('id', upcomingSession.id)
           .single();
 
-        if (!error && data) {
-          setReflection(data.intention || '');
+        if (!error && data?.employee_pre_session_note) {
+          setReflection(data.employee_pre_session_note);
+          return;
         }
       } catch {
-        const key = `session_prep_${userEmail}_${upcomingSession.id}`;
-        const saved = localStorage.getItem(key);
-        if (saved) setReflection(saved);
+        // Ignore errors
       }
+
+      // Try localStorage fallback
+      const key = `session_prep_${userEmail}_${upcomingSession.id}`;
+      const saved = localStorage.getItem(key);
+      if (saved) setReflection(saved);
     };
 
     loadReflection();
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
-  // Auto-save reflection with debounce
+  // Auto-save reflection with debounce to session_tracking
   const saveReflection = useCallback(async (text: string) => {
-    if (!upcomingSession || !userEmail) return;
+    if (!upcomingSession?.id) return;
 
     setIsSaving(true);
     const key = `session_prep_${userEmail}_${upcomingSession.id}`;
@@ -256,21 +286,23 @@ export default function GrowDashboard({
 
     try {
       const { error } = await supabase
-        .from('session_prep')
-        .upsert({
-          email: userEmail.toLowerCase(),
-          session_id: upcomingSession.id,
-          intention: text,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email,session_id' });
+        .from('session_tracking')
+        .update({ employee_pre_session_note: text })
+        .eq('id', upcomingSession.id);
 
-      if (!error) setLastSaved(new Date());
-    } catch {
+      if (error) {
+        console.error('[GrowDashboard] Error saving pre-session note:', error);
+      } else {
+        console.log('[GrowDashboard] Pre-session note saved successfully');
+        setLastSaved(new Date());
+      }
+    } catch (err) {
+      console.error('[GrowDashboard] Exception saving pre-session note:', err);
       // localStorage saved as fallback
     }
 
     setIsSaving(false);
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
   useEffect(() => {
     if (!reflection) return;
@@ -451,31 +483,55 @@ export default function GrowDashboard({
             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Coach</span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <img
-              src={getCoachPhotoUrl()}
-              alt={coachName}
-              className="w-16 h-20 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
-            />
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-boon-text">{coachName}</h3>
-              {coachProfile?.headline ? (
-                <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">
-                  {coachProfile.headline}
-                </p>
-              ) : (
-                <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">Executive Coach</p>
-              )}
-              <p className="text-sm text-gray-500 mt-1">
-                {sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'} together
-              </p>
+          {isLoadingCoachData ? (
+            /* Loading skeleton */
+            <div className="animate-pulse">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-20 rounded-xl bg-gray-200" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-5 bg-gray-200 rounded w-32" />
+                  <div className="h-3 bg-gray-200 rounded w-48" />
+                  <div className="h-4 bg-gray-200 rounded w-24" />
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-5/6" />
+                <div className="h-4 bg-gray-200 rounded w-4/6" />
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4">
+                <img
+                  src={getCoachPhotoUrl()}
+                  alt={coachName}
+                  className="w-16 h-20 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
+                />
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-boon-text">{coachName}</h3>
+                  {coachProfile?.headline ? (
+                    <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">
+                      {coachProfile.headline}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">Executive Coach</p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    {sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'} together
+                  </p>
+                </div>
+              </div>
 
-          {/* Dynamic coach description from match_summary, fallback to truncated bio */}
-          <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-            {truncateBio(extractCoachSummary(matchSummary, coachName) || coachProfile?.bio || null, 280) || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential through personalized coaching.`}
-          </p>
+              {/* Dynamic coach description: match_summary > personalized from goals > truncated bio > generic */}
+              <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+                {truncateBio(extractCoachSummary(matchSummary, coachName), 280)
+                  || createPersonalizedDescription(coachFirstName, baseline?.coaching_goals || null)
+                  || truncateBio(coachProfile?.bio || null, 280)
+                  || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential through personalized coaching.`}
+              </p>
+            </>
+          )}
         </section>
       </div>
 

@@ -74,6 +74,27 @@ function truncateBio(text: string | null, maxLength: number = 280): string | nul
   return truncated + '...';
 }
 
+/**
+ * Create a personalized coach description based on the employee's coaching goals.
+ */
+function createPersonalizedDescription(coachFirstName: string, coachingGoals: string | null): string | null {
+  if (!coachingGoals) return null;
+
+  let truncatedGoals = coachingGoals;
+  if (coachingGoals.length > 150) {
+    const truncated = coachingGoals.substring(0, 150);
+    const lastPeriod = truncated.lastIndexOf('.');
+    if (lastPeriod > 80) {
+      truncatedGoals = coachingGoals.substring(0, lastPeriod + 1);
+    } else {
+      const lastSpace = truncated.lastIndexOf(' ');
+      truncatedGoals = lastSpace > 0 ? coachingGoals.substring(0, lastSpace) + '...' : truncated + '...';
+    }
+  }
+
+  return `Based on your goal to ${truncatedGoals.toLowerCase().replace(/^i want to |^i'd like to |^i would like to /i, '').replace(/\.$/, '')}, ${coachFirstName} will partner with you to develop strategies and build the skills you need to succeed.`;
+}
+
 interface PreFirstSessionHomeProps {
   profile: Employee | null;
   sessions: Session[];
@@ -101,16 +122,19 @@ export default function PreFirstSessionHome({
     upcomingSession?.coach_name || sessions[0]?.coach_name || 'Your Coach'
   );
   const [matchSummary, setMatchSummary] = useState<string | null>(null);
+  const [isLoadingCoachData, setIsLoadingCoachData] = useState(true);
 
   // Fetch coach details
   useEffect(() => {
     const loadCoachDetails = async () => {
+      setIsLoadingCoachData(true);
       // If we have coach name from sessions, fetch by name
       const nameFromSession = sessions[0]?.coach_name || upcomingSession?.coach_name;
       if (nameFromSession) {
         setCoachName(nameFromSession);
         const coachData = await fetchCoachByName(nameFromSession);
         if (coachData) setCoach(coachData);
+        setIsLoadingCoachData(false);
         return;
       }
 
@@ -122,6 +146,7 @@ export default function PreFirstSessionHome({
           setCoachName(coachData.name);
         }
       }
+      setIsLoadingCoachData(false);
     };
 
     loadCoachDetails();
@@ -142,11 +167,14 @@ export default function PreFirstSessionHome({
 
   // Coach display data
   const coachPhotoUrl = coach?.photo_url || `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200`;
-  // Extract only the relevant coach's summary from match_summary, fallback to truncated coach bio
+  // Extract only the relevant coach's summary from match_summary
+  // Fallback: personalized from coaching goals > truncated coach bio > generic
   const allMatchSummaries = matchSummary || baseline?.match_summary || welcomeSurveyScale?.match_summary || null;
   const extractedSummary = extractCoachSummary(allMatchSummaries, coachName);
+  const coachGoalsForPersonalization = baseline?.coaching_goals || welcomeSurveyScale?.coaching_goals || null;
+  const personalizedDesc = createPersonalizedDescription(coachFirstName, coachGoalsForPersonalization);
   const coachBio = coach?.bio || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential.`;
-  const displayMatchSummary = truncateBio(extractedSummary || coachBio, 280) || coachBio;
+  const displayMatchSummary = truncateBio(extractedSummary, 280) || personalizedDesc || truncateBio(coachBio, 280) || coachBio;
 
   // Debug: Log coach data to verify headline and notable_credentials
   console.log('[PreFirstSessionHome] Coach name:', coach?.name);
@@ -159,25 +187,21 @@ export default function PreFirstSessionHome({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Load existing pre-session note
+  // Load existing pre-session note from session_tracking
   useEffect(() => {
     const loadNote = async () => {
-      if (!userEmail) return;
-
-      // Use session ID if available, otherwise use 'first' as placeholder
-      const sessionKey = upcomingSession?.id || 'first';
+      if (!upcomingSession?.id) return;
 
       try {
-        // Try to load from database first
-        const { data } = await supabase
-          .from('session_prep')
-          .select('intention')
-          .eq('email', userEmail.toLowerCase())
-          .order('updated_at', { ascending: false })
-          .limit(1);
+        // Load from session_tracking.employee_pre_session_note
+        const { data, error } = await supabase
+          .from('session_tracking')
+          .select('employee_pre_session_note')
+          .eq('id', upcomingSession.id)
+          .single();
 
-        if (data && data.length > 0 && data[0].intention) {
-          setPreSessionNote(data[0].intention);
+        if (!error && data?.employee_pre_session_note) {
+          setPreSessionNote(data.employee_pre_session_note);
           return;
         }
       } catch {
@@ -185,42 +209,45 @@ export default function PreFirstSessionHome({
       }
 
       // Try localStorage fallback
-      const key = `pre_session_note_${userEmail}_${sessionKey}`;
+      const key = `pre_session_note_${userEmail}_${upcomingSession.id}`;
       const saved = localStorage.getItem(key);
       if (saved) setPreSessionNote(saved);
     };
 
     loadNote();
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
-  // Auto-save pre-session note
+  // Auto-save pre-session note to session_tracking
   const saveNote = useCallback(async (text: string) => {
-    if (!userEmail) return;
+    if (!upcomingSession?.id) return;
 
     setIsSaving(true);
-    const sessionKey = upcomingSession?.id || 'first';
-    const key = `pre_session_note_${userEmail}_${sessionKey}`;
+
+    // Save to localStorage as backup
+    const key = `pre_session_note_${userEmail}_${upcomingSession.id}`;
     localStorage.setItem(key, text);
 
     try {
-      // Save to database - use session_id if available, otherwise save with null
-      await supabase
-        .from('session_prep')
-        .upsert({
-          email: userEmail.toLowerCase(),
-          session_id: upcomingSession?.id || null,
-          intention: text,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email,session_id' });
+      // Save to session_tracking.employee_pre_session_note
+      const { error } = await supabase
+        .from('session_tracking')
+        .update({ employee_pre_session_note: text })
+        .eq('id', upcomingSession.id);
 
+      if (error) {
+        console.error('[PreFirstSessionHome] Error saving pre-session note:', error);
+      } else {
+        console.log('[PreFirstSessionHome] Pre-session note saved successfully');
+      }
       setLastSaved(new Date());
-    } catch {
+    } catch (err) {
+      console.error('[PreFirstSessionHome] Exception saving pre-session note:', err);
       // localStorage saved as fallback
       setLastSaved(new Date());
     }
 
     setIsSaving(false);
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
   useEffect(() => {
     if (!preSessionNote) return;
@@ -233,7 +260,18 @@ export default function PreFirstSessionHome({
   const hasWelcomeSurvey = isScaleUser ? welcomeSurveyScale !== null : baseline !== null;
 
   // Get coaching goals from the appropriate survey
-  const coachingGoals = isScaleUser ? welcomeSurveyScale?.coaching_goals : baseline?.coaching_goals;
+  const rawCoachingGoals = isScaleUser ? welcomeSurveyScale?.coaching_goals : baseline?.coaching_goals;
+
+  // Check if coaching goals are valid/helpful (not empty, "no", "n/a", "none", etc.)
+  const isValidCoachingGoals = (goals: string | null | undefined): boolean => {
+    if (!goals) return false;
+    const trimmed = goals.trim().toLowerCase();
+    if (trimmed.length < 5) return false; // Too short to be meaningful
+    const unhelpfulResponses = ['no', 'n/a', 'na', 'none', 'nothing', 'no.', 'n/a.', 'none.', '-', '--', '...', 'idk', 'not sure', 'unsure', 'no idea'];
+    return !unhelpfulResponses.includes(trimmed);
+  };
+
+  const coachingGoals = isValidCoachingGoals(rawCoachingGoals) ? rawCoachingGoals : null;
 
   // Get focus areas from SCALE survey (selected boolean fields)
   const scaleFocusAreas = welcomeSurveyScale ? Object.entries(SCALE_FOCUS_AREA_LABELS)
@@ -384,42 +422,57 @@ export default function PreFirstSessionHome({
       <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
         <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Meet Your Coach</h2>
 
-        <div className="flex flex-col sm:flex-row gap-6">
-          {/* Coach headshot - using aspect-ratio container with object-position to show face */}
-          <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
-            <div className="aspect-[3/4] rounded-2xl overflow-hidden ring-4 ring-boon-bg shadow-lg bg-gray-100">
-              <img
-                src={coachPhotoUrl}
-                alt={coachName}
-                className="w-full h-full object-cover"
-                style={{ objectPosition: 'center 15%' }}
-              />
+        {isLoadingCoachData ? (
+          /* Loading skeleton */
+          <div className="animate-pulse flex flex-col sm:flex-row gap-6">
+            <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
+              <div className="aspect-[3/4] rounded-2xl bg-gray-200" />
+            </div>
+            <div className="flex-1 space-y-3 text-center sm:text-left">
+              <div className="h-6 bg-gray-200 rounded w-40 mx-auto sm:mx-0" />
+              <div className="h-4 bg-gray-200 rounded w-56 mx-auto sm:mx-0" />
+              <div className="h-4 bg-gray-200 rounded w-32 mx-auto sm:mx-0" />
+              <div className="mt-3 bg-gray-200 rounded-xl h-20 w-full" />
             </div>
           </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-6">
+            {/* Coach headshot - using aspect-ratio container with object-position to show face */}
+            <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
+              <div className="aspect-[3/4] rounded-2xl overflow-hidden ring-4 ring-boon-bg shadow-lg bg-gray-100">
+                <img
+                  src={coachPhotoUrl}
+                  alt={coachName}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 15%' }}
+                />
+              </div>
+            </div>
 
-          <div className="flex-1 text-center sm:text-left">
-            <h3 className="text-xl font-extrabold text-boon-text">{coachName}</h3>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-xl font-extrabold text-boon-text">{coachName}</h3>
 
-            {/* Headline - former corporate experience (title case) */}
-            {coach?.headline && (
-              <p className="text-sm font-bold text-boon-blue mt-1">
-                {coach.headline}
+              {/* Headline - former corporate experience (title case) */}
+              {coach?.headline && (
+                <p className="text-sm font-bold text-boon-blue mt-1">
+                  {coach.headline}
+                </p>
+              )}
+
+              {/* Notable Credentials - certifications */}
+              {coach?.notable_credentials && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {coach.notable_credentials}
+                </p>
+              )}
+
+              {/* Match Summary */}
+              <p className="text-sm text-gray-700 mt-3 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
+                {displayMatchSummary}
               </p>
-            )}
-
-            {/* Notable Credentials - certifications */}
-            {coach?.notable_credentials && (
-              <p className="text-sm text-gray-500 mt-1">
-                {coach.notable_credentials}
-              </p>
-            )}
-
-            {/* Match Summary */}
-            <p className="text-sm text-gray-700 mt-3 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
-              {displayMatchSummary}
-            </p>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* What You Shared - Reflect back their survey data */}
