@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Employee, Session, ActionItem, View, Coach } from '../lib/types';
+import type { Employee, Session, ActionItem, View, Coach, BaselineSurvey } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { supabase } from '../lib/supabase';
@@ -62,6 +62,28 @@ function extractCoachSummary(matchSummary: string | null, coachName: string): st
 }
 
 /**
+ * Create a personalized coach description based on the employee's coaching goals.
+ */
+function createPersonalizedDescription(coachFirstName: string, coachingGoals: string | null): string | null {
+  if (!coachingGoals) return null;
+
+  // Truncate goals if too long (keep first ~150 chars at sentence boundary)
+  let truncatedGoals = coachingGoals;
+  if (coachingGoals.length > 150) {
+    const truncated = coachingGoals.substring(0, 150);
+    const lastPeriod = truncated.lastIndexOf('.');
+    if (lastPeriod > 80) {
+      truncatedGoals = coachingGoals.substring(0, lastPeriod + 1);
+    } else {
+      const lastSpace = truncated.lastIndexOf(' ');
+      truncatedGoals = lastSpace > 0 ? coachingGoals.substring(0, lastSpace) + '...' : truncated + '...';
+    }
+  }
+
+  return `Based on your goal to ${truncatedGoals.toLowerCase().replace(/^i want to |^i'd like to |^i would like to /i, '').replace(/\.$/, '')}, ${coachFirstName} will partner with you to develop strategies and build the skills you need to succeed.`;
+}
+
+/**
  * Truncate text to approximately N characters, ending at a sentence boundary.
  */
 function truncateBio(text: string | null, maxLength: number = 280): string | null {
@@ -93,6 +115,7 @@ interface GrowDashboardProps {
   profile: Employee | null;
   sessions: Session[];
   actionItems: ActionItem[];
+  baseline: BaselineSurvey | null;
   coachingState: CoachingStateData;
   onActionUpdate: () => void;
   userEmail: string;
@@ -103,6 +126,7 @@ export default function GrowDashboard({
   profile,
   sessions,
   actionItems,
+  baseline,
   coachingState,
   onActionUpdate,
   userEmail,
@@ -472,9 +496,12 @@ export default function GrowDashboard({
             </div>
           </div>
 
-          {/* Dynamic coach description from match_summary, fallback to truncated bio */}
+          {/* Dynamic coach description: match_summary > personalized from goals > truncated bio > generic */}
           <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-            {truncateBio(extractCoachSummary(matchSummary, coachName) || coachProfile?.bio || null, 280) || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential through personalized coaching.`}
+            {truncateBio(extractCoachSummary(matchSummary, coachName), 280)
+              || createPersonalizedDescription(coachFirstName, baseline?.coaching_goals || null)
+              || truncateBio(coachProfile?.bio || null, 280)
+              || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential through personalized coaching.`}
           </p>
         </section>
       </div>
