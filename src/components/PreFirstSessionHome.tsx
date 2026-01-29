@@ -187,25 +187,21 @@ export default function PreFirstSessionHome({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Load existing pre-session note
+  // Load existing pre-session note from session_tracking
   useEffect(() => {
     const loadNote = async () => {
-      if (!userEmail) return;
-
-      // Use session ID if available, otherwise use 'first' as placeholder
-      const sessionKey = upcomingSession?.id || 'first';
+      if (!upcomingSession?.id) return;
 
       try {
-        // Try to load from database first
-        const { data } = await supabase
-          .from('session_prep')
-          .select('intention')
-          .eq('email', userEmail.toLowerCase())
-          .order('updated_at', { ascending: false })
-          .limit(1);
+        // Load from session_tracking.employee_pre_session_note
+        const { data, error } = await supabase
+          .from('session_tracking')
+          .select('employee_pre_session_note')
+          .eq('id', upcomingSession.id)
+          .single();
 
-        if (data && data.length > 0 && data[0].intention) {
-          setPreSessionNote(data[0].intention);
+        if (!error && data?.employee_pre_session_note) {
+          setPreSessionNote(data.employee_pre_session_note);
           return;
         }
       } catch {
@@ -213,42 +209,45 @@ export default function PreFirstSessionHome({
       }
 
       // Try localStorage fallback
-      const key = `pre_session_note_${userEmail}_${sessionKey}`;
+      const key = `pre_session_note_${userEmail}_${upcomingSession.id}`;
       const saved = localStorage.getItem(key);
       if (saved) setPreSessionNote(saved);
     };
 
     loadNote();
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
-  // Auto-save pre-session note
+  // Auto-save pre-session note to session_tracking
   const saveNote = useCallback(async (text: string) => {
-    if (!userEmail) return;
+    if (!upcomingSession?.id) return;
 
     setIsSaving(true);
-    const sessionKey = upcomingSession?.id || 'first';
-    const key = `pre_session_note_${userEmail}_${sessionKey}`;
+
+    // Save to localStorage as backup
+    const key = `pre_session_note_${userEmail}_${upcomingSession.id}`;
     localStorage.setItem(key, text);
 
     try {
-      // Save to database - use session_id if available, otherwise save with null
-      await supabase
-        .from('session_prep')
-        .upsert({
-          email: userEmail.toLowerCase(),
-          session_id: upcomingSession?.id || null,
-          intention: text,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email,session_id' });
+      // Save to session_tracking.employee_pre_session_note
+      const { error } = await supabase
+        .from('session_tracking')
+        .update({ employee_pre_session_note: text })
+        .eq('id', upcomingSession.id);
 
+      if (error) {
+        console.error('[PreFirstSessionHome] Error saving pre-session note:', error);
+      } else {
+        console.log('[PreFirstSessionHome] Pre-session note saved successfully');
+      }
       setLastSaved(new Date());
-    } catch {
+    } catch (err) {
+      console.error('[PreFirstSessionHome] Exception saving pre-session note:', err);
       // localStorage saved as fallback
       setLastSaved(new Date());
     }
 
     setIsSaving(false);
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
   useEffect(() => {
     if (!preSessionNote) return;
@@ -261,7 +260,18 @@ export default function PreFirstSessionHome({
   const hasWelcomeSurvey = isScaleUser ? welcomeSurveyScale !== null : baseline !== null;
 
   // Get coaching goals from the appropriate survey
-  const coachingGoals = isScaleUser ? welcomeSurveyScale?.coaching_goals : baseline?.coaching_goals;
+  const rawCoachingGoals = isScaleUser ? welcomeSurveyScale?.coaching_goals : baseline?.coaching_goals;
+
+  // Check if coaching goals are valid/helpful (not empty, "no", "n/a", "none", etc.)
+  const isValidCoachingGoals = (goals: string | null | undefined): boolean => {
+    if (!goals) return false;
+    const trimmed = goals.trim().toLowerCase();
+    if (trimmed.length < 5) return false; // Too short to be meaningful
+    const unhelpfulResponses = ['no', 'n/a', 'na', 'none', 'nothing', 'no.', 'n/a.', 'none.', '-', '--', '...', 'idk', 'not sure', 'unsure', 'no idea'];
+    return !unhelpfulResponses.includes(trimmed);
+  };
+
+  const coachingGoals = isValidCoachingGoals(rawCoachingGoals) ? rawCoachingGoals : null;
 
   // Get focus areas from SCALE survey (selected boolean fields)
   const scaleFocusAreas = welcomeSurveyScale ? Object.entries(SCALE_FOCUS_AREA_LABELS)

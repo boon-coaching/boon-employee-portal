@@ -247,35 +247,38 @@ export default function GrowDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Load existing reflection for upcoming session
+  // Load existing reflection for upcoming session from session_tracking
   useEffect(() => {
     const loadReflection = async () => {
-      if (!upcomingSession || !userEmail) return;
+      if (!upcomingSession?.id) return;
 
       try {
         const { data, error } = await supabase
-          .from('session_prep')
-          .select('intention')
-          .eq('email', userEmail.toLowerCase())
-          .eq('session_id', upcomingSession.id)
+          .from('session_tracking')
+          .select('employee_pre_session_note')
+          .eq('id', upcomingSession.id)
           .single();
 
-        if (!error && data) {
-          setReflection(data.intention || '');
+        if (!error && data?.employee_pre_session_note) {
+          setReflection(data.employee_pre_session_note);
+          return;
         }
       } catch {
-        const key = `session_prep_${userEmail}_${upcomingSession.id}`;
-        const saved = localStorage.getItem(key);
-        if (saved) setReflection(saved);
+        // Ignore errors
       }
+
+      // Try localStorage fallback
+      const key = `session_prep_${userEmail}_${upcomingSession.id}`;
+      const saved = localStorage.getItem(key);
+      if (saved) setReflection(saved);
     };
 
     loadReflection();
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
-  // Auto-save reflection with debounce
+  // Auto-save reflection with debounce to session_tracking
   const saveReflection = useCallback(async (text: string) => {
-    if (!upcomingSession || !userEmail) return;
+    if (!upcomingSession?.id) return;
 
     setIsSaving(true);
     const key = `session_prep_${userEmail}_${upcomingSession.id}`;
@@ -283,21 +286,23 @@ export default function GrowDashboard({
 
     try {
       const { error } = await supabase
-        .from('session_prep')
-        .upsert({
-          email: userEmail.toLowerCase(),
-          session_id: upcomingSession.id,
-          intention: text,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email,session_id' });
+        .from('session_tracking')
+        .update({ employee_pre_session_note: text })
+        .eq('id', upcomingSession.id);
 
-      if (!error) setLastSaved(new Date());
-    } catch {
+      if (error) {
+        console.error('[GrowDashboard] Error saving pre-session note:', error);
+      } else {
+        console.log('[GrowDashboard] Pre-session note saved successfully');
+        setLastSaved(new Date());
+      }
+    } catch (err) {
+      console.error('[GrowDashboard] Exception saving pre-session note:', err);
       // localStorage saved as fallback
     }
 
     setIsSaving(false);
-  }, [upcomingSession, userEmail]);
+  }, [upcomingSession?.id, userEmail]);
 
   useEffect(() => {
     if (!reflection) return;
