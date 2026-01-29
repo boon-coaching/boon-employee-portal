@@ -122,16 +122,19 @@ export default function PreFirstSessionHome({
     upcomingSession?.coach_name || sessions[0]?.coach_name || 'Your Coach'
   );
   const [matchSummary, setMatchSummary] = useState<string | null>(null);
+  const [isLoadingCoachData, setIsLoadingCoachData] = useState(true);
 
   // Fetch coach details
   useEffect(() => {
     const loadCoachDetails = async () => {
+      setIsLoadingCoachData(true);
       // If we have coach name from sessions, fetch by name
       const nameFromSession = sessions[0]?.coach_name || upcomingSession?.coach_name;
       if (nameFromSession) {
         setCoachName(nameFromSession);
         const coachData = await fetchCoachByName(nameFromSession);
         if (coachData) setCoach(coachData);
+        setIsLoadingCoachData(false);
         return;
       }
 
@@ -143,6 +146,7 @@ export default function PreFirstSessionHome({
           setCoachName(coachData.name);
         }
       }
+      setIsLoadingCoachData(false);
     };
 
     loadCoachDetails();
@@ -408,42 +412,57 @@ export default function PreFirstSessionHome({
       <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
         <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Meet Your Coach</h2>
 
-        <div className="flex flex-col sm:flex-row gap-6">
-          {/* Coach headshot - using aspect-ratio container with object-position to show face */}
-          <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
-            <div className="aspect-[3/4] rounded-2xl overflow-hidden ring-4 ring-boon-bg shadow-lg bg-gray-100">
-              <img
-                src={coachPhotoUrl}
-                alt={coachName}
-                className="w-full h-full object-cover"
-                style={{ objectPosition: 'center 15%' }}
-              />
+        {isLoadingCoachData ? (
+          /* Loading skeleton */
+          <div className="animate-pulse flex flex-col sm:flex-row gap-6">
+            <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
+              <div className="aspect-[3/4] rounded-2xl bg-gray-200" />
+            </div>
+            <div className="flex-1 space-y-3 text-center sm:text-left">
+              <div className="h-6 bg-gray-200 rounded w-40 mx-auto sm:mx-0" />
+              <div className="h-4 bg-gray-200 rounded w-56 mx-auto sm:mx-0" />
+              <div className="h-4 bg-gray-200 rounded w-32 mx-auto sm:mx-0" />
+              <div className="mt-3 bg-gray-200 rounded-xl h-20 w-full" />
             </div>
           </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-6">
+            {/* Coach headshot - using aspect-ratio container with object-position to show face */}
+            <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
+              <div className="aspect-[3/4] rounded-2xl overflow-hidden ring-4 ring-boon-bg shadow-lg bg-gray-100">
+                <img
+                  src={coachPhotoUrl}
+                  alt={coachName}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 15%' }}
+                />
+              </div>
+            </div>
 
-          <div className="flex-1 text-center sm:text-left">
-            <h3 className="text-xl font-extrabold text-boon-text">{coachName}</h3>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-xl font-extrabold text-boon-text">{coachName}</h3>
 
-            {/* Headline - former corporate experience (title case) */}
-            {coach?.headline && (
-              <p className="text-sm font-bold text-boon-blue mt-1">
-                {coach.headline}
+              {/* Headline - former corporate experience (title case) */}
+              {coach?.headline && (
+                <p className="text-sm font-bold text-boon-blue mt-1">
+                  {coach.headline}
+                </p>
+              )}
+
+              {/* Notable Credentials - certifications */}
+              {coach?.notable_credentials && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {coach.notable_credentials}
+                </p>
+              )}
+
+              {/* Match Summary */}
+              <p className="text-sm text-gray-700 mt-3 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
+                {displayMatchSummary}
               </p>
-            )}
-
-            {/* Notable Credentials - certifications */}
-            {coach?.notable_credentials && (
-              <p className="text-sm text-gray-500 mt-1">
-                {coach.notable_credentials}
-              </p>
-            )}
-
-            {/* Match Summary */}
-            <p className="text-sm text-gray-700 mt-3 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
-              {displayMatchSummary}
-            </p>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* What You Shared - Reflect back their survey data */}
