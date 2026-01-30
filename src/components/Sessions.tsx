@@ -24,23 +24,34 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Helper to extract sub-themes from other_themes string
-  const parseSubThemes = (otherThemes: string | null): string[] => {
-    if (!otherThemes) return [];
-    // Split by comma or semicolon, trim whitespace, filter empty
-    return otherThemes
-      .split(/[,;]/)
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
+  // Helper to extract themes from session
+  // The theme columns (leadership_management_skills, communication_skills, mental_well_being)
+  // are TEXT fields containing the actual sub-theme descriptions
+  const getSessionThemes = (session: Session): string[] => {
+    const themes: string[] = [];
+    // Cast to unknown then string since TypeScript thinks these are booleans but they're actually text
+    const leadership = session.leadership_management_skills as unknown as string | null;
+    const communication = session.communication_skills as unknown as string | null;
+    const wellbeing = session.mental_well_being as unknown as string | null;
+
+    if (leadership && typeof leadership === 'string' && leadership.trim()) {
+      themes.push(leadership.trim());
+    }
+    if (communication && typeof communication === 'string' && communication.trim()) {
+      themes.push(communication.trim());
+    }
+    if (wellbeing && typeof wellbeing === 'string' && wellbeing.trim()) {
+      themes.push(wellbeing.trim());
+    }
+    return themes;
   };
 
-  // Get unique sub-themes from all sessions for filtering
+  // Get unique themes from all sessions for filtering
   const allThemes = useMemo(() => {
     const themeSet = new Set<string>();
     sessions.forEach(s => {
-      // Use other_themes (sub-themes) instead of boolean category fields
-      const subThemes = parseSubThemes(s.other_themes);
-      subThemes.forEach(theme => themeSet.add(theme));
+      const themes = getSessionThemes(s);
+      themes.forEach(theme => themeSet.add(theme));
     });
     return Array.from(themeSet).sort();
   }, [sessions]);
@@ -49,9 +60,9 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
     // Status filter
     if (filter !== 'all' && s.status !== filter) return false;
 
-    // Theme filter - use sub-themes from other_themes
+    // Theme filter - use themes from the text columns
     if (themeFilter) {
-      const sessionThemes = parseSubThemes(s.other_themes);
+      const sessionThemes = getSessionThemes(s);
       if (!sessionThemes.includes(themeFilter)) return false;
     }
 
@@ -275,8 +286,8 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
             {filteredSessions.length > 0 ? filteredSessions.map((session) => {
               const isExpanded = expandedSession === session.id;
               const hasDetails = session.goals || session.plan || session.summary;
-              // Use sub-themes from other_themes instead of boolean category fields
-              const themes = parseSubThemes(session.other_themes);
+              // Get themes from text columns (not booleans)
+              const themes = getSessionThemes(session);
 
               return (
                 <div
