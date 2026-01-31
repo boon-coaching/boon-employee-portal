@@ -225,6 +225,14 @@ export default function GrowDashboard({
 
   // Action items for "Things You're Working On"
   const pendingActions = actionItems.filter(a => a.status === 'pending');
+  // Show recently completed items (last 7 days) with strikethrough
+  const recentlyCompletedActions = actionItems.filter(a => {
+    if (a.status !== 'completed') return false;
+    if (!a.completed_at) return false;
+    const completedDate = new Date(a.completed_at);
+    const daysSinceCompletion = (Date.now() - completedDate.getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceCompletion <= 7;
+  });
 
   // Debug: Log action items
   console.log('[GrowDashboard] Action items:', {
@@ -425,9 +433,10 @@ export default function GrowDashboard({
           )}
 
           {/* Action Items */}
-          {pendingActions.length > 0 ? (
+          {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
             <div className="space-y-3">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Action Items</p>
+              {/* Pending Items */}
               {pendingActions.map((action) => {
                 const isUpdating = updatingActionId === action.id;
                 return (
@@ -454,6 +463,25 @@ export default function GrowDashboard({
                   </div>
                 );
               })}
+              {/* Recently Completed Items - with strikethrough */}
+              {recentlyCompletedActions.map((action) => (
+                <div
+                  key={action.id}
+                  className="p-4 bg-green-50/50 rounded-xl border border-green-200/30 flex items-start gap-3"
+                >
+                  <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
+                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-400 leading-relaxed line-through">{action.action_text}</p>
+                    <span className="text-xs text-green-600 mt-2 block">
+                      Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : !lastSession?.goals && (
             <p className="text-gray-500 text-sm italic">
