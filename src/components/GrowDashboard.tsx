@@ -266,17 +266,6 @@ export default function GrowDashboard({
             Your GROW coaching journey
           </p>
         </div>
-        {/* Only show header button when there IS an upcoming session (secondary booking option) */}
-        {profile?.booking_link && hasUpcomingSession && (
-          <a
-            href={profile.booking_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-2xl transition-all active:scale-95 text-boon-blue border-2 border-boon-blue/30 hover:border-boon-blue hover:bg-boon-blue/5"
-          >
-            Book a session
-          </a>
-        )}
       </header>
 
       {/* ═══════════════════════════════════════════════════════════════════
