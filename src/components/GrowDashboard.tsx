@@ -320,12 +320,12 @@ export default function GrowDashboard({
     return () => clearTimeout(timer);
   }, [reflection, saveReflection]);
 
-  // Check if session is within 2 days
+  // Check if session is within 24 hours (consistent with SCALE's SessionPrep)
   const isSessionSoon = (session: Session) => {
     const sessionDate = new Date(session.session_date);
     const now = new Date();
-    const diffDays = (sessionDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 2 && diffDays >= -0.5;
+    const hoursUntilSession = (sessionDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return hoursUntilSession <= 24 && hoursUntilSession > -1; // Show from 24h before until 1h after start
   };
 
   const showJoinButton = upcomingSession?.zoom_join_link && isSessionSoon(upcomingSession);
