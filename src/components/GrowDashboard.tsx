@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import type { Employee, Session, ActionItem, View, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
-import { supabase } from '../lib/supabase';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus, fetchMatchSummary } from '../lib/dataFetcher';
 import ProgramProgressCard from './ProgramProgressCard';
 import CompetencyProgressCard from './CompetencyProgressCard';
+import SessionPrep from './SessionPrep';
 
 /**
  * Extract the specific coach's summary from the full match_summary text.
@@ -252,83 +252,6 @@ export default function GrowDashboard({
     setUpdatingActionId(null);
   }
 
-  // Session prep reflection state
-  const [reflection, setReflection] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  // Load existing reflection for upcoming session from session_tracking
-  useEffect(() => {
-    const loadReflection = async () => {
-      if (!upcomingSession?.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('session_tracking')
-          .select('employee_pre_session_note')
-          .eq('id', upcomingSession.id)
-          .single();
-
-        if (!error && data?.employee_pre_session_note) {
-          setReflection(data.employee_pre_session_note);
-          return;
-        }
-      } catch {
-        // Ignore errors
-      }
-
-      // Try localStorage fallback
-      const key = `session_prep_${userEmail}_${upcomingSession.id}`;
-      const saved = localStorage.getItem(key);
-      if (saved) setReflection(saved);
-    };
-
-    loadReflection();
-  }, [upcomingSession?.id, userEmail]);
-
-  // Auto-save reflection with debounce to session_tracking
-  const saveReflection = useCallback(async (text: string) => {
-    if (!upcomingSession?.id) return;
-
-    setIsSaving(true);
-    const key = `session_prep_${userEmail}_${upcomingSession.id}`;
-    localStorage.setItem(key, text);
-
-    try {
-      const { error } = await supabase
-        .from('session_tracking')
-        .update({ employee_pre_session_note: text })
-        .eq('id', upcomingSession.id);
-
-      if (error) {
-        console.error('[GrowDashboard] Error saving pre-session note:', error);
-      } else {
-        console.log('[GrowDashboard] Pre-session note saved successfully');
-        setLastSaved(new Date());
-      }
-    } catch (err) {
-      console.error('[GrowDashboard] Exception saving pre-session note:', err);
-      // localStorage saved as fallback
-    }
-
-    setIsSaving(false);
-  }, [upcomingSession?.id, userEmail]);
-
-  useEffect(() => {
-    if (!reflection) return;
-    const timer = setTimeout(() => saveReflection(reflection), 1000);
-    return () => clearTimeout(timer);
-  }, [reflection, saveReflection]);
-
-  // Check if session is within 24 hours (consistent with SCALE's SessionPrep)
-  const isSessionSoon = (session: Session) => {
-    const sessionDate = new Date(session.session_date);
-    const now = new Date();
-    const hoursUntilSession = (sessionDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    return hoursUntilSession <= 24 && hoursUntilSession > -1; // Show from 24h before until 1h after start
-  };
-
-  const showJoinButton = upcomingSession?.zoom_join_link && isSessionSoon(upcomingSession);
   const hasUpcomingSession = !!upcomingSession;
 
   return (
@@ -405,147 +328,112 @@ export default function GrowDashboard({
       />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          FOCUS AREAS / WHERE WE LEFT OFF - Depends on session completion
+          SESSION PREP - Consolidated component when upcoming session (like SCALE)
           ═══════════════════════════════════════════════════════════════════ */}
-      {completedSessions.length === 0 ? (
-        // Pre-first session: Show baseline focus areas
-        <CompetencyProgressCard focusAreas={focusAreas} />
-      ) : (
-        // Post-first session: Show where we left off (goals + action items)
-        <section className="bg-gradient-to-br from-boon-amberLight/50 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where We Left Off</h2>
-          </div>
-
-          {/* Current Goal from last session */}
-          {lastSession?.goals && (
-            <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Goal</p>
-              <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-lg text-boon-text leading-relaxed">
-                {lastSession.goals}
-              </p>
-            </div>
-          )}
-
-          {/* Action Items */}
-          {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Action Items</p>
-              {/* Pending Items */}
-              {pendingActions.map((action) => {
-                const isUpdating = updatingActionId === action.id;
-                return (
-                  <div
-                    key={action.id}
-                    className={`p-4 bg-white/60 rounded-xl border border-boon-amber/10 flex items-start gap-3 ${isUpdating ? 'opacity-50' : ''}`}
-                  >
-                    <button
-                      onClick={() => handleCompleteAction(action.id)}
-                      disabled={isUpdating}
-                      className="mt-1 w-5 h-5 rounded-full border-2 border-gray-300 hover:border-boon-blue hover:bg-boon-blue/10 transition-all flex-shrink-0 flex items-center justify-center group"
-                      title="Mark as complete"
-                    >
-                      <svg className="w-2.5 h-2.5 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                    <div className="flex-1">
-                      <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-700 leading-relaxed">{action.action_text}</p>
-                      <span className="text-xs text-gray-400 mt-2 block">
-                        From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-              {/* Recently Completed Items - with strikethrough */}
-              {recentlyCompletedActions.map((action) => (
-                <div
-                  key={action.id}
-                  className="p-4 bg-green-50/50 rounded-xl border border-green-200/30 flex items-start gap-3"
-                >
-                  <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-400 leading-relaxed line-through">{action.action_text}</p>
-                    <span className="text-xs text-green-600 mt-2 block">
-                      Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : !lastSession?.goals && (
-            <p className="text-gray-500 text-sm italic">
-              Your goals and action items from coaching sessions will appear here.
-            </p>
-          )}
-        </section>
+      {hasUpcomingSession && (
+        <SessionPrep
+          sessions={sessions}
+          actionItems={actionItems}
+          coachName={coachName}
+          userEmail={userEmail}
+          onActionUpdate={onActionUpdate}
+        />
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-          NEXT SESSION + COACH - Two columns when upcoming session, otherwise just coach card
+          FOCUS AREAS / WHERE WE LEFT OFF - Depends on session completion
+          Only show when no upcoming session (SessionPrep handles this otherwise)
           ═══════════════════════════════════════════════════════════════════ */}
-      <div className={hasUpcomingSession ? "grid md:grid-cols-2 gap-6" : ""}>
-        {/* Next Session Card - Only show when there's an upcoming session */}
-        {hasUpcomingSession && (
-          <section className={`rounded-[2rem] p-6 border-2 transition-all ${
-            showJoinButton
-              ? 'bg-gradient-to-br from-boon-blue/10 via-white to-boon-lightBlue/30 border-boon-blue/40 shadow-xl'
-              : 'bg-white border-gray-100 shadow-sm'
-          }`}>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                Your Next Session
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-xl font-bold text-boon-text">
-                {new Date(upcomingSession.session_date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-              <p className="text-gray-500 text-sm mt-1">
-                {new Date(upcomingSession.session_date).toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })} with {coachFirstName}
-              </p>
-            </div>
-
-            {upcomingSession.zoom_join_link && (
-              <a
-                href={upcomingSession.zoom_join_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all ${
-                  showJoinButton
-                    ? 'text-white bg-green-600 hover:bg-green-700 shadow-lg'
-                    : 'text-boon-blue bg-boon-lightBlue hover:bg-boon-lightBlue/80'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      {!hasUpcomingSession && (
+        completedSessions.length === 0 ? (
+          // Pre-first session: Show baseline focus areas
+          <CompetencyProgressCard focusAreas={focusAreas} />
+        ) : (
+          // Post-first session: Show where we left off (goals + action items)
+          <section className="bg-gradient-to-br from-boon-amberLight/50 to-white rounded-[2rem] p-8 border border-boon-amber/20">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
+                <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                {showJoinButton ? 'Join Session' : 'Join Link'}
-              </a>
+              </div>
+              <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where We Left Off</h2>
+            </div>
+
+            {/* Current Goal from last session */}
+            {lastSession?.goals && (
+              <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Goal</p>
+                <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-lg text-boon-text leading-relaxed">
+                  {lastSession.goals}
+                </p>
+              </div>
+            )}
+
+            {/* Action Items */}
+            {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Action Items</p>
+                {/* Pending Items */}
+                {pendingActions.map((action) => {
+                  const isUpdating = updatingActionId === action.id;
+                  return (
+                    <div
+                      key={action.id}
+                      className={`p-4 bg-white/60 rounded-xl border border-boon-amber/10 flex items-start gap-3 ${isUpdating ? 'opacity-50' : ''}`}
+                    >
+                      <button
+                        onClick={() => handleCompleteAction(action.id)}
+                        disabled={isUpdating}
+                        className="mt-1 w-5 h-5 rounded-full border-2 border-gray-300 hover:border-boon-blue hover:bg-boon-blue/10 transition-all flex-shrink-0 flex items-center justify-center group"
+                        title="Mark as complete"
+                      >
+                        <svg className="w-2.5 h-2.5 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </button>
+                      <div className="flex-1">
+                        <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-700 leading-relaxed">{action.action_text}</p>
+                        <span className="text-xs text-gray-400 mt-2 block">
+                          From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Recently Completed Items - with strikethrough */}
+                {recentlyCompletedActions.map((action) => (
+                  <div
+                    key={action.id}
+                    className="p-4 bg-green-50/50 rounded-xl border border-green-200/30 flex items-start gap-3"
+                  >
+                    <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-400 leading-relaxed line-through">{action.action_text}</p>
+                      <span className="text-xs text-green-600 mt-2 block">
+                        Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !lastSession?.goals && (
+              <p className="text-gray-500 text-sm italic">
+                Your goals and action items from coaching sessions will appear here.
+              </p>
             )}
           </section>
-        )}
+        )
+      )}
 
-        {/* Your Coach Card - Full width when no upcoming session */}
-        <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
+      {/* ═══════════════════════════════════════════════════════════════════
+          YOUR COACH CARD
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Coach</span>
           </div>
@@ -616,79 +504,12 @@ export default function GrowDashboard({
             </>
           )}
         </section>
-      </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          BEFORE YOU MEET - Reflection card (only when session scheduled)
+          THINGS YOU'RE WORKING ON - Action items (only show if no sessions completed AND no upcoming session)
+          Note: When there's an upcoming session, SessionPrep handles action items
           ═══════════════════════════════════════════════════════════════════ */}
-      {hasUpcomingSession && (
-        <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Before you meet with {coachFirstName}</h2>
-          </div>
-
-          {/* Last session context */}
-          {lastSession?.goals && (
-            <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Last time, you were working on:</p>
-              <p className="font-serif text-gray-700 leading-relaxed italic">"{lastSession.goals}"</p>
-            </div>
-          )}
-
-          {/* Reflection prompt */}
-          <div className="space-y-3">
-            <label className="block">
-              <span className="font-serif text-lg text-boon-text">
-                How's it going?
-              </span>
-            </label>
-            <div className="relative">
-              <textarea
-                value={reflection}
-                onChange={(e) => setReflection(e.target.value)}
-                placeholder="Share what's on your mind..."
-                className="w-full p-5 rounded-xl border border-boon-amber/20 focus:border-boon-amber focus:ring-0 focus:outline-none font-serif text-base min-h-[100px] resize-none bg-white placeholder-gray-400 transition-all"
-              />
-              <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                {isSaving && (
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
-                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Saving...
-                  </span>
-                )}
-                {!isSaving && lastSaved && (
-                  <span className="text-xs text-boon-amber flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Saved
-                  </span>
-                )}
-              </div>
-            </div>
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <svg className="w-4 h-4 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              {coachFirstName} will see this before your session
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          THINGS YOU'RE WORKING ON - Action items (only show if no sessions completed)
-          Note: After first session, action items appear in "Where We Left Off" section
-          ═══════════════════════════════════════════════════════════════════ */}
-      {completedSessions.length === 0 && pendingActions.length > 0 && (
+      {!hasUpcomingSession && completedSessions.length === 0 && pendingActions.length > 0 && (
         <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
@@ -725,30 +546,6 @@ export default function GrowDashboard({
                 </div>
               );
             })}
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          FROM YOUR COACH - Quote card
-          ═══════════════════════════════════════════════════════════════════ */}
-      {lastSession?.summary && (
-        <section className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">From Your Coach</h2>
-          <div className="absolute top-12 left-6 text-5xl text-boon-amber/30 font-serif">"</div>
-          <p className="font-serif text-gray-600 leading-relaxed italic relative z-10">
-            {lastSession.summary}
-          </p>
-          <div className="mt-6 flex items-center gap-3 relative z-10">
-            <img
-              src={getCoachPhotoUrl()}
-              alt="Coach"
-              className="w-9 h-9 rounded-full object-cover object-[center_15%] ring-2 ring-boon-bg"
-            />
-            <div>
-              <p className="text-sm font-bold text-boon-text leading-none">{coachName}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest">Executive Coach</p>
-            </div>
           </div>
         </section>
       )}
