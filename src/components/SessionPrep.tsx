@@ -170,31 +170,20 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
             </div>
           )}
 
-          {/* Action Items - from most recent session's plan field */}
-          {sessionWithGoals?.plan && (
+          {/* Action Items - from action_items table */}
+          {actionItems.length > 0 && (
             <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
-                Action Items ({sessionWithGoals.plan.split('\n').filter(line => {
-                  const cleanText = line.trim().replace(/^[\s•\-\*\d\.:\)]+/, '').trim();
-                  return cleanText && cleanText.length >= 5;
-                }).length} open)
+                Action Items ({actionItems.filter(a => a.status !== 'completed').length} open)
               </p>
               <div className="space-y-2">
-                {sessionWithGoals.plan.split('\n').filter(line => line.trim()).slice(0, 5).map((item, idx) => {
-                  const cleanText = item.trim().replace(/^[\s•\-\*\d\.:\)]+/, '').trim();
-                  if (!cleanText || cleanText.length < 5) return null;
-
-                  // Check if this item exists in actionItems and get its status
-                  const matchingAction = actionItems.find(ai =>
-                    ai.action_text.toLowerCase().includes(cleanText.toLowerCase().slice(0, 30)) ||
-                    cleanText.toLowerCase().includes(ai.action_text.toLowerCase().slice(0, 30))
-                  );
-                  const isCompleted = matchingAction?.status === 'completed';
-                  const isUpdating = matchingAction && updatingItem === matchingAction.id;
+                {actionItems.slice(0, 5).map((item) => {
+                  const isCompleted = item.status === 'completed';
+                  const isUpdating = updatingItem === item.id;
 
                   return (
                     <label
-                      key={idx}
+                      key={item.id}
                       className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-all ${
                         isCompleted
                           ? 'bg-green-50/50 text-gray-400'
@@ -204,16 +193,12 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
                       <input
                         type="checkbox"
                         checked={isCompleted}
-                        disabled={!matchingAction || isUpdating}
-                        onChange={() => {
-                          if (matchingAction) {
-                            handleToggleAction(matchingAction.id, matchingAction.status);
-                          }
-                        }}
+                        disabled={isUpdating}
+                        onChange={() => handleToggleAction(item.id, item.status)}
                         className="mt-0.5 w-4 h-4 rounded border-gray-300 text-boon-blue focus:ring-boon-blue"
                       />
                       <span className={`text-sm ${isCompleted ? 'line-through' : ''}`}>
-                        {cleanText}
+                        {item.action_text}
                       </span>
                     </label>
                   );
