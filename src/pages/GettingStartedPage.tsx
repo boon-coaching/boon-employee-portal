@@ -8,7 +8,10 @@ interface GettingStartedPageProps {
 export default function GettingStartedPage({ sessions }: GettingStartedPageProps) {
   const { employee, signOut } = useAuth();
 
-  const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
+  // Get the NEAREST upcoming session (sort by date ascending, take first)
+  const upcomingSession = sessions
+    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const coachName = upcomingSession?.coach_name || sessions[0]?.coach_name || 'Your Coach';
 
   return (

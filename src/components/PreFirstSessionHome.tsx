@@ -114,7 +114,10 @@ export default function PreFirstSessionHome({
   userEmail,
   onNavigate,
 }: PreFirstSessionHomeProps) {
-  const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
+  // Get the NEAREST upcoming session (sort by date ascending, take first)
+  const upcomingSession = sessions
+    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
 
   // Coach state - full coach data from coaches table
   const [coach, setCoach] = useState<Coach | null>(null);

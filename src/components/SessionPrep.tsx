@@ -13,7 +13,10 @@ interface SessionPrepProps {
 
 export default function SessionPrep({ sessions, actionItems, coachName, userEmail: _userEmail, onActionUpdate }: SessionPrepProps) {
   const completedSessions = sessions.filter(s => s.status === 'Completed');
-  const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
+  // Get the NEAREST upcoming session (sort by date ascending, take first)
+  const upcomingSession = sessions
+    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
 
   // Find most recent session with goals or plan (for showing relevant context)
   const sessionWithGoals = completedSessions.find(s => s.goals || s.plan) || null;
