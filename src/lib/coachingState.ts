@@ -49,6 +49,9 @@ const PROGRAM_SESSION_COUNTS: Record<string, number> = {
   SCALE: 6,
 };
 
+// Statuses that count towards session totals (completed, late cancels, no-shows all count)
+export const COUNTED_SESSION_STATUSES = ['Completed', 'Late Cancel', 'Client No-Show'];
+
 /**
  * Determines if all sessions are done (final session completed, no upcoming)
  */
@@ -56,11 +59,12 @@ function areAllSessionsDone(
   sessions: Session[],
   programType: string | null
 ): boolean {
-  const completedSessions = sessions.filter(s => s.status === 'Completed');
+  // Count sessions that count towards totals (completed, late cancel, no-show)
+  const countedSessions = sessions.filter(s => COUNTED_SESSION_STATUSES.includes(s.status));
   const upcomingSessions = sessions.filter(s => s.status === 'Upcoming' || s.status === 'Scheduled');
   const expectedSessions = programType ? PROGRAM_SESSION_COUNTS[programType] || 12 : 12;
 
-  return completedSessions.length >= expectedSessions && upcomingSessions.length === 0;
+  return countedSessions.length >= expectedSessions && upcomingSessions.length === 0;
 }
 
 /**
@@ -199,7 +203,10 @@ export function getCoachingState(
   welcomeSurveyScale: WelcomeSurveyScale | null = null,
   fetchedProgramType: string | null = null
 ): CoachingStateData {
+  // Sessions that actually completed (for finding last session with goals/plan)
   const completedSessions = sessions.filter(s => s.status === 'Completed');
+  // Sessions that count towards the total (includes late cancels, no-shows)
+  const countedSessions = sessions.filter(s => COUNTED_SESSION_STATUSES.includes(s.status));
   const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled') || null;
   const lastSession = completedSessions.length > 0
     ? completedSessions.sort((a, b) =>
@@ -210,7 +217,7 @@ export function getCoachingState(
   const hasProgram = !!employee?.program;
   const hasCoach = hasCoachAssigned(employee, sessions);
   const hasBaseline = !!baseline;
-  const hasCompletedSessions = completedSessions.length > 0;
+  const hasCompletedSessions = countedSessions.length > 0;
   const hasUpcomingSession = !!upcomingSession;
 
   // Use fetched programType (from database lookup) if available, otherwise pattern match
@@ -220,16 +227,16 @@ export function getCoachingState(
   const totalExpectedSessions = programType ? PROGRAM_SESSION_COUNTS[programType] || 12 : 12;
   const programProgress = isScale
     ? 0 // SCALE is ongoing, no fixed progress
-    : Math.min(100, Math.round((completedSessions.length / totalExpectedSessions) * 100));
+    : Math.min(100, Math.round((countedSessions.length / totalExpectedSessions) * 100));
 
   const hasEndOfProgramScores = competencyScores.some(cs => cs.score_type === 'end_of_program');
   const hasReflection = !!reflection || hasEndOfProgramScores;
   const allSessionsDone = !isScale && areAllSessionsDone(sessions, programType);
   const isFullyCompleted = !isScale && isProgramFullyCompleted(employee, competencyScores, reflection);
 
-  // Calculate SCALE checkpoint status
+  // Calculate SCALE checkpoint status (use countedSessions for late cancel/no-show tracking)
   const scaleCheckpointStatus: ScaleCheckpointStatus = isScale
-    ? calculateScaleCheckpointStatus(completedSessions.length, checkpoints)
+    ? calculateScaleCheckpointStatus(countedSessions.length, checkpoints)
     : {
         isScaleUser: false,
         currentCheckpointNumber: 0,
@@ -275,7 +282,7 @@ export function getCoachingState(
     hasBaseline,
     hasCompletedSessions,
     hasUpcomingSession,
-    completedSessionCount: completedSessions.length,
+    completedSessionCount: countedSessions.length,
     totalExpectedSessions,
     upcomingSession,
     lastSession,
