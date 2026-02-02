@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Employee, Session, ActionItem, View, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
+import { COUNTED_SESSION_STATUSES } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus, fetchMatchSummary } from '../lib/dataFetcher';
 import ProgramProgressCard from './ProgramProgressCard';
@@ -213,8 +214,10 @@ export default function GrowDashboard({
     loadGrowData();
   }, [profile?.program, profile?.coach_id, userEmail, coachName]);
 
-  // Count sessions with this specific coach
-  const sessionsWithCoach = completedSessions.filter(s => s.coach_name === coachName);
+  // Count sessions with this specific coach (includes late cancel, no-show)
+  const sessionsWithCoach = sessions.filter(s =>
+    COUNTED_SESSION_STATUSES.includes(s.status) && s.coach_name === coachName
+  );
   const sessionCountWithCoach = sessionsWithCoach.length;
 
   // Helper: Get coach photo URL or generate placeholder
