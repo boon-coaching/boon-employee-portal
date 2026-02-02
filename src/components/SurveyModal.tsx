@@ -977,12 +977,12 @@ export default function SurveyModal({
         return (
           <div className="space-y-6">
             <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
-              What would you like to focus on for the remaining sessions?
+              Is there anything you'd like to adjust or emphasize more in your remaining sessions?
             </h3>
             <textarea
               value={remainingFocus}
               onChange={e => setRemainingFocus(e.target.value)}
-              placeholder="What goals or areas would you like to prioritize? (optional)"
+              placeholder="Any shifts in priorities, new challenges, or areas you'd like to explore? (optional)"
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
               className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
