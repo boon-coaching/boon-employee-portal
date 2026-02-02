@@ -174,8 +174,10 @@ export default function ProgressPage({
   const isPendingReflection = isPendingReflectionState(coachingState.state);
 
   // Get coach name for pre-first-session messaging
-  // Try upcoming session first, then any session with a coach name
-  const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
+  // Get the NEAREST upcoming session (sort by date ascending, take first)
+  const upcomingSession = sessions
+    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const anySessionWithCoach = sessions.find(s => s.coach_name);
   const coachName = upcomingSession?.coach_name || anySessionWithCoach?.coach_name;
   const coachFirstName = coachName?.split(' ')[0] || 'your coach';
