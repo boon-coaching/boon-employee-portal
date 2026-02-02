@@ -1238,36 +1238,48 @@ export async function fetchPendingSurvey(
     return null;
   }
 
-  // Filter to completed sessions and sort by date (oldest first) to determine session number
+  // Statuses that count towards session totals (late cancel, no-show count towards milestones)
+  const COUNTED_STATUSES = ['Completed', 'Late Cancel', 'Client No-Show'];
+
+  // Filter to sessions that count towards total and sort by date (oldest first) to determine session number
   // Note: appointment_number contains Salesforce IDs (e.g. "SA-107788"), not sequential numbers
   // So we calculate session number based on chronological order
+  const countedSessions = loadedSessions
+    .filter(s => COUNTED_STATUSES.includes(s.status))
+    .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime());
+
+  // Also track just completed sessions (for attaching surveys)
   const completedSessions = loadedSessions
     .filter(s => s.status === 'Completed')
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime());
 
-  console.log('[fetchPendingSurvey] Completed sessions (sorted by date):', completedSessions.map((s, idx) => ({
+  console.log('[fetchPendingSurvey] Counted sessions (sorted by date):', countedSessions.map((s, idx) => ({
     id: s.id,
     sessionNumber: idx + 1,
     session_date: s.session_date,
     status: s.status
   })));
 
-  // Find sessions at milestone numbers (based on their position, not appointment_number)
-  const milestoneSessions = completedSessions
+  // Find sessions at milestone numbers (based on their position in counted sessions)
+  // For surveys, we want to attach to completed sessions, so find the completed session
+  // that corresponds to each milestone position
+  const milestoneSessions = countedSessions
     .map((session, index) => ({
       ...session,
       calculatedSessionNumber: index + 1 // 1-indexed session number
     }))
-    .filter(s => milestones.includes(s.calculatedSessionNumber));
+    .filter(s => milestones.includes(s.calculatedSessionNumber) && s.status === 'Completed');
 
   console.log('[fetchPendingSurvey] Sessions at milestones:', {
     total: loadedSessions.length,
+    counted: countedSessions.length,
     completed: completedSessions.length,
     atMilestones: milestoneSessions.length,
     milestoneDetails: milestoneSessions.map(s => ({
       id: s.id,
       sessionNumber: s.calculatedSessionNumber,
-      date: s.session_date
+      date: s.session_date,
+      status: s.status
     })),
   });
 
@@ -1277,7 +1289,7 @@ export async function fetchPendingSurvey(
   }
 
   // Check for end-of-program survey first
-  if (completedSessions.length >= sessionsPerEmployee) {
+  if (countedSessions.length >= sessionsPerEmployee) {
     const { data: existingEndSurvey } = await supabase
       .from('survey_submissions')
       .select('id')
@@ -1286,15 +1298,17 @@ export async function fetchPendingSurvey(
       .limit(1);
 
     if (!existingEndSurvey || existingEndSurvey.length === 0) {
-      // Get the latest session (last in the sorted array)
-      const latestSession = completedSessions[completedSessions.length - 1];
-      return {
-        session_id: latestSession.id,
-        session_number: completedSessions.length,
-        session_date: latestSession.session_date,
-        coach_name: latestSession.coach_name || 'Your Coach',
-        survey_type: isGrow ? 'grow_end' : 'end_of_program',
-      };
+      // Get the latest completed session
+      const latestCompletedSession = completedSessions[completedSessions.length - 1];
+      if (latestCompletedSession) {
+        return {
+          session_id: latestCompletedSession.id,
+          session_number: countedSessions.length,
+          session_date: latestCompletedSession.session_date,
+          coach_name: latestCompletedSession.coach_name || 'Your Coach',
+          survey_type: isGrow ? 'grow_end' : 'end_of_program',
+        };
+      }
     }
   }
 
