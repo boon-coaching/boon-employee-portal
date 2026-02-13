@@ -164,7 +164,7 @@ function ProtectedApp() {
         const validActionItems = actionItemsData.filter(item => {
           if (!item.session_id) return true;
           const session = sessionsData.find(s => String(s.id) === String(item.session_id));
-          return !session || session.status === 'Completed';
+          return session?.status === 'Completed';
         });
         setActionItems(validActionItems);
         setReflection(reflectionData);
@@ -195,7 +195,7 @@ function ProtectedApp() {
     const validItems = items.filter(item => {
       if (!item.session_id) return true;
       const session = sessions.find(s => String(s.id) === String(item.session_id));
-      return !session || session.status === 'Completed';
+      return session?.status === 'Completed';
     });
     setActionItems(validItems);
   }
