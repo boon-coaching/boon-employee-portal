@@ -3,6 +3,60 @@ import type { Session } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { isAlumniState, isPreFirstSession } from '../lib/coachingState';
 
+function getStatusStyle(status: Session['status']): {
+  icon: 'check' | 'clock' | 'x-circle' | 'x';
+  bgClass: string;
+  textClass: string;
+  label: string;
+} {
+  switch (status) {
+    case 'Completed':
+      return { icon: 'check', bgClass: 'bg-green-50', textClass: 'text-green-600', label: 'Completed' };
+    case 'Late Cancel':
+      return { icon: 'clock', bgClass: 'bg-red-50', textClass: 'text-red-500', label: 'Late Cancel' };
+    case 'Client No-Show':
+      return { icon: 'x-circle', bgClass: 'bg-red-50', textClass: 'text-red-600', label: 'No-Show' };
+    case 'No Show':
+      return { icon: 'x-circle', bgClass: 'bg-red-50', textClass: 'text-red-600', label: 'No Show' };
+    case 'Cancelled':
+      return { icon: 'x', bgClass: 'bg-gray-50', textClass: 'text-gray-500', label: 'Cancelled' };
+    case 'Upcoming':
+    case 'Scheduled':
+      return { icon: 'clock', bgClass: 'bg-blue-50', textClass: 'text-blue-600', label: status };
+    default:
+      return { icon: 'clock', bgClass: 'bg-orange-50', textClass: 'text-orange-600', label: status };
+  }
+}
+
+function StatusIcon({ type }: { type: 'check' | 'clock' | 'x-circle' | 'x' }) {
+  switch (type) {
+    case 'check':
+      return (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+        </svg>
+      );
+    case 'clock':
+      return (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'x-circle':
+      return (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'x':
+      return (
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      );
+  }
+}
+
 interface SessionsPageProps {
   sessions: Session[];
   coachingState: CoachingStateData;
@@ -299,21 +353,14 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          session.status === 'Completed'
-                            ? 'bg-green-50 text-green-600'
-                            : 'bg-boon-lightBlue text-boon-blue'
-                        }`}>
-                          {session.status === 'Completed' ? (
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          )}
-                        </div>
+                        {(() => {
+                          const style = getStatusStyle(session.status);
+                          return (
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${style.bgClass} ${style.textClass}`}>
+                              <StatusIcon type={style.icon} />
+                            </div>
+                          );
+                        })()}
                         <div>
                           <p className="font-bold text-boon-text">
                             {new Date(session.session_date).toLocaleDateString('en-US', {
@@ -325,13 +372,14 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
-                          session.status === 'Completed'
-                            ? 'bg-green-50 text-green-600'
-                            : 'bg-orange-50 text-orange-600'
-                        }`}>
-                          {session.status}
-                        </span>
+                        {(() => {
+                          const style = getStatusStyle(session.status);
+                          return (
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${style.bgClass} ${style.textClass}`}>
+                              {style.label}
+                            </span>
+                          );
+                        })()}
                         {hasDetails && (
                           <svg
                             className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -360,6 +408,18 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
                   {/* Expanded Content */}
                   {isExpanded && hasDetails && (
                     <div className="px-6 pb-6 space-y-4 border-t border-gray-50 pt-4">
+                      {themes.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Topics Discussed</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {themes.map((theme, i) => (
+                              <span key={i} className="px-3 py-1.5 bg-boon-lightBlue/30 text-boon-blue text-xs font-medium rounded-full">
+                                {theme}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {session.goals && (
                         <div>
                           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Goals</h4>
@@ -469,11 +529,14 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
                 <div key={session.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
                   <div>
                     <p className="font-bold text-boon-text">{session.coach_name}</p>
-                    <p className={`text-xs font-bold uppercase ${
-                      session.status === 'Completed' ? 'text-green-600' : 'text-orange-600'
-                    }`}>
-                      {session.status}
-                    </p>
+                    {(() => {
+                      const style = getStatusStyle(session.status);
+                      return (
+                        <p className={`text-xs font-bold uppercase ${style.textClass}`}>
+                          {style.label}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               )) : (

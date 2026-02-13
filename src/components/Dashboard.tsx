@@ -389,7 +389,7 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
       {isCompleted ? (
         <KeyTakeaways actionItems={actionItems} sessions={sessions} />
       ) : (
-        <ActionItems items={actionItems} onUpdate={onActionUpdate} />
+        <ActionItems items={actionItems} onUpdate={onActionUpdate} onNavigate={onNavigate} />
       )}
 
       {/* What's Next - for completed users only */}

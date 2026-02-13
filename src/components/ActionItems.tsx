@@ -102,6 +102,14 @@ export default function ActionItems({ items, onUpdate, onNavigate }: ActionItems
                           {due.text}
                         </span>
                       )}
+                      {onNavigate && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onNavigate('sessions'); }}
+                          className="text-xs text-boon-blue font-medium hover:underline"
+                        >
+                          View sessions →
+                        </button>
+                      )}
                       {/* Contextual bridge to Practice */}
                       {onNavigate && hasPracticeRelevance(item.action_text) && (
                         <button

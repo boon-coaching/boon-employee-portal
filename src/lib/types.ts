@@ -27,7 +27,7 @@ export interface Session {
   employee_email: string;
   employee_name: string;
   session_date: string;
-  status: 'Completed' | 'Upcoming' | 'Scheduled' | 'Cancelled' | 'No Show';
+  status: 'Completed' | 'Upcoming' | 'Scheduled' | 'Cancelled' | 'No Show' | 'Late Cancel' | 'Client No-Show';
   coach_name: string;
   // Theme columns contain text descriptions of sub-themes (e.g. "Navigating conflict"), not booleans
   leadership_management_skills: string | null;
