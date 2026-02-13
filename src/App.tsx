@@ -160,7 +160,13 @@ function ProtectedApp() {
         }
 
         setProgramType(finalProgramType);
-        setActionItems(actionItemsData);
+        // Only show action items from completed sessions (filter out cancelled/no-show/etc.)
+        const validActionItems = actionItemsData.filter(item => {
+          if (!item.session_id) return true;
+          const session = sessionsData.find(s => String(s.id) === String(item.session_id));
+          return !session || session.status === 'Completed';
+        });
+        setActionItems(validActionItems);
         setReflection(reflectionData);
         setCheckpoints(checkpointsData);
         setCoachingWins(winsData);
