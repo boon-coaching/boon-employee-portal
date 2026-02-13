@@ -191,7 +191,13 @@ function ProtectedApp() {
   async function reloadActionItems() {
     if (!employee?.company_email) return;
     const items = await fetchActionItems(employee.company_email);
-    setActionItems(items);
+    // Only show action items from completed sessions (filter out cancelled/no-show/etc.)
+    const validItems = items.filter(item => {
+      if (!item.session_id) return true;
+      const session = sessions.find(s => String(s.id) === String(item.session_id));
+      return !session || session.status === 'Completed';
+    });
+    setActionItems(validItems);
   }
 
   // Handle reflection completion - update state and close modal
