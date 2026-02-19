@@ -1,16 +1,16 @@
-// supabase/functions/salesforce-session-sync/index.ts
+// salesforce-appointments-new
 //
-// Receives coaching appointment data from Salesforce Flow HTTP Callout
-// Replaces: Zapier 6-step flow
-// 
-// Trigger: Salesforce Flow on ServiceAppointment create/update
-// 
-// What it does:
+// Receives coaching appointment data from Salesforce via Apex HTTP callout.
 // 1. Validates required fields
 // 2. Looks up program_config for program_type + company_id
-// 3. Upserts to session_tracking (keyed on appointment_number)
-// 4. Updates employee_manager booking link
-// 5. Logs everything
+// 3. Looks up employee_id (case-insensitive email match)
+// 4. Upserts to session_tracking (keyed on appointment_number)
+// 5. Stores salesforce_contact_id on employee_manager for deterministic joins
+//
+// v3 Changes:
+// - FIX: .eq() -> .ilike() for email matching (case-insensitive)
+// - FIX: Removed booking_link overwrite with reschedule_session_link
+// - NEW: Accepts and stores salesforce_contact_id on session_tracking + employee_manager
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -18,57 +18,57 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WEBHOOK_SECRET = Deno.env.get("SF_WEBHOOK_SECRET") || "";
 
-// ── Types ────────────────────────────────────────────────────────────
+// -- Types --
 
 interface SalesforcePayload {
-  // Appointment fields (from ServiceAppointment)
-  appointment_number: string;       // AppointmentNumber (auto-number)
-  status: string;                   // Status (picklist)
-  scheduled_start: string;          // SchedStartTime
-  scheduled_end?: string;           // SchedEndTime
-  duration?: number;                // Duration
-  actual_start?: string;            // ActualStartTime
-  actual_end?: string;              // ActualEndTime
-  actual_duration?: number;         // ActualDuration
-  description?: string;             // Description
-  subject?: string;                 // Subject
+  // Appointment fields
+  appointment_number: string;
+  status: string;
+  scheduled_start: string;
+  scheduled_end?: string;
+  duration?: number;
+  actual_start?: string;
+  actual_end?: string;
+  actual_duration?: number;
+  description?: string;
+  subject?: string;
 
-  // Client/Employee fields (from Client__c Contact lookup)
-  client_name?: string;             // Client__c -> Contact.Name
-  client_email?: string;            // Client__c -> Contact.Email
-  client_first_name?: string;       // Client__c -> Contact.FirstName
-  client_last_name?: string;        // Client__c -> Contact.LastName
-  client_contact_id?: string;       // Client__c -> Contact.Id (SF record ID)
-  client_booking_link?: string;     // Client__c -> Contact.Client_Booking_Link__c
+  // Client/Employee fields
+  client_name?: string;
+  client_email?: string;
+  client_first_name?: string;
+  client_last_name?: string;
+  salesforce_contact_id?: string;  // NEW: SF Contact record ID
 
-  // Coach fields (from Coach__c Contact lookup)
-  coach_name?: string;              // Coach__c -> Contact.Name
+  // Coach fields
+  coach_name?: string;
 
-  // Program fields (from Company_Program__c lookup)
-  program_name?: string;            // Company_Program__c -> Name
-  program_number?: string;          // Company_Program__c -> Program_Number (CP-XXXX)
-  salesforce_program_id?: string;   // Company_Program__c -> Id (SF record ID)
+  // Program fields
+  program_name?: string;
+  program_number?: string;
+  salesforce_program_id?: string;
 
   // Account
-  account_name?: string;            // Account_Name__c (formula field)
+  account_name?: string;
 
   // Session content
-  zoom_join_link?: string;          // Zoom_Join_Link__c
-  cancel_session_link?: string;     // Cancel_Session_Link__c (formula)
-  reschedule_session_link?: string; // Reschedule_Session_Link__c (formula)
-  goals?: string;                   // Goals__c
-  plan?: string;                    // Plan__c
-  notes?: string;                   // Notes__c
-  employee_pre_session_notes?: string; // Employee_Pre_Session_Notes__c
+  zoom_join_link?: string;
+  cancel_session_link?: string;
+  reschedule_session_link?: string;
+  goals?: string;
+  plan?: string;
+  notes?: string;
+  employee_pre_session_notes?: string;
 
-  // Skills/themes (multi-select picklists)
-  leadership_management_skills?: string;  // Leadership_Management_Skills__c
-  communication_skills?: string;          // Communication_Skills__c
-  mental_well_being?: string;             // Mental_Well_Being__c
-  other_themes?: string;                  // Other_Themes__c
+  // Skills/themes
+  leadership_management_skills?: string;
+  communication_skills?: string;
+  mental_well_being?: string;
+  other_themes?: string;
 
   // Session type
-  session_type?: string;            // Session_Type__c (formula)
+  session_type?: string;
+  billable?: boolean;
 }
 
 interface SyncResult {
@@ -77,11 +77,12 @@ interface SyncResult {
   action: "created" | "updated" | "skipped";
   program_type: string | null;
   company_id: string | null;
+  employee_id: number | null;
   warnings: string[];
   error?: string;
 }
 
-// ── Program Type Derivation (fallback) ───────────────────────────────
+// -- Program Type Derivation (fallback) --
 
 function deriveProductType(programName: string): string {
   if (!programName) return "UNKNOWN";
@@ -100,7 +101,7 @@ function deriveProductType(programName: string): string {
   return "UNKNOWN";
 }
 
-// ── Status Normalization ─────────────────────────────────────────────
+// -- Status Normalization --
 
 function normalizeStatus(status: string): string {
   if (!status) return "Scheduled";
@@ -121,7 +122,7 @@ function normalizeStatus(status: string): string {
   return statusMap[status] || status;
 }
 
-// ── Main Handler ─────────────────────────────────────────────────────
+// -- Main Handler --
 
 Deno.serve(async (req: Request) => {
   // CORS preflight
@@ -131,7 +132,8 @@ Deno.serve(async (req: Request) => {
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-SF-Webhook-Secret",
+        "Access-Control-Allow-Headers":
+          "Content-Type, Authorization, X-SF-Webhook-Secret",
       },
     });
   }
@@ -143,8 +145,12 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // ── Auth ──────────────────────────────────────────────────────────
-  const incomingSecret = req.headers.get("X-SF-Webhook-Secret") || "";
+  // -- Auth --
+  const authHeader = req.headers.get("Authorization") || "";
+  const incomingSecret =
+    req.headers.get("X-SF-Webhook-Secret") ||
+    authHeader.replace("Bearer ", "");
+
   if (WEBHOOK_SECRET && incomingSecret !== WEBHOOK_SECRET) {
     console.error("[AUTH] Invalid webhook secret");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -165,33 +171,38 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  console.log(`[SYNC] Processing: ${payload.appointment_number} | ${payload.account_name} | ${payload.status}`);
-
   const result: SyncResult = {
     success: false,
-    appointment_number: payload.appointment_number || "MISSING",
+    appointment_number: payload.appointment_number || "UNKNOWN",
     action: "skipped",
     program_type: null,
     company_id: null,
+    employee_id: null,
     warnings: [],
   };
 
   try {
-    // ── Validate ────────────────────────────────────────────────────
+    console.log(
+      `[SYNC] Processing: ${payload.appointment_number} | status=${payload.status} | client=${payload.client_email || "no-email"} | sf_contact=${payload.salesforce_contact_id || "none"}`
+    );
+
+    // Validate required fields
     if (!payload.appointment_number) {
-      throw new Error("Missing appointment_number");
+      throw new Error("Missing required field: appointment_number");
     }
 
-    // ── Look Up Program Config ──────────────────────────────────────
+    // -- Look Up Program Config --
     let programType: string | null = null;
     let companyId: string | null = null;
     let programTitle: string | null = null;
 
-    // Try by salesforce_program_id first (SF record ID)
+    // Try by salesforce_program_id first
     if (payload.salesforce_program_id) {
       const { data: pc } = await supabase
         .from("program_config")
-        .select("program_type, company_id, program_title, program_number")
+        .select(
+          "program_type, company_id, program_title, program_number"
+        )
         .eq("salesforce_program_id", payload.salesforce_program_id)
         .maybeSingle();
 
@@ -199,7 +210,9 @@ Deno.serve(async (req: Request) => {
         programType = pc.program_type;
         companyId = pc.company_id;
         programTitle = pc.program_title;
-        console.log(`[SYNC] Matched program_config by SF ID: type=${programType}`);
+        console.log(
+          `[SYNC] Matched program_config by SF ID: type=${programType}, company_id=${companyId}`
+        );
       }
     }
 
@@ -207,7 +220,9 @@ Deno.serve(async (req: Request) => {
     if (!programType && payload.program_number) {
       const { data: pc } = await supabase
         .from("program_config")
-        .select("program_type, company_id, program_title, salesforce_program_id")
+        .select(
+          "program_type, company_id, program_title, salesforce_program_id"
+        )
         .eq("program_number", payload.program_number)
         .maybeSingle();
 
@@ -215,14 +230,18 @@ Deno.serve(async (req: Request) => {
         programType = pc.program_type;
         companyId = pc.company_id;
         programTitle = pc.program_title;
-        console.log(`[SYNC] Matched program_config by program_number: ${payload.program_number} -> ${programType}`);
+        console.log(
+          `[SYNC] Matched program_config by program_number: ${payload.program_number} -> ${programType}`
+        );
       }
     }
 
     // Fallback: derive from program_name
     if (!programType && payload.program_name) {
       programType = deriveProductType(payload.program_name);
-      result.warnings.push(`No program_config match. Derived from name: "${payload.program_name}" -> ${programType}`);
+      result.warnings.push(
+        `No program_config match. Derived from name: "${payload.program_name}" -> ${programType}`
+      );
     }
 
     // Fallback: look up company_id by account_name
@@ -230,22 +249,45 @@ Deno.serve(async (req: Request) => {
       const { data: company } = await supabase
         .from("companies")
         .select("id")
-        .or(`account_name.eq.${payload.account_name},name.eq.${payload.account_name}`)
+        .or(
+          `account_name.eq.${payload.account_name},name.eq.${payload.account_name}`
+        )
         .maybeSingle();
 
       if (company) {
         companyId = company.id;
       } else {
-        result.warnings.push(`No company found for: ${payload.account_name}`);
+        result.warnings.push(
+          `No company found for: ${payload.account_name}`
+        );
       }
     }
 
     result.program_type = programType;
     result.company_id = companyId;
 
-    // ── Look Up Employee ID ─────────────────────────────────────────
+    // -- Look Up Employee ID --
+    // Try salesforce_contact_id first (deterministic), then email (case-insensitive)
     let employeeId: number | null = null;
-    if (payload.client_email) {
+
+    // Strategy 1: Match by salesforce_contact_id (deterministic, no case issues)
+    if (!employeeId && payload.salesforce_contact_id) {
+      const { data: employee } = await supabase
+        .from("employee_manager")
+        .select("id")
+        .eq("salesforce_contact_id", payload.salesforce_contact_id)
+        .maybeSingle();
+
+      if (employee) {
+        employeeId = employee.id;
+        console.log(
+          `[SYNC] Matched employee by salesforce_contact_id: ${employeeId}`
+        );
+      }
+    }
+
+    // Strategy 2: Match by email (case-insensitive)
+    if (!employeeId && payload.client_email) {
       const { data: employee } = await supabase
         .from("employee_manager")
         .select("id")
@@ -254,37 +296,55 @@ Deno.serve(async (req: Request) => {
 
       if (employee) {
         employeeId = employee.id;
+        console.log(
+          `[SYNC] Matched employee by email (ilike): ${employeeId}`
+        );
       } else {
-        result.warnings.push(`No employee_manager match for: ${payload.client_email}`);
+        result.warnings.push(
+          `No employee found for email: ${payload.client_email}`
+        );
       }
     }
 
-    // ── Build Session Data ──────────────────────────────────────────
+    result.employee_id = employeeId;
+
+    // -- Build employee_name from parts or whole --
+    const employeeName =
+      payload.client_name ||
+      [payload.client_first_name, payload.client_last_name]
+        .filter(Boolean)
+        .join(" ") ||
+      null;
+
+    // -- Upsert Session Tracking --
     const sessionData: Record<string, unknown> = {
       appointment_number: payload.appointment_number,
-      status: normalizeStatus(payload.status),
-      session_date: payload.scheduled_start,
-      duration_minutes: payload.duration || payload.actual_duration,
-      employee_name: payload.client_name,
+      employee_name: employeeName,
       employee_id: employeeId,
-      coach_name: payload.coach_name,
+      company_id: companyId,
       account_name: payload.account_name,
       program_name: payload.program_name,
       program_title: programTitle || payload.program_name,
-      program_type: programType,
       program_number: payload.program_number,
+      program_type: programType,
       salesforce_program_id: payload.salesforce_program_id,
-      company_id: companyId,
+      salesforce_contact_id: payload.salesforce_contact_id,
+      coach_name: payload.coach_name,
+      session_date: payload.scheduled_start,
+      status: normalizeStatus(payload.status),
+      duration_minutes:
+        payload.duration || payload.actual_duration || null,
       zoom_join_link: payload.zoom_join_link,
       cancel_session_link: payload.cancel_session_link,
       reschedule_session_link: payload.reschedule_session_link,
-      leadership_management_skills: payload.leadership_management_skills,
+      leadership_management_skills:
+        payload.leadership_management_skills,
       communication_skills: payload.communication_skills,
       mental_well_being: payload.mental_well_being,
       other_themes: payload.other_themes,
-      summary: payload.description,
       goals: payload.goals,
       plan: payload.plan,
+      notes: payload.notes,
       employee_pre_session_note: payload.employee_pre_session_notes,
     };
 
@@ -293,8 +353,7 @@ Deno.serve(async (req: Request) => {
       if (sessionData[key] === undefined) delete sessionData[key];
     });
 
-    // ── Upsert ──────────────────────────────────────────────────────
-    // Check if record exists first
+    // Check if record exists, then update or insert
     const { data: existing } = await supabase
       .from("session_tracking")
       .select("id")
@@ -302,7 +361,6 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (existing) {
-      // Update existing record
       const { error: updateError } = await supabase
         .from("session_tracking")
         .update(sessionData)
@@ -311,7 +369,6 @@ Deno.serve(async (req: Request) => {
       if (updateError) throw updateError;
       result.action = "updated";
     } else {
-      // Insert new record
       const { error: insertError } = await supabase
         .from("session_tracking")
         .insert(sessionData);
@@ -320,35 +377,41 @@ Deno.serve(async (req: Request) => {
       result.action = "created";
     }
 
-    // ── Update Employee Manager Booking Link ────────────────────────
-    // Only update if client_booking_link is provided (the proper per-client
-    // scheduling URL from the SF Contact record). Do NOT use
-    // reschedule_session_link, which is a per-appointment URL that expires.
-    if (payload.client_email && payload.client_booking_link) {
+    // -- Update Employee Manager (salesforce_contact_id backfill) --
+    // Only set salesforce_contact_id if we matched an employee and
+    // they don't already have one. Builds up the deterministic
+    // join key over time as sessions sync.
+    if (employeeId && payload.salesforce_contact_id) {
       const { error: emError } = await supabase
         .from("employee_manager")
-        .update({ booking_link: payload.client_booking_link })
-        .ilike("company_email", payload.client_email);
+        .update({
+          salesforce_contact_id: payload.salesforce_contact_id,
+        })
+        .eq("id", employeeId)
+        .is("salesforce_contact_id", null);
 
       if (emError) {
-        result.warnings.push(`employee_manager booking_link update failed: ${emError.message}`);
+        result.warnings.push(
+          `employee_manager sf_contact_id update failed: ${emError.message}`
+        );
       }
     }
 
     result.success = true;
-    console.log(`[SYNC] ${result.action}: ${payload.appointment_number} | status=${sessionData.status} | type=${programType} | warnings=${result.warnings.length}`);
-
+    console.log(
+      `[SYNC] Success: ${result.action} | ${payload.appointment_number} | type=${programType} | employee_id=${employeeId} | sf_contact=${payload.salesforce_contact_id || "none"} | warnings=${result.warnings.length}`
+    );
   } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg =
+      err instanceof Error ? err.message : "Unknown error";
     result.error = errorMsg;
-    console.error(`[SYNC] Error: ${payload.appointment_number}: ${errorMsg}`);
+    console.error(
+      `[SYNC] Error for ${payload.appointment_number}: ${errorMsg}`
+    );
   }
 
   return new Response(JSON.stringify(result), {
-    status: result.success ? 200 : 422,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
+    status: result.success ? 200 : 500,
+    headers: { "Content-Type": "application/json" },
   });
 });
