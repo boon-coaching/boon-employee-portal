@@ -28,6 +28,7 @@ import ReflectionFlow from './components/ReflectionFlow';
 import CheckpointFlow from './components/CheckpointFlow';
 import AdminStatePreview from './components/AdminStatePreview';
 import SurveyModal from './components/SurveyModal';
+import { PreviewBanner } from './components/PreviewBanner';
 
 // Configuration - Replace with actual survey URL
 const WELCOME_SURVEY_URL = 'https://boon.typeform.com/welcome'; // TODO: Update with actual URL
@@ -670,6 +671,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <>
+    <PreviewBanner />
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
@@ -693,5 +696,6 @@ export default function App() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

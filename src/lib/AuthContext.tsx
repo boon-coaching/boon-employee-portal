@@ -20,6 +20,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Preview mode: auto-login via URL param (build-time gated)
+    if (import.meta.env.VITE_PREVIEW_MODE) {
+      const urlEmail = new URLSearchParams(window.location.search).get('email');
+      const previewEmail = urlEmail || localStorage.getItem('boon_preview_email');
+      if (previewEmail) {
+        if (urlEmail) localStorage.setItem('boon_preview_email', previewEmail);
+        fetchEmployeeProfileDevMode(previewEmail);
+        return;
+      }
+      // No email param - fall through to show login
+    }
+
     // Check for dev mode bypass
     const devEmail = localStorage.getItem('boon_dev_email');
 
@@ -95,14 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Dev mode: fetch employee directly using anon key (bypasses RLS)
+  // Dev/preview mode: fetch employee via SECURITY DEFINER RPC (bypasses RLS with anon key)
   async function fetchEmployeeProfileDevMode(email: string) {
     try {
       const { data, error } = await supabase
-        .from('employee_manager')
-        .select('*')
-        .ilike('company_email', email)
-        .limit(1);
+        .rpc('get_employee_by_email', { lookup_email: email });
 
       if (error) {
         console.error('Dev mode fetch error:', error);
@@ -124,8 +133,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     await auth.signOut();
-    // Clear dev mode
+    // Clear dev mode and preview mode
     localStorage.removeItem('boon_dev_email');
+    localStorage.removeItem('boon_preview_email');
     setUser(null);
     setSession(null);
     setEmployee(null);
