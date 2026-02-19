@@ -1332,6 +1332,13 @@ export async function fetchPendingSurvey(
     console.log('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
 
     if (!existingSurvey || existingSurvey.length === 0) {
+      // Skip stale surveys: if the user is more than 5 sessions past this milestone, don't prompt
+      if (countedSessions.length - sessionNum > 5) {
+        console.log('[fetchPendingSurvey] Skipping stale survey for session', sessionNum,
+          '(current count:', countedSessions.length, ')');
+        continue;
+      }
+
       // Determine survey type based on program and session number
       // For GROW: session 1 = first_session, midpoint = midpoint
       // For SCALE: all milestones = feedback

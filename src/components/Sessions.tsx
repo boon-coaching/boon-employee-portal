@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Session } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
-import { isAlumniState, isPreFirstSession } from '../lib/coachingState';
+import { isAlumniState, isPreFirstSession, isUpcomingSession } from '../lib/coachingState';
 
 function getStatusStyle(status: Session['status']): {
   icon: 'check' | 'clock' | 'x-circle' | 'x';
@@ -94,15 +94,20 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
     return themes;
   };
 
-  // Get unique themes from all sessions for filtering
+  // Get unique themes from all sessions, sorted by frequency (most common first)
   const allThemes = useMemo(() => {
-    const themeSet = new Set<string>();
+    const themeCount = new Map<string, number>();
     sessions.forEach(s => {
-      const themes = getSessionThemes(s);
-      themes.forEach(theme => themeSet.add(theme));
+      getSessionThemes(s).forEach(theme => {
+        themeCount.set(theme, (themeCount.get(theme) || 0) + 1);
+      });
     });
-    return Array.from(themeSet).sort();
+    return Array.from(themeCount.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([theme]) => theme);
   }, [sessions]);
+
+  const [showAllThemes, setShowAllThemes] = useState(false);
 
   const filteredSessions = sessions.filter(s => {
     // Status filter
@@ -175,7 +180,7 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
   if (isPreFirst) {
     // Get the NEAREST upcoming session (sort by date ascending, take first)
     const upcomingSession = sessions
-      .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+      .filter(isUpcomingSession)
       .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
     const coachName = upcomingSession?.coach_name || 'your coach';
 
@@ -303,33 +308,46 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
                 ))}
               </div>
 
-              {/* Theme filter - enhanced for archive mode */}
-              {allThemes.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Theme:</span>
-                  <div className="flex bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
-                    <button
-                      onClick={() => setThemeFilter(null)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        themeFilter === null ? 'bg-gray-100 text-boon-text' : 'text-gray-400 hover:text-boon-blue'
-                      }`}
-                    >
-                      All
-                    </button>
-                    {allThemes.map(theme => (
+              {/* Theme filter - show top 5 with expand toggle */}
+              {allThemes.length > 0 && (() => {
+                const MAX_VISIBLE_THEMES = 5;
+                const visibleThemes = showAllThemes ? allThemes : allThemes.slice(0, MAX_VISIBLE_THEMES);
+                const hiddenCount = allThemes.length - MAX_VISIBLE_THEMES;
+                return (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Theme:</span>
+                    <div className="flex flex-wrap bg-white p-1 rounded-xl border border-gray-100 shadow-sm gap-0.5">
                       <button
-                        key={theme}
-                        onClick={() => setThemeFilter(theme)}
+                        onClick={() => setThemeFilter(null)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          themeFilter === theme ? 'bg-boon-blue text-white' : 'text-gray-400 hover:text-boon-blue'
+                          themeFilter === null ? 'bg-gray-100 text-boon-text' : 'text-gray-400 hover:text-boon-blue'
                         }`}
                       >
-                        {theme}
+                        All
                       </button>
-                    ))}
+                      {visibleThemes.map(theme => (
+                        <button
+                          key={theme}
+                          onClick={() => setThemeFilter(theme)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            themeFilter === theme ? 'bg-boon-blue text-white' : 'text-gray-400 hover:text-boon-blue'
+                          }`}
+                        >
+                          {theme}
+                        </button>
+                      ))}
+                      {hiddenCount > 0 && (
+                        <button
+                          onClick={() => setShowAllThemes(!showAllThemes)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-boon-blue hover:bg-blue-50 transition-all"
+                        >
+                          {showAllThemes ? 'Show less' : `+${hiddenCount} more`}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 

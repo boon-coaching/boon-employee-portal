@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale, View } from '../lib/types';
 import type { ScaleCheckpointStatus } from '../lib/types';
 import { updateActionItemStatus } from '../lib/dataFetcher';
+import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
 import CoachProfile from './CoachProfile';
 
@@ -40,7 +41,7 @@ export default function ScaleHome({
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
 

@@ -52,6 +52,17 @@ const PROGRAM_SESSION_COUNTS: Record<string, number> = {
 // Statuses that count towards session totals (completed, late cancels, no-shows all count)
 export const COUNTED_SESSION_STATUSES = ['Completed', 'Late Cancel', 'Client No-Show'];
 
+// A session is only truly upcoming if it has a Scheduled/Upcoming status AND its date is today or in the future.
+// Past-dated "Scheduled" sessions are stale Salesforce data that was never updated.
+export function isUpcomingSession(session: Session): boolean {
+  if (session.status !== 'Upcoming' && session.status !== 'Scheduled') return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const sessionDate = new Date(session.session_date);
+  sessionDate.setHours(0, 0, 0, 0);
+  return sessionDate >= today;
+}
+
 /**
  * Determines if all sessions are done (final session completed, no upcoming)
  */
@@ -61,7 +72,7 @@ function areAllSessionsDone(
 ): boolean {
   // Count sessions that count towards totals (completed, late cancel, no-show)
   const countedSessions = sessions.filter(s => COUNTED_SESSION_STATUSES.includes(s.status));
-  const upcomingSessions = sessions.filter(s => s.status === 'Upcoming' || s.status === 'Scheduled');
+  const upcomingSessions = sessions.filter(isUpcomingSession);
   const expectedSessions = programType ? PROGRAM_SESSION_COUNTS[programType] || 12 : 12;
 
   return countedSessions.length >= expectedSessions && upcomingSessions.length === 0;
@@ -207,7 +218,7 @@ export function getCoachingState(
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   // Sessions that count towards the total (includes late cancels, no-shows)
   const countedSessions = sessions.filter(s => COUNTED_SESSION_STATUSES.includes(s.status));
-  const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled') || null;
+  const upcomingSession = sessions.find(isUpcomingSession) || null;
   const lastSession = completedSessions.length > 0
     ? completedSessions.sort((a, b) =>
         new Date(b.session_date).getTime() - new Date(a.session_date).getTime()

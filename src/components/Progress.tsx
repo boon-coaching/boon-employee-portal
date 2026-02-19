@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem, Checkpoint, WelcomeSurveyScale, CoachingWin, View } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
-import { isAlumniState, isPreFirstSession, isPendingReflectionState } from '../lib/coachingState';
+import { isAlumniState, isPreFirstSession, isPendingReflectionState, isUpcomingSession } from '../lib/coachingState';
 import {
   RadarChart,
   PolarGrid,
@@ -176,7 +176,7 @@ export default function ProgressPage({
   // Get coach name for pre-first-session messaging
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const anySessionWithCoach = sessions.find(s => s.coach_name);
   const coachName = upcomingSession?.coach_name || anySessionWithCoach?.coach_name;
@@ -1860,7 +1860,7 @@ export default function ProgressPage({
               );
             })}
             {/* Upcoming session indicator */}
-            {sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled') && (
+            {sessions.find(isUpcomingSession) && (
               <div className="flex items-center gap-4 p-4 bg-boon-lightBlue/20 rounded-xl border-2 border-dashed border-boon-blue/30">
                 <div className="w-10 h-10 bg-boon-blue ring-4 ring-boon-blue/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <div className="w-2 h-2 bg-white rounded-full" />
@@ -1868,7 +1868,7 @@ export default function ProgressPage({
                 <div className="flex-1">
                   <p className="font-bold text-boon-text">Session {completedSessions.length + 1}</p>
                   <p className="text-sm text-boon-blue">
-                    {new Date(sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled')!.session_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    {new Date(sessions.find(isUpcomingSession)!.session_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     <span className="text-gray-400 ml-1">(upcoming)</span>
                   </p>
                 </div>

@@ -1,4 +1,5 @@
 import type { Employee, Session, BaselineSurvey } from './types';
+import { isUpcomingSession } from './coachingState';
 
 export type LifecycleStage =
   | 'welcome'        // Never signed up - needs to take welcome survey
@@ -22,7 +23,7 @@ export function determineLifecycleStage(
   baseline: BaselineSurvey | null
 ): LifecycleData {
   const completedSessions = sessions.filter(s => s.status === 'Completed');
-  const upcomingSession = sessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled') || null;
+  const upcomingSession = sessions.find(isUpcomingSession) || null;
 
   const hasBaseline = !!baseline;
   const hasCoach = !!employee?.coach_id || sessions.length > 0;

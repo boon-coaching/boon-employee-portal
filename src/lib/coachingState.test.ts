@@ -129,7 +129,7 @@ describe('getCoachingState', () => {
 
     it('returns MATCHED_PRE_FIRST_SESSION when has upcoming session but no completed', () => {
       const employee = createEmployee({ program: 'GROW - Cohort 1', coach_id: 'coach-1' });
-      const upcomingSession = createSession({ status: 'Upcoming' });
+      const upcomingSession = createSession({ status: 'Upcoming', session_date: new Date(Date.now() + 7 * 86400000).toISOString() });
       const result = getCoachingState(employee, [upcomingSession], createBaseline());
       expect(result.state).toBe('MATCHED_PRE_FIRST_SESSION');
       expect(result.hasUpcomingSession).toBe(true);
@@ -215,7 +215,7 @@ describe('getCoachingState', () => {
       const completedSessions = Array.from({ length: 12 }, (_, i) =>
         createSession({ id: `session-${i}`, status: 'Completed' })
       );
-      const upcomingSession = createSession({ id: 'upcoming', status: 'Upcoming' });
+      const upcomingSession = createSession({ id: 'upcoming', status: 'Upcoming', session_date: new Date(Date.now() + 7 * 86400000).toISOString() });
       const result = getCoachingState(
         employee,
         [...completedSessions, upcomingSession],

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Employee, Session, ActionItem, BaselineSurvey, View, Coach } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
+import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName } from '../lib/dataFetcher';
 
@@ -31,7 +32,7 @@ export default function ActiveGrowHome({
     new Date(b.session_date).getTime() - new Date(a.session_date).getTime()
   );
   const completedSessions = sortedSessions.filter(s => s.status === 'Completed');
-  const upcomingSession = sortedSessions.find(s => s.status === 'Upcoming' || s.status === 'Scheduled');
+  const upcomingSession = sortedSessions.find(isUpcomingSession);
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
 
   const coachName = lastSession?.coach_name || upcomingSession?.coach_name || 'Your Coach';

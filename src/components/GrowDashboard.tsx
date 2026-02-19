@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Employee, Session, ActionItem, View, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
-import { COUNTED_SESSION_STATUSES } from '../lib/coachingState';
+import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus, fetchMatchSummary } from '../lib/dataFetcher';
 import ProgramProgressCard from './ProgramProgressCard';
@@ -140,7 +140,7 @@ export default function GrowDashboard({
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
 

@@ -3,6 +3,7 @@ import type { Employee, Session, BaselineSurvey, WelcomeSurveyScale, ProgramType
 import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName, fetchCoachById, fetchMatchSummary } from '../lib/dataFetcher';
+import { isUpcomingSession } from '../lib/coachingState';
 
 /**
  * Extract the specific coach's summary from the full match_summary text.
@@ -116,7 +117,7 @@ export default function PreFirstSessionHome({
 }: PreFirstSessionHomeProps) {
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
 
   // Coach state - full coach data from coaches table

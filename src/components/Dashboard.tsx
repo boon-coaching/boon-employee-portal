@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, View, Checkpoint } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
-import { isAlumniState, isPreFirstSession, isPendingReflectionState } from '../lib/coachingState';
+import { isAlumniState, isPreFirstSession, isPendingReflectionState, isUpcomingSession } from '../lib/coachingState';
 import ActionItems from './ActionItems';
 import CoachProfile from './CoachProfile';
 import GrowthStory from './GrowthStory';
@@ -37,7 +37,7 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
 

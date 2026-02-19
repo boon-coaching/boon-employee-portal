@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Session, ActionItem } from '../lib/types';
+import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { updateActionItemStatus } from '../lib/dataFetcher';
 
@@ -15,7 +16,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
 
   // Find most recent session with goals or plan (for showing relevant context)

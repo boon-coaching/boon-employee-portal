@@ -1,5 +1,6 @@
 import { useAuth } from '../lib/AuthContext';
 import type { Session } from '../lib/types';
+import { isUpcomingSession } from '../lib/coachingState';
 
 interface GettingStartedPageProps {
   sessions: Session[];
@@ -10,7 +11,7 @@ export default function GettingStartedPage({ sessions }: GettingStartedPageProps
 
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
-    .filter(s => s.status === 'Upcoming' || s.status === 'Scheduled')
+    .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const coachName = upcomingSession?.coach_name || sessions[0]?.coach_name || 'Your Coach';
 
