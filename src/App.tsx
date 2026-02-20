@@ -161,11 +161,15 @@ function ProtectedApp() {
         }
 
         setProgramType(finalProgramType);
-        // Only show action items from completed sessions (filter out cancelled/no-show/etc.)
+        // Only show action items from recent completed sessions
+        // Historical items from years ago aren't actionable
+        const completedByDate = sessionsData
+          .filter(s => s.status === 'Completed')
+          .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+        const recentSessionIds = new Set(completedByDate.slice(0, 5).map(s => String(s.id)));
         const validActionItems = actionItemsData.filter(item => {
           if (!item.session_id) return true;
-          const session = sessionsData.find(s => String(s.id) === String(item.session_id));
-          return session?.status === 'Completed';
+          return recentSessionIds.has(String(item.session_id));
         });
         setActionItems(validActionItems);
         setReflection(reflectionData);
@@ -192,11 +196,14 @@ function ProtectedApp() {
   async function reloadActionItems() {
     if (!employee?.company_email) return;
     const items = await fetchActionItems(employee.company_email);
-    // Only show action items from completed sessions (filter out cancelled/no-show/etc.)
+    // Only show action items from recent completed sessions
+    const completedByDate = sessions
+      .filter(s => s.status === 'Completed')
+      .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+    const recentSessionIds = new Set(completedByDate.slice(0, 5).map(s => String(s.id)));
     const validItems = items.filter(item => {
       if (!item.session_id) return true;
-      const session = sessions.find(s => String(s.id) === String(item.session_id));
-      return session?.status === 'Completed';
+      return recentSessionIds.has(String(item.session_id));
     });
     setActionItems(validItems);
   }

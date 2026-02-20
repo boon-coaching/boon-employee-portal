@@ -327,13 +327,11 @@ export async function fetchLatestSurveyResponse(email: string): Promise<SurveyRe
 export async function fetchActionItems(email: string): Promise<ActionItem[]> {
   console.log('[fetchActionItems] Fetching for email:', email);
 
-  // Limit to 50 most recent items to keep UI manageable for long-running clients
   const { data, error } = await supabase
     .from('action_items')
     .select('*')
     .ilike('email', email)
-    .order('created_at', { ascending: false })
-    .limit(50);
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.log('[fetchActionItems] Error:', {
