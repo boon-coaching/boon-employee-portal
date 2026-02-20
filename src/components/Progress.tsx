@@ -38,6 +38,15 @@ interface ProgressPageProps {
   onNavigate?: (view: View) => void;
 }
 
+// Filter out non-substantive free-text answers (test entries, dismissive responses)
+const NON_ANSWERS = ['no', 'n/a', 'na', 'none', 'nope', 'nothing', 'test', 'asdf', 'xxx'];
+function isSubstantiveText(text: string | null | undefined): text is string {
+  if (!text?.trim()) return false;
+  const normalized = text.trim().toLowerCase();
+  if (normalized.length < 3) return false;
+  return !NON_ANSWERS.includes(normalized);
+}
+
 // The 12 competencies with their database column keys
 const COMPETENCIES = [
   { key: 'adaptability_and_resilience', label: 'Adaptability & Resilience', shortLabel: 'Adaptability' },
@@ -228,8 +237,8 @@ export default function ProgressPage({
         },
       ];
 
-      // Get coaching goals from welcomeSurveyScale
-      const coachingGoal = welcomeSurveyScale.coaching_goals || welcomeSurveyScale.additional_topics;
+      // Get coaching goals from welcomeSurveyScale (filter out test/non-substantive entries)
+      const coachingGoal = [welcomeSurveyScale.coaching_goals, welcomeSurveyScale.additional_topics].find(isSubstantiveText) || null;
 
       // Format session date for display
       const sessionDate = upcomingSession?.session_date
@@ -761,12 +770,13 @@ export default function ProgressPage({
     };
 
     // Get goal display - prefer their own words, fall back to selected focus areas
+    // Filters out non-substantive entries (test data, dismissive answers)
     const getGoalDisplay = () => {
-      if (welcomeSurveyScale?.additional_topics?.trim()) {
-        return { type: 'text' as const, content: welcomeSurveyScale.additional_topics };
+      if (isSubstantiveText(welcomeSurveyScale?.additional_topics)) {
+        return { type: 'text' as const, content: welcomeSurveyScale!.additional_topics! };
       }
-      if (welcomeSurveyScale?.coaching_goals?.trim()) {
-        return { type: 'text' as const, content: welcomeSurveyScale.coaching_goals };
+      if (isSubstantiveText(welcomeSurveyScale?.coaching_goals)) {
+        return { type: 'text' as const, content: welcomeSurveyScale!.coaching_goals! };
       }
       // Get selected focus areas
       const selectedFocusAreas = Object.entries(focusLabels)
