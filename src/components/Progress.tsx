@@ -110,6 +110,7 @@ export default function ProgressPage({
   const [showAddWinModal, setShowAddWinModal] = useState(false);
   const [newWinText, setNewWinText] = useState('');
   const [isSubmittingWin, setIsSubmittingWin] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
 
   // Edit/delete win state
   const [editingWinId, setEditingWinId] = useState<string | null>(null);
@@ -458,20 +459,28 @@ export default function ProgressPage({
               </div>
             </section>
           ) : (
-            <section className="bg-white rounded-[2rem] p-8 border-2 border-dashed border-gray-200 text-center">
-              <div className="text-4xl mb-4">🏆</div>
-              <h2 className="text-lg font-extrabold text-boon-text mb-2">Your Wins</h2>
-              <p className="text-gray-500 max-w-md mx-auto text-sm mb-4">
-                This is where you'll track breakthroughs and accomplishments as you progress through coaching.
-              </p>
-              {onAddWin && (
-                <button
-                  onClick={() => setShowAddWinModal(true)}
-                  className="text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 px-5 py-2 rounded-full transition-colors"
-                >
-                  + Add your first win
-                </button>
-              )}
+            <section className="rounded-[2rem] p-8 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold text-boon-text mb-2">What counts as a win?</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
+                  </p>
+                  {onAddWin && (
+                    <button
+                      onClick={() => setShowAddWinModal(true)}
+                      className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
+                    >
+                      + Add your first win
+                    </button>
+                  )}
+                </div>
+              </div>
             </section>
           )}
 
@@ -934,49 +943,201 @@ export default function ProgressPage({
           )}
         </section>
 
-        {/* Your Journey - Timeline */}
+        {/* Session Stats - Compact */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
+            <p className="text-2xl font-black text-boon-text">{completedSessions.length}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions completed</p>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
+            <p className="text-2xl font-black text-boon-text">{monthsInProgram > 0 ? monthsInProgram : '—'}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Months in coaching</p>
+          </div>
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
+            <p className="text-2xl font-black text-gray-500">Session {nextCheckInSession}</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Next check-in</p>
+          </div>
+        </div>
+
+        {/* Wellbeing Progress - Baseline vs Current */}
+        {welcomeSurveyScale && (welcomeSurveyScale.satisfaction || welcomeSurveyScale.productivity || welcomeSurveyScale.work_life_balance) && (
+          <section className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-600">
+                {latestWellbeingCheckpoint ? 'Your Wellbeing Progress' : 'Your Starting Point'}
+              </h3>
+              <span className="text-[10px] text-gray-400">
+                {latestWellbeingCheckpoint
+                  ? `Updated Session ${latestWellbeingCheckpoint.checkpoint_number}`
+                  : 'From welcome survey · Check-in every 6 sessions'}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              {wellbeingMetrics.map((metric) => {
+                const baselineValue = metric.value;
+                const currentValue = latestWellbeingCheckpoint
+                  ? (metric.key === 'satisfaction' ? latestWellbeingCheckpoint.wellbeing_satisfaction
+                    : metric.key === 'productivity' ? latestWellbeingCheckpoint.wellbeing_productivity
+                    : latestWellbeingCheckpoint.wellbeing_balance)
+                  : null;
+                const hasUpdate = currentValue !== null;
+                const improvement = hasUpdate && baselineValue ? currentValue - baselineValue : null;
+
+                return (
+                  <div key={metric.key} className="text-center">
+                    {hasUpdate ? (
+                      <>
+                        {/* Current score - prominent */}
+                        <p className="text-xl font-bold text-boon-text">
+                          {currentValue}<span className="text-sm text-gray-400">/10</span>
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
+                        {/* Show improvement from baseline */}
+                        {improvement !== null && improvement !== 0 && (
+                          <p className={`text-xs font-bold mt-1 ${improvement > 0 ? 'text-green-600' : 'text-amber-600'}`}>
+                            {improvement > 0 ? '↑' : '↓'} {Math.abs(improvement)} from baseline
+                          </p>
+                        )}
+                        {improvement === 0 && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Same as baseline ({baselineValue})
+                          </p>
+                        )}
+                        {/* Baseline reference */}
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          Baseline: {baselineValue}/10
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        {/* Only baseline - original display */}
+                        <p className="text-xl font-bold text-boon-text">
+                          {baselineValue || '—'}<span className="text-sm text-gray-400">/10</span>
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
+                        {(() => {
+                          const vsBenchmark = calculateVsBenchmark(baselineValue, metric.benchmark);
+                          return vsBenchmark !== null ? (
+                            <p className={`text-xs mt-1 ${vsBenchmark >= 0 ? 'text-green-600' : 'text-amber-600'}`}>
+                              {vsBenchmark >= 0 ? '+' : ''}{vsBenchmark}% vs avg
+                            </p>
+                          ) : null;
+                        })()}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Your Journey - Timeline (collapsible) */}
         <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
           <h2 className="text-lg font-extrabold text-boon-text mb-6">Your Journey</h2>
           <div className="space-y-0">
-            {journeySteps.map((step, idx) => {
-              const isLast = idx === journeySteps.length - 1;
-              const isCurrent = step.isCurrent;
-              return (
-                <div key={step.key} className="flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      step.completed
-                        ? 'bg-green-500'
-                        : isCurrent
-                        ? 'bg-boon-blue ring-4 ring-boon-blue/20'
-                        : 'bg-gray-200'
-                    }`}>
-                      {step.completed ? (
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : isCurrent ? (
-                        <div className="w-2 h-2 bg-white rounded-full" />
-                      ) : (
-                        <div className="w-2 h-2 bg-gray-400 rounded-full" />
+            {(() => {
+              // Split journey steps for collapsible rendering
+              const milestoneSteps = journeySteps.filter(s => s.key === 'welcome' || s.key === 'matched');
+              const sessionSteps = journeySteps.filter(s => s.key.startsWith('session-') && s.completed);
+              const remainingSteps = journeySteps.filter(s =>
+                s.key !== 'welcome' && s.key !== 'matched' &&
+                !(s.key.startsWith('session-') && s.completed)
+              );
+              const shouldCollapse = sessionSteps.length > 5 && !timelineExpanded;
+
+              const renderStep = (step: typeof journeySteps[0], isLast: boolean) => {
+                const isCurrent = step.isCurrent;
+                return (
+                  <div key={step.key} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        step.completed
+                          ? 'bg-green-500'
+                          : isCurrent
+                          ? 'bg-boon-blue ring-4 ring-boon-blue/20'
+                          : 'bg-gray-200'
+                      }`}>
+                        {step.completed ? (
+                          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : isCurrent ? (
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        ) : (
+                          <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                        )}
+                      </div>
+                      {!isLast && (
+                        <div className={`w-0.5 h-12 ${step.completed ? 'bg-green-300' : 'bg-gray-200'}`} />
                       )}
                     </div>
-                    {!isLast && (
-                      <div className={`w-0.5 h-12 ${step.completed ? 'bg-green-300' : 'bg-gray-200'}`} />
-                    )}
+                    <div className="pb-8">
+                      <p className={`font-bold ${isCurrent ? 'text-boon-blue' : step.completed ? 'text-boon-text' : 'text-gray-400'}`}>
+                        {step.label}
+                        {isCurrent && <span className="ml-2 text-xs font-normal">(You're here)</span>}
+                      </p>
+                      <p className={`text-sm ${step.completed || isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>
+                        {step.detail}
+                      </p>
+                    </div>
                   </div>
-                  <div className="pb-8">
-                    <p className={`font-bold ${isCurrent ? 'text-boon-blue' : step.completed ? 'text-boon-text' : 'text-gray-400'}`}>
-                      {step.label}
-                      {isCurrent && <span className="ml-2 text-xs font-normal">(You're here)</span>}
-                    </p>
-                    <p className={`text-sm ${step.completed || isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {step.detail}
-                    </p>
-                  </div>
-                </div>
+                );
+              };
+
+              if (shouldCollapse) {
+                // Collapsed view: milestones, collapsed row, last 3 sessions, remaining
+                const collapsedCount = sessionSteps.length - 3;
+                const firstDate = sessionSteps[0]?.detail?.match(/\w+ \d+/)?.[0] || '';
+                const lastCollapsedDate = sessionSteps[collapsedCount - 1]?.detail?.match(/\w+ \d+/)?.[0] || '';
+                const recentSessions = sessionSteps.slice(-3);
+
+                return (
+                  <>
+                    {milestoneSteps.map(step => renderStep(step, false))}
+                    {/* Collapsed sessions row */}
+                    <div className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">{collapsedCount}</span>
+                        </div>
+                        <div className="w-0.5 h-12 bg-green-300" />
+                      </div>
+                      <div className="pb-8">
+                        <button
+                          onClick={() => setTimelineExpanded(true)}
+                          className="font-bold text-boon-text hover:text-boon-blue transition-colors text-left"
+                        >
+                          Sessions 1-{collapsedCount}
+                          <span className="text-sm font-normal text-gray-400 ml-2">({firstDate} - {lastCollapsedDate})</span>
+                        </button>
+                        <p className="text-sm text-boon-blue cursor-pointer hover:underline" onClick={() => setTimelineExpanded(true)}>
+                          Show all sessions
+                        </p>
+                      </div>
+                    </div>
+                    {recentSessions.map((step, idx) => renderStep(step, idx === recentSessions.length - 1 && remainingSteps.length === 0))}
+                    {remainingSteps.map((step, idx) => renderStep(step, idx === remainingSteps.length - 1))}
+                  </>
+                );
+              }
+
+              // Expanded or small timeline: render all steps
+              const allSteps = [...milestoneSteps, ...sessionSteps, ...remainingSteps];
+              return (
+                <>
+                  {allSteps.map((step, idx) => renderStep(step, idx === allSteps.length - 1))}
+                  {timelineExpanded && sessionSteps.length > 5 && (
+                    <button
+                      onClick={() => setTimelineExpanded(false)}
+                      className="text-sm font-bold text-boon-blue hover:underline ml-12 mt-2"
+                    >
+                      Show less
+                    </button>
+                  )}
+                </>
               );
-            })}
+            })()}
           </div>
         </section>
 
@@ -1066,104 +1227,29 @@ export default function ProgressPage({
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🏆</span>
+            <div className="rounded-2xl p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-boon-text mb-1">What counts as a win?</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
+                  </p>
+                  <button
+                    onClick={() => setShowAddWinModal(true)}
+                    className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
+                  >
+                    + Add your first win
+                  </button>
+                </div>
               </div>
-              <p className="text-gray-500 mb-2">This is where you'll track breakthroughs and accomplishments</p>
-              <p className="text-sm text-gray-400">Celebrate your wins—big and small</p>
             </div>
           )}
         </section>
-
-        {/* Session Stats - Compact */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
-            <p className="text-2xl font-black text-boon-text">{completedSessions.length}</p>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions completed</p>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
-            <p className="text-2xl font-black text-boon-text">{monthsInProgram > 0 ? monthsInProgram : '—'}</p>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Months in coaching</p>
-          </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
-            <p className="text-2xl font-black text-gray-500">Session {nextCheckInSession}</p>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Next check-in</p>
-          </div>
-        </div>
-
-        {/* Wellbeing Progress - Baseline vs Current */}
-        {welcomeSurveyScale && (welcomeSurveyScale.satisfaction || welcomeSurveyScale.productivity || welcomeSurveyScale.work_life_balance) && (
-          <section className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-600">
-                {latestWellbeingCheckpoint ? 'Your Wellbeing Progress' : 'Your Starting Point'}
-              </h3>
-              <span className="text-[10px] text-gray-400">
-                {latestWellbeingCheckpoint
-                  ? `Updated Session ${latestWellbeingCheckpoint.checkpoint_number}`
-                  : 'From welcome survey · Check-in every 6 sessions'}
-              </span>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              {wellbeingMetrics.map((metric) => {
-                const baselineValue = metric.value;
-                const currentValue = latestWellbeingCheckpoint
-                  ? (metric.key === 'satisfaction' ? latestWellbeingCheckpoint.wellbeing_satisfaction
-                    : metric.key === 'productivity' ? latestWellbeingCheckpoint.wellbeing_productivity
-                    : latestWellbeingCheckpoint.wellbeing_balance)
-                  : null;
-                const hasUpdate = currentValue !== null;
-                const improvement = hasUpdate && baselineValue ? currentValue - baselineValue : null;
-
-                return (
-                  <div key={metric.key} className="text-center">
-                    {hasUpdate ? (
-                      <>
-                        {/* Current score - prominent */}
-                        <p className="text-xl font-bold text-boon-text">
-                          {currentValue}<span className="text-sm text-gray-400">/10</span>
-                        </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
-                        {/* Show improvement from baseline */}
-                        {improvement !== null && improvement !== 0 && (
-                          <p className={`text-xs font-bold mt-1 ${improvement > 0 ? 'text-green-600' : 'text-amber-600'}`}>
-                            {improvement > 0 ? '↑' : '↓'} {Math.abs(improvement)} from baseline
-                          </p>
-                        )}
-                        {improvement === 0 && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Same as baseline ({baselineValue})
-                          </p>
-                        )}
-                        {/* Baseline reference */}
-                        <p className="text-[10px] text-gray-400 mt-0.5">
-                          Baseline: {baselineValue}/10
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        {/* Only baseline - original display */}
-                        <p className="text-xl font-bold text-boon-text">
-                          {baselineValue || '—'}<span className="text-sm text-gray-400">/10</span>
-                        </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
-                        {(() => {
-                          const vsBenchmark = calculateVsBenchmark(baselineValue, metric.benchmark);
-                          return vsBenchmark !== null ? (
-                            <p className={`text-xs mt-1 ${vsBenchmark >= 0 ? 'text-green-600' : 'text-amber-600'}`}>
-                              {vsBenchmark >= 0 ? '+' : ''}{vsBenchmark}% vs avg
-                            </p>
-                          ) : null;
-                        })()}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
 
         {/* Add Win Modal */}
         {showAddWinModal && (
@@ -1967,12 +2053,28 @@ export default function ProgressPage({
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🏆</span>
+            <div className="rounded-2xl p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-boon-text mb-1">What counts as a win?</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                    A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
+                  </p>
+                  {onAddWin && (
+                    <button
+                      onClick={() => setShowAddWinModal(true)}
+                      className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
+                    >
+                      + Add your first win
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-gray-600 font-medium mb-2">No wins yet—celebrate your first!</p>
-              <p className="text-sm text-gray-400">Track breakthroughs and accomplishments here.</p>
             </div>
           )}
         </section>

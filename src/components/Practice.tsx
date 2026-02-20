@@ -222,7 +222,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
               </div>
               <div>
                 <h3 className="font-bold text-boon-text">My Team</h3>
-                <p className="text-xs text-gray-400">{teamMembers.length} member{teamMembers.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-gray-400">{teamMembers.length > 0 ? `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}` : 'Get more relevant practice'}</p>
               </div>
             </div>
             <button
@@ -246,7 +246,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
               )}
             </div>
           ) : (
-            <p className="text-xs text-gray-400">Add team members for more personalized practice scenarios</p>
+            <p className="text-xs text-gray-400">Add the people you work with to get tailored scenarios and conversation strategies.</p>
           )}
         </div>
 
@@ -261,7 +261,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
               </div>
               <div>
                 <h3 className="font-bold text-boon-text">My Playbook</h3>
-                <p className="text-xs text-gray-400">{savedPlans.length} saved plan{savedPlans.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-gray-400">{savedPlans.length > 0 ? `${savedPlans.length} saved plan${savedPlans.length !== 1 ? 's' : ''}` : 'Your conversation playbook'}</p>
               </div>
             </div>
           </div>
@@ -287,7 +287,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-400">Your generated plans will be saved here for future reference</p>
+            <p className="text-xs text-gray-400">Try a scenario above and your gameplan will be saved here for quick reference before real conversations.</p>
           )}
         </div>
       </div>

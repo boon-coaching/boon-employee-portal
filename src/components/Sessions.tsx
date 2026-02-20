@@ -122,6 +122,28 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
     return true;
   });
 
+  // Group filtered sessions by month-year for visual structure
+  const groupedSessions = useMemo(() => {
+    const groups: { key: string; label: string; sessions: Session[] }[] = [];
+    let currentKey = '';
+
+    filteredSessions.forEach(session => {
+      const date = new Date(session.session_date);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      if (key !== currentKey) {
+        currentKey = key;
+        groups.push({
+          key,
+          label: date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          sessions: [],
+        });
+      }
+      groups[groups.length - 1].sessions.push(session);
+    });
+
+    return groups;
+  }, [filteredSessions]);
+
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -351,124 +373,130 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
             </div>
           </div>
 
-          <div className="space-y-4">
-            {filteredSessions.length > 0 ? filteredSessions.map((session) => {
-              const isExpanded = expandedSession === session.id;
-              const hasDetails = session.goals || session.plan || session.summary;
-              // Get themes from text columns (not booleans)
-              const themes = getSessionThemes(session);
+          <div className="space-y-6">
+            {groupedSessions.length > 0 ? groupedSessions.map((group) => (
+              <div key={group.key}>
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">{group.label}</h3>
+                <div className="space-y-4">
+                  {group.sessions.map((session) => {
+                    const isExpanded = expandedSession === session.id;
+                    const hasDetails = session.goals || session.plan || session.summary;
+                    const themes = getSessionThemes(session);
 
-              return (
-                <div
-                  key={session.id}
-                  className={`bg-white rounded-2xl shadow-sm border transition-all ${
-                    isExpanded ? 'border-boon-blue/20' : 'border-gray-100 hover:border-boon-blue/10'
-                  }`}
-                >
-                  <div
-                    className="p-6 cursor-pointer"
-                    onClick={() => hasDetails && setExpandedSession(isExpanded ? null : session.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {(() => {
-                          const style = getStatusStyle(session.status);
-                          return (
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${style.bgClass} ${style.textClass}`}>
-                              <StatusIcon type={style.icon} />
+                    return (
+                      <div
+                        key={session.id}
+                        className={`bg-white rounded-2xl shadow-sm border transition-all ${
+                          isExpanded ? 'border-boon-blue/20' : 'border-gray-100 hover:border-boon-blue/10'
+                        }`}
+                      >
+                        <div
+                          className="p-6 cursor-pointer"
+                          onClick={() => hasDetails && setExpandedSession(isExpanded ? null : session.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {(() => {
+                                const style = getStatusStyle(session.status);
+                                return (
+                                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${style.bgClass} ${style.textClass}`}>
+                                    <StatusIcon type={style.icon} />
+                                  </div>
+                                );
+                              })()}
+                              <div>
+                                <p className="font-bold text-boon-text">
+                                  {new Date(session.session_date).toLocaleDateString('en-US', {
+                                    weekday: 'long', month: 'long', day: 'numeric'
+                                  })}
+                                </p>
+                                <p className="text-sm text-gray-500">with {session.coach_name}</p>
+                              </div>
                             </div>
-                          );
-                        })()}
-                        <div>
-                          <p className="font-bold text-boon-text">
-                            {new Date(session.session_date).toLocaleDateString('en-US', {
-                              weekday: 'long', month: 'long', day: 'numeric'
-                            })}
-                          </p>
-                          <p className="text-sm text-gray-500">with {session.coach_name}</p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-3">
-                        {(() => {
-                          const style = getStatusStyle(session.status);
-                          return (
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${style.bgClass} ${style.textClass}`}>
-                              {style.label}
-                            </span>
-                          );
-                        })()}
-                        {hasDetails && (
-                          <svg
-                            className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
+                            <div className="flex items-center gap-3">
+                              {(() => {
+                                const style = getStatusStyle(session.status);
+                                return (
+                                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${style.bgClass} ${style.textClass}`}>
+                                    {style.label}
+                                  </span>
+                                );
+                              })()}
+                              {hasDetails && (
+                                <svg
+                                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Theme tags - always visible */}
+                          {themes.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-4">
+                              {themes.map((theme, i) => (
+                                <span key={i} className="px-3 py-1 bg-boon-bg text-gray-600 text-xs font-medium rounded-full">
+                                  {theme}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Expanded Content */}
+                        {isExpanded && hasDetails && (
+                          <div className="px-6 pb-6 space-y-4 border-t border-gray-50 pt-4">
+                            {themes.length > 0 && (
+                              <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Topics Discussed</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {themes.map((theme, i) => (
+                                    <span key={i} className="px-3 py-1.5 bg-boon-lightBlue/30 text-boon-blue text-xs font-medium rounded-full">
+                                      {theme}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {session.goals && (
+                              <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Goals</h4>
+                                <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.goals}</p>
+                              </div>
+                            )}
+                            {session.plan && (
+                              <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Plan</h4>
+                                <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.plan}</p>
+                              </div>
+                            )}
+                            {session.summary && (
+                              <div>
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Summary</h4>
+                                <p className="text-sm text-gray-600 leading-relaxed">{session.summary}</p>
+                              </div>
+                            )}
+                            {session.status === 'Completed' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setFeedbackSession(session); }}
+                                className="px-4 py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-xl hover:bg-boon-lightBlue transition-all"
+                              >
+                                Give Feedback
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    </div>
-
-                    {/* Theme tags - always visible */}
-                    {themes.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {themes.map((theme, i) => (
-                          <span key={i} className="px-3 py-1 bg-boon-bg text-gray-600 text-xs font-medium rounded-full">
-                            {theme}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Expanded Content */}
-                  {isExpanded && hasDetails && (
-                    <div className="px-6 pb-6 space-y-4 border-t border-gray-50 pt-4">
-                      {themes.length > 0 && (
-                        <div>
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Topics Discussed</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {themes.map((theme, i) => (
-                              <span key={i} className="px-3 py-1.5 bg-boon-lightBlue/30 text-boon-blue text-xs font-medium rounded-full">
-                                {theme}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {session.goals && (
-                        <div>
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Goals</h4>
-                          <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.goals}</p>
-                        </div>
-                      )}
-                      {session.plan && (
-                        <div>
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Plan</h4>
-                          <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.plan}</p>
-                        </div>
-                      )}
-                      {session.summary && (
-                        <div>
-                          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Summary</h4>
-                          <p className="text-sm text-gray-600 leading-relaxed">{session.summary}</p>
-                        </div>
-                      )}
-                      {session.status === 'Completed' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setFeedbackSession(session); }}
-                          className="px-4 py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-xl hover:bg-boon-lightBlue transition-all"
-                        >
-                          Give Feedback
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
-              );
-            }) : (
+              </div>
+            )) : (
               <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
                 <p className="text-gray-400">No sessions found.</p>
               </div>
