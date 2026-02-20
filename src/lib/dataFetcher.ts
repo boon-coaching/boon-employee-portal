@@ -327,11 +327,13 @@ export async function fetchLatestSurveyResponse(email: string): Promise<SurveyRe
 export async function fetchActionItems(email: string): Promise<ActionItem[]> {
   console.log('[fetchActionItems] Fetching for email:', email);
 
+  // Limit to 50 most recent items to keep UI manageable for long-running clients
   const { data, error } = await supabase
     .from('action_items')
     .select('*')
     .ilike('email', email)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50);
 
   if (error) {
     console.log('[fetchActionItems] Error:', {
@@ -1171,8 +1173,15 @@ export async function fetchCoreCompetencies(): Promise<CoreCompetency[]> {
 }
 
 // Program-specific milestone arrays
-// SCALE: feedback at sessions 1, 3, 6, 12, 18, 24, 30, 36
-const SCALE_MILESTONES = [1, 3, 6, 12, 18, 24, 30, 36];
+// SCALE: feedback at sessions 1, 3, then every 6 (6, 12, 18, 24, ...)
+// Generated dynamically since SCALE is ongoing with no fixed end
+function getScaleMilestones(countedSessionCount: number): number[] {
+  const milestones = [1, 3];
+  for (let i = 6; i <= countedSessionCount + 6; i += 6) {
+    milestones.push(i);
+  }
+  return milestones;
+}
 // GROW: feedback at sessions 1, midpoint (dynamically calculated), end (handled separately)
 
 /**
@@ -1223,15 +1232,6 @@ export async function fetchPendingSurvey(
   const sessionsPerEmployee = isGrow ? 12 : 36; // defaults
   const growMidpoint = Math.floor(sessionsPerEmployee / 2);
 
-  const milestones = isGrow ? getGrowMilestones(sessionsPerEmployee).milestones : SCALE_MILESTONES;
-
-  console.log('[fetchPendingSurvey] Checking milestones:', {
-    milestones,
-    isGrow,
-    sessionsPerEmployee,
-    growMidpoint: isGrow ? growMidpoint : 'N/A',
-  });
-
   // Use loaded sessions if available, otherwise we can't check (RPC should have worked)
   if (!loadedSessions || loadedSessions.length === 0) {
     console.log('[fetchPendingSurvey] No loaded sessions available and RPC failed');
@@ -1247,6 +1247,16 @@ export async function fetchPendingSurvey(
   const countedSessions = loadedSessions
     .filter(s => COUNTED_STATUSES.includes(s.status))
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime());
+
+  // Calculate milestones (SCALE generates dynamically based on session count)
+  const milestones = isGrow ? getGrowMilestones(sessionsPerEmployee).milestones : getScaleMilestones(countedSessions.length);
+
+  console.log('[fetchPendingSurvey] Checking milestones:', {
+    milestones,
+    isGrow,
+    sessionsPerEmployee,
+    growMidpoint: isGrow ? growMidpoint : 'N/A',
+  });
 
   // Also track just completed sessions (for attaching surveys)
   const completedSessions = loadedSessions
@@ -1288,8 +1298,8 @@ export async function fetchPendingSurvey(
     return null;
   }
 
-  // Check for end-of-program survey first
-  if (countedSessions.length >= sessionsPerEmployee) {
+  // Check for end-of-program survey first (GROW/EXEC only, SCALE is ongoing)
+  if (isGrow && countedSessions.length >= sessionsPerEmployee) {
     const { data: existingEndSurvey } = await supabase
       .from('survey_submissions')
       .select('id')

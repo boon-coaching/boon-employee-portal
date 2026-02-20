@@ -203,7 +203,7 @@ export default function SurveyModal({
 
   // Get current step identifier for feedback surveys
   const getCurrentStepId = () => {
-    if (surveyType === 'feedback' || surveyType === 'first_session') {
+    if (surveyType === 'feedback' || surveyType === 'first_session' || surveyType === 'end_of_program') {
       const steps = getFeedbackSteps();
       return steps[currentStep - 1] || 'experience';
     }
@@ -245,7 +245,7 @@ export default function SurveyModal({
 
   // Can proceed to next step?
   const canProceed = () => {
-    if (surveyType === 'feedback' || surveyType === 'first_session') {
+    if (surveyType === 'feedback' || surveyType === 'first_session' || surveyType === 'end_of_program') {
       const stepId = getCurrentStepId();
       switch (stepId) {
         case 'experience':
@@ -465,7 +465,7 @@ export default function SurveyModal({
 
   // Next step handler - recalculates steps based on current answers
   const handleNext = () => {
-    if (surveyType === 'feedback' || surveyType === 'first_session') {
+    if (surveyType === 'feedback' || surveyType === 'first_session' || surveyType === 'end_of_program') {
       const steps = getFeedbackSteps();
       if (currentStep < steps.length) {
         setCurrentStep(prev => prev + 1);
