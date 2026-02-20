@@ -268,8 +268,9 @@ export function getCoachingState(
   if (!employee) {
     // No employee record at all
     state = 'NOT_SIGNED_UP';
-  } else if (!hasProgram && !hasCompletedOnboarding) {
-    // Has employee record but no program and no welcome survey
+  } else if (!hasProgram && !hasCompletedOnboarding && !hasCompletedSessions) {
+    // Has employee record but no program, no welcome survey, AND no sessions
+    // (Session history overrides missing program/survey data for legacy clients)
     state = 'NOT_SIGNED_UP';
   } else if (isFullyCompleted) {
     state = 'COMPLETED_PROGRAM';

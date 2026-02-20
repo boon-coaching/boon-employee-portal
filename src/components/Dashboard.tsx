@@ -110,9 +110,9 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
     );
   }
 
-  // Active EXEC users (or GROW fallback): Show ActiveGrowHome with sub-states
-  // (Session Scheduled vs No Session Scheduled)
-  if (!isCompleted && coachingState.isGrowOrExec) {
+  // Active non-Scale users: Show ActiveGrowHome with sub-states
+  // Catches EXEC, unknown program types, and legacy clients with sessions but no program field
+  if (!isCompleted) {
     return (
       <ActiveGrowHome
         profile={profile}
@@ -207,7 +207,7 @@ export default function Dashboard({ profile, sessions, actionItems, baseline, we
             <>
               {/* Program */}
               <div>
-                <p className="text-lg font-black text-boon-blue tracking-tight">GROW</p>
+                <p className="text-lg font-black text-boon-blue tracking-tight">{programType || 'Boon'}</p>
                 <p className="text-[10px] text-gray-400 uppercase tracking-widest">Program</p>
               </div>
               {/* Sessions */}
