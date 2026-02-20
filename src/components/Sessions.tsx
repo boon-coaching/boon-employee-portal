@@ -79,17 +79,20 @@ export default function SessionsPage({ sessions, coachingState }: SessionsPagePr
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Helper to extract themes from session
-  // The theme columns contain text descriptions of sub-themes (e.g. "Navigating conflict")
+  // Theme columns may contain semicolon-separated values (e.g. "Career development; Leading through change")
+  // Split them into individual themes for filtering and display
   const getSessionThemes = (session: Session): string[] => {
     const themes: string[] = [];
-    if (session.leadership_management_skills?.trim()) {
-      themes.push(session.leadership_management_skills.trim());
-    }
-    if (session.communication_skills?.trim()) {
-      themes.push(session.communication_skills.trim());
-    }
-    if (session.mental_well_being?.trim()) {
-      themes.push(session.mental_well_being.trim());
+    const fields = [session.leadership_management_skills, session.communication_skills, session.mental_well_being];
+    for (const field of fields) {
+      if (field?.trim()) {
+        for (const part of field.split(';')) {
+          const trimmed = part.trim();
+          if (trimmed && !themes.includes(trimmed)) {
+            themes.push(trimmed);
+          }
+        }
+      }
     }
     return themes;
   };
