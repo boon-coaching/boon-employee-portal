@@ -6,15 +6,15 @@ export default defineConfig({
   retries: 0,
   outputDir: './test-results',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:3000',
     headless: true,
     screenshot: 'on',
     trace: 'retain-on-failure',
     viewport: { width: 1280, height: 800 },
   },
   webServer: {
-    command: 'npm run dev -- --port 5173',
-    port: 5173,
+    command: 'npm run dev',
+    port: 3000,
     reuseExistingServer: true,
     timeout: 15_000,
   },
