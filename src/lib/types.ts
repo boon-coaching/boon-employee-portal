@@ -269,8 +269,6 @@ export interface SlackNudge {
   responded_at: string | null;
 }
 
-export type View = 'dashboard' | 'sessions' | 'progress' | 'practice' | 'coach' | 'resources' | 'reflection' | 'settings';
-
 // SCALE Checkpoint data (longitudinal tracking every 6 sessions)
 export interface Checkpoint {
   id: string;

@@ -1,11 +1,11 @@
-import type { Employee, Session, BaselineSurvey, ProgramType, View } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { Employee, Session, BaselineSurvey, ProgramType } from '../lib/types';
 
 interface PendingReflectionHomeProps {
   profile: Employee | null;
   sessions: Session[];
   baseline: BaselineSurvey | null;
   programType: ProgramType | null;
-  onNavigate?: (view: View) => void;
   onStartReflection: () => void;
 }
 
@@ -14,9 +14,9 @@ export default function PendingReflectionHome({
   sessions,
   baseline,
   programType,
-  onNavigate,
   onStartReflection,
 }: PendingReflectionHomeProps) {
+  const navigate = useNavigate();
   const completedSessions = sessions.filter(s => s.status === 'Completed');
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
   const coachName = lastSession?.coach_name || 'Your Coach';
@@ -226,7 +226,7 @@ export default function PendingReflectionHome({
           When hard moments come up, your Practice Space is still here.
         </p>
         <button
-          onClick={() => onNavigate?.('practice')}
+          onClick={() => navigate('/practice')}
           className="inline-flex items-center gap-2 text-boon-blue font-bold hover:underline"
         >
           Practice a scenario

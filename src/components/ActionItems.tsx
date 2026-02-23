@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { ActionItem, View } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { ActionItem } from '../lib/types';
 import { updateActionItemStatus } from '../lib/dataFetcher';
 
 interface ActionItemsProps {
   items: ActionItem[];
   onUpdate: () => void;
-  onNavigate?: (view: View) => void;
 }
 
 // Keywords that suggest an action item might benefit from practice
@@ -16,7 +16,8 @@ function hasPracticeRelevance(text: string): boolean {
   return PRACTICE_KEYWORDS.some(keyword => lower.includes(keyword));
 }
 
-export default function ActionItems({ items, onUpdate, onNavigate }: ActionItemsProps) {
+export default function ActionItems({ items, onUpdate }: ActionItemsProps) {
+  const navigate = useNavigate();
   const [updating, setUpdating] = useState<string | null>(null);
 
   const pendingItems = items.filter(item => item.status === 'pending');
@@ -102,18 +103,16 @@ export default function ActionItems({ items, onUpdate, onNavigate }: ActionItems
                           {due.text}
                         </span>
                       )}
-                      {onNavigate && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onNavigate('sessions'); }}
-                          className="text-xs text-boon-blue font-medium hover:underline"
-                        >
-                          View sessions →
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate('/sessions'); }}
+                        className="text-xs text-boon-blue font-medium hover:underline"
+                      >
+                        View sessions →
+                      </button>
                       {/* Contextual bridge to Practice */}
-                      {onNavigate && hasPracticeRelevance(item.action_text) && (
+                      {hasPracticeRelevance(item.action_text) && (
                         <button
-                          onClick={() => onNavigate('practice')}
+                          onClick={() => navigate('/practice')}
                           className="text-xs text-purple-600 font-medium hover:underline"
                         >
                           Practice this →

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Employee, Session, BaselineSurvey, WelcomeSurveyScale, ProgramType, View, Coach } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { Employee, Session, BaselineSurvey, WelcomeSurveyScale, ProgramType, Coach } from '../lib/types';
 import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName, fetchCoachById, fetchMatchSummary } from '../lib/dataFetcher';
@@ -103,7 +104,6 @@ interface PreFirstSessionHomeProps {
   welcomeSurveyScale: WelcomeSurveyScale | null;
   programType: ProgramType | null;
   userEmail: string;
-  onNavigate?: (view: View) => void;
 }
 
 export default function PreFirstSessionHome({
@@ -113,8 +113,8 @@ export default function PreFirstSessionHome({
   welcomeSurveyScale,
   programType,
   userEmail,
-  onNavigate,
 }: PreFirstSessionHomeProps) {
+  const navigate = useNavigate();
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
     .filter(isUpcomingSession)
@@ -662,7 +662,7 @@ export default function PreFirstSessionHome({
           While you wait, explore the Practice Space—AI-powered scenarios to help you prepare for real leadership moments.
         </p>
         <button
-          onClick={() => onNavigate?.('practice')}
+          onClick={() => navigate('/practice')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
         >
           Explore Practice Space

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale, View } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 import type { ScaleCheckpointStatus } from '../lib/types';
 import { updateActionItemStatus } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
@@ -15,7 +16,6 @@ interface ScaleHomeProps {
   checkpointStatus: ScaleCheckpointStatus;
   onActionUpdate: () => void;
   userEmail: string;
-  onNavigate?: (view: View) => void;
   onStartCheckpoint?: () => void;
   onDismissCheckpoint?: () => void;
 }
@@ -29,10 +29,10 @@ export default function ScaleHome({
   checkpointStatus,
   onActionUpdate,
   userEmail,
-  onNavigate,
   onStartCheckpoint,
   onDismissCheckpoint,
 }: ScaleHomeProps) {
+  const navigate = useNavigate();
   // Unused props reserved for future use
   void _baseline;
 
@@ -270,7 +270,7 @@ export default function ScaleHome({
           Prepare for challenging conversations with AI-powered scenarios.
         </p>
         <button
-          onClick={() => onNavigate?.('practice')}
+          onClick={() => navigate('/practice')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
         >
           Explore scenarios

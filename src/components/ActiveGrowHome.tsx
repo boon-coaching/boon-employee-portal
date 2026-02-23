@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Employee, Session, ActionItem, BaselineSurvey, View, Coach } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { Employee, Session, ActionItem, BaselineSurvey, Coach } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
@@ -13,7 +14,6 @@ interface ActiveGrowHomeProps {
   coachingState: CoachingStateData;
   onActionUpdate: () => void;
   userEmail: string;
-  onNavigate?: (view: View) => void;
 }
 
 export default function ActiveGrowHome({
@@ -23,8 +23,8 @@ export default function ActiveGrowHome({
   coachingState,
   onActionUpdate: _onActionUpdate,
   userEmail,
-  onNavigate,
 }: ActiveGrowHomeProps) {
+  const navigate = useNavigate();
   void _onActionUpdate; // Reserved for future action item updates
 
   // Sort sessions by date descending to get most recent first
@@ -738,7 +738,7 @@ export default function ActiveGrowHome({
           Prepare for challenging conversations with AI-powered scenarios.
         </p>
         <button
-          onClick={() => onNavigate?.('practice')}
+          onClick={() => navigate('/practice')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
         >
           Explore scenarios

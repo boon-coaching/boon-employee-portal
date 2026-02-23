@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { Employee, Session, ActionItem, View, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { Employee, Session, ActionItem, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
@@ -121,7 +122,6 @@ interface GrowDashboardProps {
   coachingState: CoachingStateData;
   onActionUpdate: () => void;
   userEmail: string;
-  onNavigate?: (view: View) => void;
 }
 
 export default function GrowDashboard({
@@ -133,8 +133,8 @@ export default function GrowDashboard({
   coachingState,
   onActionUpdate,
   userEmail,
-  onNavigate,
 }: GrowDashboardProps) {
+  const navigate = useNavigate();
   const [updatingActionId, setUpdatingActionId] = useState<string | null>(null);
 
   const completedSessions = sessions.filter(s => s.status === 'Completed');
@@ -559,7 +559,7 @@ export default function GrowDashboard({
           Prepare for challenging conversations with AI-powered scenarios.
         </p>
         <button
-          onClick={() => onNavigate?.('practice')}
+          onClick={() => navigate('/practice')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
         >
           Explore scenarios

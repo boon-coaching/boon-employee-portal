@@ -32,7 +32,6 @@ export function HomePage() {
         baseline={baseline}
         welcomeSurveyScale={welcomeSurveyScale}
         programType={programType}
-        onNavigate={(view) => navigate(`/${view === 'dashboard' ? '' : view}`)}
       />
     );
   }
@@ -171,7 +170,6 @@ export function HomePage() {
         welcomeSurveyScale={welcomeSurveyScale}
         programType={programType}
         userEmail={userEmail}
-        onNavigate={(view) => navigate(`/${view === 'dashboard' ? '' : view}`)}
       />
     );
   }
@@ -184,7 +182,6 @@ export function HomePage() {
         sessions={sessions}
         baseline={baseline}
         programType={programType}
-        onNavigate={(view) => navigate(`/${view === 'dashboard' ? '' : view}`)}
         onStartReflection={handleStartReflection}
       />
     );
@@ -202,7 +199,6 @@ export function HomePage() {
         checkpointStatus={coachingState.scaleCheckpointStatus}
         onActionUpdate={onActionUpdate}
         userEmail={userEmail}
-        onNavigate={(view) => navigate(`/${view === 'dashboard' ? '' : view}`)}
         onStartCheckpoint={handleStartCheckpoint}
       />
     );
@@ -220,7 +216,6 @@ export function HomePage() {
         coachingState={coachingState}
         onActionUpdate={onActionUpdate}
         userEmail={userEmail}
-        onNavigate={(view) => navigate(`/${view === 'dashboard' ? '' : view}`)}
       />
     );
   }
@@ -236,7 +231,6 @@ export function HomePage() {
         coachingState={coachingState}
         onActionUpdate={onActionUpdate}
         userEmail={userEmail}
-        onNavigate={(view) => navigate(`/${view === 'dashboard' ? '' : view}`)}
       />
     );
   }

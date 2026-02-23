@@ -1,4 +1,5 @@
-import type { Employee, BaselineSurvey, WelcomeSurveyScale, ProgramType, View } from '../lib/types';
+import { useNavigate } from 'react-router-dom';
+import type { Employee, BaselineSurvey, WelcomeSurveyScale, ProgramType } from '../lib/types';
 import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 
 interface MatchingHomeProps {
@@ -6,7 +7,6 @@ interface MatchingHomeProps {
   baseline: BaselineSurvey | null;
   welcomeSurveyScale: WelcomeSurveyScale | null;
   programType: ProgramType | null;
-  onNavigate?: (view: View) => void;
 }
 
 /**
@@ -18,8 +18,8 @@ export default function MatchingHome({
   baseline,
   welcomeSurveyScale,
   programType,
-  onNavigate,
 }: MatchingHomeProps) {
+  const navigate = useNavigate();
   // Determine if we have survey data to show
   const isScaleUser = programType === 'SCALE';
   const hasWelcomeSurvey = isScaleUser ? welcomeSurveyScale !== null : baseline !== null;
@@ -292,7 +292,7 @@ export default function MatchingHome({
           Check out the Practice Space—AI-powered scenarios to help you prepare for real leadership moments.
         </p>
         <button
-          onClick={() => onNavigate?.('practice')}
+          onClick={() => navigate('/practice')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
         >
           Explore Practice Space
