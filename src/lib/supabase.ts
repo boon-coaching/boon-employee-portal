@@ -7,11 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Check your .env.local file.');
 }
 
-const supabaseKey = import.meta.env.VITE_PREVIEW_MODE
-  ? import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
-  : supabaseAnonKey;
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Auth helpers
 export const auth = {

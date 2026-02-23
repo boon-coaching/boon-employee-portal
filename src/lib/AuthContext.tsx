@@ -20,20 +20,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Preview mode: auto-login via URL param (build-time gated)
+    // Preview mode: auto-login via URL param using real auth session
     if (import.meta.env.VITE_PREVIEW_MODE) {
       const urlEmail = new URLSearchParams(window.location.search).get('email');
       const previewEmail = urlEmail || localStorage.getItem('boon_preview_email');
       if (previewEmail) {
         if (urlEmail) localStorage.setItem('boon_preview_email', previewEmail);
-        fetchEmployeeProfileDevMode(previewEmail);
-        return;
+        previewLogin(previewEmail);
+        // Don't return - let onAuthStateChange handle the session once OTP verifies
       }
-      // No email param - fall through to show login
     }
-
-    // Check for dev mode bypass
-    const devEmail = localStorage.getItem('boon_dev_email');
 
     // Get initial session
     auth.getSession().then(async ({ session }) => {
@@ -42,9 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session?.user?.email) {
         fetchEmployeeProfile(session.user.email, session.access_token);
-      } else if (devEmail) {
-        // Dev mode: fetch employee directly without auth
-        await fetchEmployeeProfileDevMode(devEmail);
       } else {
         setLoading(false);
       }
@@ -107,34 +100,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Dev/preview mode: fetch employee via SECURITY DEFINER RPC (bypasses RLS with anon key)
-  async function fetchEmployeeProfileDevMode(email: string) {
+  async function previewLogin(email: string) {
     try {
-      const { data, error } = await supabase
-        .rpc('get_employee_by_email', { lookup_email: email });
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const previewSecret = import.meta.env.VITE_PREVIEW_SECRET;
+
+      if (!previewSecret) {
+        console.error('VITE_PREVIEW_SECRET not set');
+        setLoading(false);
+        return;
+      }
+
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const response = await fetch(`${supabaseUrl}/functions/v1/preview-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({ email, preview_secret: previewSecret }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        console.error('Preview login failed:', err);
+        setLoading(false);
+        return;
+      }
+
+      const { token_hash } = await response.json();
+
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: 'email',
+      });
 
       if (error) {
-        console.error('Dev mode fetch error:', error);
-        setEmployee(null);
-      } else if (data && data.length > 0) {
-        setEmployee(data[0] as Employee);
-        // Create a mock session for dev mode
-        setSession({ user: { email } } as any);
-      } else {
-        setEmployee(null);
+        console.error('OTP verification failed:', error);
+        setLoading(false);
       }
+      // On success, onAuthStateChange fires SIGNED_IN and handles the rest
     } catch (err) {
-      console.error('Error in fetchEmployeeProfileDevMode:', err);
-      setEmployee(null);
-    } finally {
+      console.error('Preview login error:', err);
       setLoading(false);
     }
   }
 
   async function signOut() {
     await auth.signOut();
-    // Clear dev mode and preview mode
-    localStorage.removeItem('boon_dev_email');
     localStorage.removeItem('boon_preview_email');
     setUser(null);
     setSession(null);
