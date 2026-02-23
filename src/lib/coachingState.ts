@@ -10,6 +10,8 @@ import type { Employee, Session, BaselineSurvey, CompetencyScore, ReflectionResp
  * 4. ACTIVE_PROGRAM - In active coaching (has completed sessions)
  * 5. PENDING_REFLECTION - Final session done, awaiting reflection submission
  * 6. COMPLETED_PROGRAM - Program finished (reflection submitted)
+ * 7. PAUSED - Coaching temporarily on hold
+ * 8. TERMINATED - Coaching ended early
  */
 
 export type CoachingState =
@@ -18,7 +20,9 @@ export type CoachingState =
   | 'MATCHED_PRE_FIRST_SESSION'
   | 'ACTIVE_PROGRAM'
   | 'PENDING_REFLECTION'
-  | 'COMPLETED_PROGRAM';
+  | 'COMPLETED_PROGRAM'
+  | 'PAUSED'
+  | 'TERMINATED';
 
 export interface CoachingStateData {
   state: CoachingState;
@@ -265,9 +269,16 @@ export function getCoachingState(
   // Determine state
   let state: CoachingState;
 
+  // Check employee status for paused/terminated before normal flow
+  const employeeStatus = employee?.status?.toLowerCase() || '';
+
   if (!employee) {
     // No employee record at all
     state = 'NOT_SIGNED_UP';
+  } else if (employeeStatus.includes('paused')) {
+    state = 'PAUSED';
+  } else if (employeeStatus.includes('terminated')) {
+    state = 'TERMINATED';
   } else if (!hasProgram && !hasCompletedOnboarding && !hasCompletedSessions) {
     // Has employee record but no program, no welcome survey, AND no sessions
     // (Session history overrides missing program/survey data for legacy clients)
@@ -337,6 +348,20 @@ export function isPendingReflectionState(state: CoachingState): boolean {
 }
 
 /**
+ * Helper to check if program is paused
+ */
+export function isPausedState(state: CoachingState): boolean {
+  return state === 'PAUSED';
+}
+
+/**
+ * Helper to check if program is terminated
+ */
+export function isTerminatedState(state: CoachingState): boolean {
+  return state === 'TERMINATED';
+}
+
+/**
  * Get display label for state
  */
 export function getStateLabel(state: CoachingState): string {
@@ -353,5 +378,9 @@ export function getStateLabel(state: CoachingState): string {
       return 'Final Reflection';
     case 'COMPLETED_PROGRAM':
       return 'Program Graduate';
+    case 'PAUSED':
+      return 'Coaching Paused';
+    case 'TERMINATED':
+      return 'Program Ended';
   }
 }

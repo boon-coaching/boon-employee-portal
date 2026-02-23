@@ -47,6 +47,18 @@ const ALL_STATES: { state: CoachingState; label: string; description: string; co
     description: 'Program finished with reflection - alumni view',
     color: 'bg-purple-500',
   },
+  {
+    state: 'PAUSED',
+    label: 'Paused',
+    description: 'Coaching temporarily on hold',
+    color: 'bg-amber-500',
+  },
+  {
+    state: 'TERMINATED',
+    label: 'Terminated',
+    description: 'Coaching ended early',
+    color: 'bg-gray-500',
+  },
 ];
 
 export default function AdminStatePreview({

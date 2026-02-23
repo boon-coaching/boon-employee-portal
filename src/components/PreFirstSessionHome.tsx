@@ -444,7 +444,40 @@ export default function PreFirstSessionHome({
             </a>
           </div>
         </section>
-      ) : null}
+      ) : (
+        /* No upcoming session and no booking link - guide the user */
+        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <span className="text-xs font-bold text-boon-blue uppercase tracking-widest">Your First Session</span>
+          </div>
+
+          <div>
+            <p className="text-2xl font-extrabold text-boon-text mb-2">
+              Your session with {coachFirstName} is being scheduled
+            </p>
+            <p className="text-gray-500 text-lg">
+              You'll receive an email with scheduling details shortly. If you don't hear back within a few days, reach out to us.
+            </p>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-boon-blue/10">
+            <a
+              href="mailto:hello@booncoaching.com?subject=Scheduling%20My%20First%20Session"
+              className="inline-flex items-center gap-2 text-boon-blue font-bold hover:underline"
+            >
+              Contact Boon Support
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* Meet Your Coach */}
       <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">

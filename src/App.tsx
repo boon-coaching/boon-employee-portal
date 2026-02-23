@@ -30,8 +30,8 @@ import AdminStatePreview from './components/AdminStatePreview';
 import SurveyModal from './components/SurveyModal';
 import { PreviewBanner } from './components/PreviewBanner';
 
-// Configuration - Replace with actual survey URL
-const WELCOME_SURVEY_URL = 'https://boon.typeform.com/welcome'; // TODO: Update with actual URL
+// Configuration
+const WELCOME_SURVEY_URL = import.meta.env.VITE_WELCOME_SURVEY_URL || 'https://boon.typeform.com/welcome';
 
 function ProtectedApp() {
   const { employee, loading } = useAuth();

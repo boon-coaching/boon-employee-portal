@@ -1,9 +1,10 @@
-import type { Employee, Session, BaselineSurvey, View } from '../lib/types';
+import type { Employee, Session, BaselineSurvey, ProgramType, View } from '../lib/types';
 
 interface PendingReflectionHomeProps {
   profile: Employee | null;
   sessions: Session[];
   baseline: BaselineSurvey | null;
+  programType: ProgramType | null;
   onNavigate?: (view: View) => void;
   onStartReflection: () => void;
 }
@@ -12,6 +13,7 @@ export default function PendingReflectionHome({
   profile,
   sessions,
   baseline,
+  programType,
   onNavigate,
   onStartReflection,
 }: PendingReflectionHomeProps) {
@@ -27,6 +29,8 @@ export default function PendingReflectionHome({
     ? `${startDate.toLocaleDateString('en-US', { month: 'short' })} – ${endDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })}`
     : '—';
 
+  const programDisplayName = programType === 'EXEC' ? 'Executive Coaching' : programType || 'coaching';
+
   // Get baseline competency count
   const hasBaseline = !!baseline;
 
@@ -38,7 +42,7 @@ export default function PendingReflectionHome({
           Hi {profile?.first_name || 'there'}
         </h1>
         <p className="text-gray-500 mt-2 text-lg font-medium">
-          Your GROW program is complete
+          Your {programDisplayName} program is complete
         </p>
       </header>
 
@@ -92,7 +96,7 @@ export default function PendingReflectionHome({
 
           {/* Program */}
           <div>
-            <p className="text-lg font-black text-boon-blue tracking-tight">GROW</p>
+            <p className="text-lg font-black text-boon-blue tracking-tight">{programType || 'Boon'}</p>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest">Program</p>
           </div>
 

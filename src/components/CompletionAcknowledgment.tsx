@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import type { Session } from '../lib/types';
+import type { Session, ProgramType } from '../lib/types';
 
 interface CompletionAcknowledgmentProps {
   sessions: Session[];
   coachName: string;
   userEmail: string;
+  programType: ProgramType | null;
   onDismiss: () => void;
 }
 
@@ -12,6 +13,7 @@ export default function CompletionAcknowledgment({
   sessions,
   coachName,
   userEmail,
+  programType,
   onDismiss,
 }: CompletionAcknowledgmentProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -82,7 +84,7 @@ export default function CompletionAcknowledgment({
         {/* Content */}
         <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold text-boon-text mb-4">
-            You've completed your GROW program.
+            You've completed your {programType === 'EXEC' ? 'Executive Coaching' : programType || 'coaching'} program.
           </h2>
 
           <div className="bg-gray-50 rounded-2xl p-6 mb-8">
