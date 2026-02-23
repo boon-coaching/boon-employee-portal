@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Employee, Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, SlackNudge, ReflectionResponse, Checkpoint, Coach } from './types';
+import type { Employee, Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, TeamsConnectionStatus, Nudge, ReflectionResponse, Checkpoint, Coach } from './types';
 
 /**
  * Fetch employee profile by email
@@ -694,12 +694,16 @@ export async function fetchMatchSummary(employeeId: string, email?: string): Pro
 }
 
 // ============================================
-// SLACK INTEGRATION
+// MESSAGING INTEGRATIONS (Slack + Teams)
 // ============================================
 
 const SLACK_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/slack-oauth`
   : '/functions/v1/slack-oauth';
+
+const TEAMS_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
+  ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/teams-oauth`
+  : '/functions/v1/teams-oauth';
 
 /**
  * Get Slack connection status for the current user
@@ -795,15 +799,108 @@ export async function updateSlackSettings(settings: {
 }
 
 /**
- * Fetch nudge history for the current user (last 30 days only)
+ * Get Teams connection status for the current user
  */
-export async function fetchNudgeHistory(email: string): Promise<SlackNudge[]> {
-  // Only fetch nudges from the last 30 days
+export async function fetchTeamsConnectionStatus(): Promise<TeamsConnectionStatus> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return { connected: false, settings: null };
+    }
+
+    const response = await fetch(`${TEAMS_FUNCTION_URL}?action=status`, {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch Teams status');
+      return { connected: false, settings: null };
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching Teams connection:', error);
+    return { connected: false, settings: null };
+  }
+}
+
+/**
+ * Get the URL to start Teams OAuth flow
+ */
+export function getTeamsConnectUrl(email: string): string {
+  return `${TEAMS_FUNCTION_URL}?action=start&email=${encodeURIComponent(email)}`;
+}
+
+/**
+ * Disconnect Teams integration
+ */
+export async function disconnectTeams(): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return false;
+    }
+
+    const response = await fetch(`${TEAMS_FUNCTION_URL}?action=disconnect`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error disconnecting Teams:', error);
+    return false;
+  }
+}
+
+/**
+ * Update Teams nudge settings
+ */
+export async function updateTeamsSettings(settings: {
+  nudge_enabled?: boolean;
+  nudge_frequency?: 'smart' | 'daily' | 'weekly' | 'none';
+  preferred_time?: string;
+  timezone?: string;
+}): Promise<boolean> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return false;
+    }
+
+    const response = await fetch(`${TEAMS_FUNCTION_URL}?action=settings`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(settings),
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error updating Teams settings:', error);
+    return false;
+  }
+}
+
+/**
+ * Fetch nudge history for the current user (last 30 days, both channels)
+ */
+export async function fetchNudgeHistory(email: string): Promise<Nudge[]> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+  // Query the unified nudges table (backward-compatible view also works)
   const { data, error } = await supabase
-    .from('slack_nudges')
+    .from('nudges')
     .select('*')
     .ilike('employee_email', email)
     .gte('sent_at', thirtyDaysAgo.toISOString())
@@ -811,12 +908,24 @@ export async function fetchNudgeHistory(email: string): Promise<SlackNudge[]> {
     .limit(20);
 
   if (error) {
-    // Table might not exist
-    console.error('Error fetching nudge history:', error);
-    return [];
+    // Fall back to slack_nudges view if nudges table isn't available yet
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('slack_nudges')
+      .select('*')
+      .ilike('employee_email', email)
+      .gte('sent_at', thirtyDaysAgo.toISOString())
+      .order('sent_at', { ascending: false })
+      .limit(20);
+
+    if (fallbackError) {
+      console.error('Error fetching nudge history:', fallbackError);
+      return [];
+    }
+
+    return (fallbackData as Nudge[]) || [];
   }
 
-  return (data as SlackNudge[]) || [];
+  return (data as Nudge[]) || [];
 }
 
 // ============================================

@@ -1,17 +1,21 @@
-// Slack OAuth Edge Function
-// Handles both the initial redirect and the callback
+// Teams OAuth Edge Function
+// Handles OAuth flow, connection management, and settings for Microsoft Teams
 
 import { getSupabaseClient, getEnvVar } from '../_shared/supabase.ts';
 import {
-  exchangeCodeForToken,
-  lookupSlackUserByEmail,
-  openDMChannel,
-} from '../_shared/slack.ts';
+  exchangeCodeForTokens,
+  getGraphUserProfile,
+  getBotAccessToken,
+  createProactiveConversation,
+} from '../_shared/teams.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Default service URL for Bot Framework
+const DEFAULT_SERVICE_URL = 'https://smba.trafficmanager.net/teams/';
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -23,7 +27,7 @@ Deno.serve(async (req) => {
   const action = url.searchParams.get('action');
 
   try {
-    // Action: Start OAuth flow (redirect to Slack)
+    // Action: Start OAuth flow (redirect to Azure AD)
     if (action === 'start') {
       const employeeEmail = url.searchParams.get('email');
       if (!employeeEmail) {
@@ -33,29 +37,31 @@ Deno.serve(async (req) => {
         );
       }
 
-      const clientId = getEnvVar('SLACK_CLIENT_ID');
-      const redirectUri = `${url.origin}/functions/v1/slack-oauth?action=callback`;
+      const clientId = getEnvVar('TEAMS_CLIENT_ID');
+      const redirectUri = `${url.origin}/functions/v1/teams-oauth?action=callback`;
 
-      // Store email in state param (you could also use a signed JWT for security)
+      // Store email in state param
       const state = btoa(JSON.stringify({ email: employeeEmail }));
 
-      const slackAuthUrl = new URL('https://slack.com/oauth/v2/authorize');
-      slackAuthUrl.searchParams.set('client_id', clientId);
-      slackAuthUrl.searchParams.set('scope', 'chat:write,users:read,users:read.email,im:write');
-      slackAuthUrl.searchParams.set('redirect_uri', redirectUri);
-      slackAuthUrl.searchParams.set('state', state);
+      const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('scope', 'User.Read offline_access');
+      authUrl.searchParams.set('state', state);
+      authUrl.searchParams.set('response_mode', 'query');
 
-      return Response.redirect(slackAuthUrl.toString(), 302);
+      return Response.redirect(authUrl.toString(), 302);
     }
 
-    // Action: Handle OAuth callback from Slack
+    // Action: Handle OAuth callback from Azure AD
     if (action === 'callback') {
       const code = url.searchParams.get('code');
       const state = url.searchParams.get('state');
       const error = url.searchParams.get('error');
 
       if (error) {
-        console.error('Slack OAuth error:', error);
+        console.error('Teams OAuth error:', error, url.searchParams.get('error_description'));
         return redirectToPortal('error=oauth_denied');
       }
 
@@ -72,12 +78,12 @@ Deno.serve(async (req) => {
         return redirectToPortal('error=invalid_state');
       }
 
-      // Exchange code for token
-      const clientId = getEnvVar('SLACK_CLIENT_ID');
-      const clientSecret = getEnvVar('SLACK_CLIENT_SECRET');
-      const redirectUri = `${url.origin}/functions/v1/slack-oauth?action=callback`;
+      // Exchange code for tokens
+      const clientId = getEnvVar('TEAMS_CLIENT_ID');
+      const clientSecret = getEnvVar('TEAMS_CLIENT_SECRET');
+      const redirectUri = `${url.origin}/functions/v1/teams-oauth?action=callback`;
 
-      const tokenResponse = await exchangeCodeForToken(
+      const tokenResponse = await exchangeCodeForTokens(
         clientId,
         clientSecret,
         code,
@@ -89,73 +95,92 @@ Deno.serve(async (req) => {
         return redirectToPortal('error=token_exchange_failed');
       }
 
-      const { access_token: botToken, team, bot_user_id: botUserId } = tokenResponse;
+      // Get user profile from Graph API (includes tenant ID)
+      const userProfile = await getGraphUserProfile(tokenResponse.access_token);
 
-      if (!team) {
-        return redirectToPortal('error=missing_team');
-      }
-
-      const supabase = getSupabaseClient();
-
-      // Upsert slack installation
-      const { error: installError } = await supabase
-        .from('slack_installations')
-        .upsert({
-          team_id: team.id,
-          team_name: team.name,
-          bot_token: botToken,
-          bot_user_id: botUserId,
-          installed_by: employeeEmail,
-        }, {
-          onConflict: 'team_id',
-        });
-
-      if (installError) {
-        console.error('Failed to save installation:', installError);
-        return redirectToPortal('error=save_failed');
-      }
-
-      // Look up the employee's Slack user ID
-      const slackUser = await lookupSlackUserByEmail(botToken!, employeeEmail);
-
-      if (!slackUser) {
-        console.error('Could not find Slack user for email:', employeeEmail);
+      if (!userProfile || !userProfile.tenantId) {
+        console.error('Could not get user profile or tenant ID');
         return redirectToPortal('error=user_not_found');
       }
 
-      // Open DM channel
-      const dmChannelId = await openDMChannel(botToken!, slackUser.id);
+      const supabase = getSupabaseClient();
+      const serviceUrl = DEFAULT_SERVICE_URL;
 
-      // Save employee Slack connection
+      // Get a bot token for this tenant
+      const botToken = await getBotAccessToken(clientId, clientSecret, userProfile.tenantId);
+
+      if (!botToken) {
+        console.error('Could not get bot access token');
+        return redirectToPortal('error=bot_token_failed');
+      }
+
+      // Get bot ID from env or use the client ID
+      const botId = Deno.env.get('TEAMS_BOT_ID') || clientId;
+
+      // Upsert teams installation
+      const { error: installError } = await supabase
+        .from('teams_installations')
+        .upsert({
+          tenant_id: userProfile.tenantId,
+          bot_token: botToken.token,
+          bot_id: botId,
+          service_url: serviceUrl,
+          installed_by: employeeEmail,
+          token_expires_at: botToken.expiresAt.toISOString(),
+        }, {
+          onConflict: 'tenant_id',
+        });
+
+      if (installError) {
+        console.error('Failed to save Teams installation:', installError);
+        return redirectToPortal('error=save_failed');
+      }
+
+      // Create proactive 1:1 conversation
+      const conversationId = await createProactiveConversation(
+        botToken.token,
+        serviceUrl,
+        userProfile.tenantId,
+        userProfile.id,
+        botId
+      );
+
+      if (!conversationId) {
+        console.error('Could not create proactive conversation');
+        return redirectToPortal('error=conversation_failed');
+      }
+
+      // Save employee Teams connection
       const { error: connectionError } = await supabase
-        .from('employee_slack_connections')
+        .from('employee_teams_connections')
         .upsert({
           employee_email: employeeEmail,
-          slack_team_id: team.id,
-          slack_user_id: slackUser.id,
-          slack_dm_channel_id: dmChannelId,
+          tenant_id: userProfile.tenantId,
+          teams_user_id: userProfile.id,
+          conversation_id: conversationId,
+          service_url: serviceUrl,
           nudge_enabled: true,
           nudge_frequency: 'smart',
         }, {
-          onConflict: 'employee_email,slack_team_id',
+          onConflict: 'employee_email,tenant_id',
         });
 
       if (connectionError) {
-        console.error('Failed to save connection:', connectionError);
+        console.error('Failed to save Teams connection:', connectionError);
         return redirectToPortal('error=connection_failed');
       }
 
-      // Enforce one-channel-at-a-time: delete any Teams connection
+      // Enforce one-channel-at-a-time: delete any Slack connection
       await supabase
-        .from('employee_teams_connections')
+        .from('employee_slack_connections')
         .delete()
         .ilike('employee_email', employeeEmail);
 
       // Success! Redirect back to portal
-      return redirectToPortal('slack_connected=true');
+      return redirectToPortal('teams_connected=true');
     }
 
-    // Action: Disconnect Slack
+    // Action: Disconnect Teams
     if (action === 'disconnect') {
       const authHeader = req.headers.get('Authorization');
       if (!authHeader) {
@@ -167,7 +192,6 @@ Deno.serve(async (req) => {
 
       const supabase = getSupabaseClient();
 
-      // Get user from JWT
       const token = authHeader.replace('Bearer ', '');
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
@@ -178,14 +202,13 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Delete the connection
       const { error: deleteError } = await supabase
-        .from('employee_slack_connections')
+        .from('employee_teams_connections')
         .delete()
-        .eq('employee_email', user.email.toLowerCase());
+        .ilike('employee_email', user.email);
 
       if (deleteError) {
-        console.error('Failed to disconnect:', deleteError);
+        console.error('Failed to disconnect Teams:', deleteError);
         return new Response(
           JSON.stringify({ error: 'Failed to disconnect' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -221,9 +244,9 @@ Deno.serve(async (req) => {
       }
 
       const { data: connection } = await supabase
-        .from('employee_slack_connections')
-        .select('slack_user_id, nudge_enabled, nudge_frequency, preferred_time, timezone')
-        .eq('employee_email', user.email.toLowerCase())
+        .from('employee_teams_connections')
+        .select('teams_user_id, nudge_enabled, nudge_frequency, preferred_time, timezone')
+        .ilike('employee_email', user.email)
         .single();
 
       return new Response(
@@ -261,17 +284,17 @@ Deno.serve(async (req) => {
       const { nudge_enabled, nudge_frequency, preferred_time, timezone } = body;
 
       const { error: updateError } = await supabase
-        .from('employee_slack_connections')
+        .from('employee_teams_connections')
         .update({
           nudge_enabled,
           nudge_frequency,
           preferred_time,
           timezone,
         })
-        .eq('employee_email', user.email.toLowerCase());
+        .ilike('employee_email', user.email);
 
       if (updateError) {
-        console.error('Failed to update settings:', updateError);
+        console.error('Failed to update Teams settings:', updateError);
         return new Response(
           JSON.stringify({ error: 'Failed to update settings' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -290,7 +313,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Slack OAuth error:', error);
+    console.error('Teams OAuth error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

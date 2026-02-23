@@ -6,9 +6,13 @@ import {
   getSlackConnectUrl,
   disconnectSlack,
   updateSlackSettings,
+  fetchTeamsConnectionStatus,
+  getTeamsConnectUrl,
+  disconnectTeams,
+  updateTeamsSettings,
   fetchNudgeHistory,
 } from '../lib/dataFetcher';
-import type { SlackConnectionStatus, SlackNudge } from '../lib/types';
+import type { SlackConnectionStatus, TeamsConnectionStatus, Nudge, NudgeChannel } from '../lib/types';
 
 export default function Settings() {
   const { employee, signOut } = useAuth();
@@ -16,10 +20,21 @@ export default function Settings() {
     connected: false,
     settings: null,
   });
-  const [nudgeHistory, setNudgeHistory] = useState<SlackNudge[]>([]);
+  const [teamsStatus, setTeamsStatus] = useState<TeamsConnectionStatus>({
+    connected: false,
+    settings: null,
+  });
+  const [nudgeHistory, setNudgeHistory] = useState<Nudge[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  // Derived: which channel is active
+  const activeChannel: NudgeChannel | null = teamsStatus.connected
+    ? 'teams'
+    : slackStatus.connected
+    ? 'slack'
+    : null;
 
   // Form state
   const [nudgeEnabled, setNudgeEnabled] = useState(true);
@@ -30,12 +45,11 @@ export default function Settings() {
   // Check for success/error params from OAuth redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('slack_connected') === 'true') {
-      // Clear the URL param
+    if (params.get('slack_connected') === 'true' || params.get('teams_connected') === 'true') {
       window.history.replaceState({}, '', window.location.pathname);
     }
     if (params.get('error')) {
-      console.error('Slack connection error:', params.get('error'));
+      console.error('Connection error:', params.get('error'));
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -44,20 +58,28 @@ export default function Settings() {
     async function loadData() {
       setLoading(true);
       try {
-        const [status, history] = await Promise.all([
+        const [slack, teams, history] = await Promise.all([
           fetchSlackConnectionStatus(),
+          fetchTeamsConnectionStatus(),
           employee?.company_email ? fetchNudgeHistory(employee.company_email) : Promise.resolve([]),
         ]);
 
-        setSlackStatus(status);
+        setSlackStatus(slack);
+        setTeamsStatus(teams);
         setNudgeHistory(history);
 
-        // Initialize form with current settings
-        if (status.settings) {
-          setNudgeEnabled(status.settings.nudge_enabled);
-          setNudgeFrequency(status.settings.nudge_frequency);
-          setPreferredTime(status.settings.preferred_time?.slice(0, 5) || '09:00');
-          setTimezone(status.settings.timezone || 'America/New_York');
+        // Initialize form with current settings from whichever is connected
+        const activeSettings = teams.connected
+          ? teams.settings
+          : slack.connected
+          ? slack.settings
+          : null;
+
+        if (activeSettings) {
+          setNudgeEnabled(activeSettings.nudge_enabled);
+          setNudgeFrequency(activeSettings.nudge_frequency);
+          setPreferredTime(activeSettings.preferred_time?.slice(0, 5) || '09:00');
+          setTimezone(activeSettings.timezone || 'America/New_York');
         }
       } catch (err) {
         console.error('Error loading settings:', err);
@@ -72,26 +94,34 @@ export default function Settings() {
   async function handleSaveSettings() {
     setSaving(true);
     try {
-      const success = await updateSlackSettings({
+      const settingsPayload = {
         nudge_enabled: nudgeEnabled,
         nudge_frequency: nudgeFrequency,
         preferred_time: preferredTime,
         timezone,
-      });
+      };
 
-      if (success) {
-        setSlackStatus((prev) => ({
-          ...prev,
-          settings: prev.settings
-            ? {
-                ...prev.settings,
-                nudge_enabled: nudgeEnabled,
-                nudge_frequency: nudgeFrequency,
-                preferred_time: preferredTime,
-                timezone,
-              }
-            : null,
-        }));
+      let success = false;
+      if (activeChannel === 'teams') {
+        success = await updateTeamsSettings(settingsPayload);
+        if (success) {
+          setTeamsStatus((prev) => ({
+            ...prev,
+            settings: prev.settings
+              ? { ...prev.settings, ...settingsPayload }
+              : null,
+          }));
+        }
+      } else if (activeChannel === 'slack') {
+        success = await updateSlackSettings(settingsPayload);
+        if (success) {
+          setSlackStatus((prev) => ({
+            ...prev,
+            settings: prev.settings
+              ? { ...prev.settings, ...settingsPayload }
+              : null,
+          }));
+        }
       }
     } finally {
       setSaving(false);
@@ -99,24 +129,47 @@ export default function Settings() {
   }
 
   async function handleDisconnect() {
-    if (!confirm('Are you sure you want to disconnect Slack? You will stop receiving coaching nudges.')) {
+    const platformName = activeChannel === 'teams' ? 'Microsoft Teams' : 'Slack';
+    if (!confirm(`Are you sure you want to disconnect ${platformName}? You will stop receiving coaching nudges.`)) {
       return;
     }
 
     setDisconnecting(true);
     try {
-      const success = await disconnectSlack();
-      if (success) {
-        setSlackStatus({ connected: false, settings: null });
+      let success = false;
+      if (activeChannel === 'teams') {
+        success = await disconnectTeams();
+        if (success) {
+          setTeamsStatus({ connected: false, settings: null });
+        }
+      } else {
+        success = await disconnectSlack();
+        if (success) {
+          setSlackStatus({ connected: false, settings: null });
+        }
       }
     } finally {
       setDisconnecting(false);
     }
   }
 
-  function handleConnect() {
+  function handleConnectSlack() {
     if (employee?.company_email) {
       window.location.href = getSlackConnectUrl(employee.company_email);
+    }
+  }
+
+  function handleConnectTeams() {
+    if (employee?.company_email) {
+      window.location.href = getTeamsConnectUrl(employee.company_email);
+    }
+  }
+
+  function handleSwitchPlatform() {
+    if (activeChannel === 'teams') {
+      handleConnectSlack();
+    } else {
+      handleConnectTeams();
     }
   }
 
@@ -148,26 +201,29 @@ export default function Settings() {
         <p className="text-gray-500 mt-1">Manage your notifications and integrations</p>
       </div>
 
-      {/* Slack Integration Card */}
+      {/* Coaching Nudges Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden">
-              <img
-                src="https://storage.googleapis.com/boon-public-assets/Slack_icon_2019.svg.png"
-                alt="Slack"
-                className="w-10 h-10 object-contain"
-              />
+            <div className="w-12 h-12 rounded-xl bg-boon-lightBlue/30 flex items-center justify-center">
+              <svg className="w-6 h-6 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-boon-text">Slack Nudges</h2>
+              <h2 className="text-lg font-semibold text-boon-text">Coaching Nudges</h2>
               <p className="text-sm text-gray-500">
                 Get friendly reminders about your coaching goals and action items
               </p>
             </div>
-            {slackStatus.connected ? (
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
-                Connected
+            {activeChannel ? (
+              <span className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                {activeChannel === 'teams' ? (
+                  <TeamsIcon className="w-4 h-4" />
+                ) : (
+                  <SlackIcon className="w-4 h-4" />
+                )}
+                Connected via {activeChannel === 'teams' ? 'Teams' : 'Slack'}
               </span>
             ) : (
               <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm font-medium rounded-full">
@@ -177,13 +233,15 @@ export default function Settings() {
           </div>
         </div>
 
-        {slackStatus.connected ? (
+        {activeChannel ? (
           <div className="p-6 space-y-6">
             {/* Nudge Toggle */}
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-medium text-boon-text">Enable Nudges</h3>
-                <p className="text-sm text-gray-500">Receive Slack messages about your coaching journey</p>
+                <p className="text-sm text-gray-500">
+                  Receive {activeChannel === 'teams' ? 'Teams' : 'Slack'} messages about your coaching journey
+                </p>
               </div>
               <button
                 onClick={() => setNudgeEnabled(!nudgeEnabled)}
@@ -257,6 +315,16 @@ export default function Settings() {
               </>
             )}
 
+            {/* Switch platform link */}
+            <div className="text-center">
+              <button
+                onClick={handleSwitchPlatform}
+                className="text-sm text-boon-blue hover:text-boon-darkBlue transition-colors"
+              >
+                Switch to {activeChannel === 'teams' ? 'Slack' : 'Microsoft Teams'} instead
+              </button>
+            </div>
+
             {/* Save / Disconnect buttons */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <button
@@ -264,7 +332,7 @@ export default function Settings() {
                 disabled={disconnecting}
                 className="px-4 py-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors disabled:opacity-50"
               >
-                {disconnecting ? 'Disconnecting...' : 'Disconnect Slack'}
+                {disconnecting ? 'Disconnecting...' : `Disconnect ${activeChannel === 'teams' ? 'Teams' : 'Slack'}`}
               </button>
               <button
                 onClick={handleSaveSettings}
@@ -277,46 +345,51 @@ export default function Settings() {
           </div>
         ) : (
           <div className="p-6">
-            <div className="bg-boon-lightBlue/30 rounded-xl p-4 mb-4">
+            <div className="bg-boon-lightBlue/30 rounded-xl p-4 mb-6">
               <h3 className="font-medium text-boon-text mb-2">What you'll get:</h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-boon-blue flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   Reminders about your action items before they're due
                 </li>
                 <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-boon-blue flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   Check-ins on your coaching goals a few days after sessions
                 </li>
                 <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-boon-blue flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   Session prep prompts before upcoming coaching sessions
                 </li>
               </ul>
             </div>
-            <button
-              onClick={handleConnect}
-              className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-[#4A154B] text-white font-medium rounded-xl hover:bg-[#3a1039] transition-colors"
-            >
-              <img
-                src="https://storage.googleapis.com/boon-public-assets/Slack_icon_2019.svg.png"
-                alt="Slack"
-                className="w-5 h-5 object-contain"
-              />
-              Connect Slack
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleConnectSlack}
+                className="flex items-center justify-center gap-3 px-6 py-3 bg-[#4A154B] text-white font-medium rounded-xl hover:bg-[#3a1039] transition-colors"
+              >
+                <SlackIcon className="w-5 h-5" />
+                Connect Slack
+              </button>
+              <button
+                onClick={handleConnectTeams}
+                className="flex items-center justify-center gap-3 px-6 py-3 bg-[#6264A7] text-white font-medium rounded-xl hover:bg-[#505298] transition-colors"
+              >
+                <TeamsIcon className="w-5 h-5" />
+                Connect Teams
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* Nudge Analytics (only show if connected and has history) */}
-      {slackStatus.connected && nudgeHistory.length > 0 && (
+      {activeChannel && nudgeHistory.length > 0 && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-boon-text">Your Nudge Engagement</h2>
@@ -329,7 +402,7 @@ export default function Settings() {
               const responded = nudgeHistory.filter(n => n.status === 'responded').length;
               const total = nudgeHistory.length;
               const responseRate = total > 0 ? Math.round((responded / total) * 100) : 0;
-              const completedActions = nudgeHistory.filter(n => n.response === 'action_done').length;
+              const completedActions = nudgeHistory.filter(n => n.response === 'action_done' || n.response === 'complete_action_item').length;
               const inProgress = nudgeHistory.filter(n => n.response === 'action_in_progress').length;
               const greatProgress = nudgeHistory.filter(n => n.response === 'progress_great').length;
 
@@ -371,6 +444,7 @@ export default function Settings() {
                   goal_checkin: { label: 'Goal Check-ins', color: 'bg-blue-500', icon: '🎯' },
                   session_prep: { label: 'Session Prep', color: 'bg-purple-500', icon: '📅' },
                   weekly_digest: { label: 'Weekly Digest', color: 'bg-green-500', icon: '📊' },
+                  daily_digest: { label: 'Daily Digest', color: 'bg-yellow-500', icon: '📰' },
                 };
 
                 const total = nudgeHistory.length;
@@ -414,28 +488,34 @@ export default function Settings() {
                       : 'bg-gray-100'
                   }`}
                 >
-                  {nudge.nudge_type === 'action_reminder' && (
+                  {nudge.nudge_type === 'action_reminder' || nudge.nudge_type === 'daily_digest' ? (
                     <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                  )}
-                  {nudge.nudge_type === 'goal_checkin' && (
+                  ) : nudge.nudge_type === 'goal_checkin' ? (
                     <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                  )}
-                  {nudge.nudge_type === 'session_prep' && (
+                  ) : (
                     <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-boon-text">
-                    {nudge.nudge_type === 'action_reminder' && 'Action Reminder'}
-                    {nudge.nudge_type === 'goal_checkin' && 'Goal Check-in'}
-                    {nudge.nudge_type === 'session_prep' && 'Session Prep'}
-                    {nudge.nudge_type === 'weekly_digest' && 'Weekly Digest'}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-boon-text">
+                      {nudge.nudge_type === 'action_reminder' && 'Action Reminder'}
+                      {nudge.nudge_type === 'goal_checkin' && 'Goal Check-in'}
+                      {nudge.nudge_type === 'session_prep' && 'Session Prep'}
+                      {nudge.nudge_type === 'weekly_digest' && 'Weekly Digest'}
+                      {nudge.nudge_type === 'daily_digest' && 'Daily Digest'}
+                    </span>
+                    {nudge.channel && (
+                      <span className="text-xs text-gray-400">
+                        via {nudge.channel === 'teams' ? 'Teams' : 'Slack'}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">
                     {new Date(nudge.sent_at).toLocaleDateString('en-US', {
@@ -449,7 +529,7 @@ export default function Settings() {
                 <div>
                   {nudge.status === 'responded' && nudge.response && (
                     <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                      {nudge.response.replace('action_', '').replace('progress_', '')}
+                      {nudge.response.replace('action_', '').replace('progress_', '').replace('complete_', '')}
                     </span>
                   )}
                   {nudge.status === 'sent' && (
@@ -501,5 +581,28 @@ export default function Settings() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Platform icon components
+
+interface IconProps {
+  className?: string;
+}
+
+function SlackIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.27 0a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.163 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.163 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.163 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.27a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.315A2.528 2.528 0 0 1 24 15.163a2.528 2.528 0 0 1-2.522 2.523h-6.315z" />
+    </svg>
+  );
+}
+
+function TeamsIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.625 8.073h-5.17v7.637c0 1.49-1.202 2.7-2.685 2.7a2.693 2.693 0 0 1-2.685-2.7V7.573a.5.5 0 0 1 .5-.5h9.54a.5.5 0 0 1 .5.5v.5zM16.5 6.073a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12.77 5.073a2.5 2.5 0 1 0-3.54-3.54 2.5 2.5 0 0 0 3.54 3.54zM9.27 7.073H2.5a.5.5 0 0 0-.5.5v6.75a4.25 4.25 0 0 0 8.5 0v-6a1.25 1.25 0 0 0-1.23-1.25z" />
+      <path d="M20.5 10.073h-3.95v5.637a4.197 4.197 0 0 1-4.185 4.2A4.18 4.18 0 0 1 9.5 18.035 3.75 3.75 0 0 0 16.25 14.323v-4.75a.5.5 0 0 1 .5-.5h3.75a.5.5 0 0 1 .5.5v.5h-.5z" />
+    </svg>
   );
 }

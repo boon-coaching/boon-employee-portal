@@ -258,16 +258,37 @@ export interface SlackConnectionStatus {
   settings: SlackConnection | null;
 }
 
-export interface SlackNudge {
+export interface TeamsConnection {
+  teams_user_id: string;
+  nudge_enabled: boolean;
+  nudge_frequency: 'smart' | 'daily' | 'weekly' | 'none';
+  preferred_time: string;
+  timezone: string;
+}
+
+export interface TeamsConnectionStatus {
+  connected: boolean;
+  settings: TeamsConnection | null;
+}
+
+export type NudgeChannel = 'slack' | 'teams';
+
+export type NudgeType = 'action_reminder' | 'goal_checkin' | 'session_prep' | 'weekly_digest' | 'daily_digest' | 'streak_celebration';
+
+export interface Nudge {
   id: string;
   employee_email: string;
-  nudge_type: 'action_reminder' | 'goal_checkin' | 'session_prep' | 'weekly_digest' | 'daily_digest' | 'streak_celebration';
+  nudge_type: NudgeType;
   reference_id: string | null;
   status: 'sent' | 'delivered' | 'responded' | 'dismissed' | 'failed';
   response: string | null;
   sent_at: string;
   responded_at: string | null;
+  channel: NudgeChannel;
 }
+
+// Backward compat alias
+export type SlackNudge = Nudge;
 
 // SCALE Checkpoint data (longitudinal tracking every 6 sessions)
 export interface Checkpoint {
