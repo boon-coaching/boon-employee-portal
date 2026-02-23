@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { Session, Coach, ProgramType } from '../lib/types';
+import type { Coach } from '../lib/types';
 import { fetchCoachByName, parseCoachSpecialties, fetchMatchSummary } from '../lib/dataFetcher';
+import { usePortalData } from './ProtectedLayout';
 
 /**
  * Extract the specific coach's summary from the full match_summary text.
@@ -74,17 +75,13 @@ function truncateBio(text: string | null, maxLength: number = 280): string | nul
   return truncated + '...';
 }
 
-interface CoachPageProps {
-  coachName: string;
-  sessions: Session[];
-  bookingLink: string | null;
-  programType?: ProgramType | null;
-  employeeId?: string | null;
-  userEmail?: string | null;
-}
-
-export default function CoachPage({ coachName, sessions, bookingLink, programType: _programType, employeeId, userEmail }: CoachPageProps) {
-  void _programType; // Unused but kept for API compatibility
+export default function CoachPage() {
+  const portalData = usePortalData();
+  const sessions = portalData.sessions;
+  const coachName = sessions.length > 0 ? sessions[0].coach_name : 'Your Coach';
+  const bookingLink = portalData.employee?.booking_link || null;
+  const employeeId = portalData.employee?.id || null;
+  const userEmail = portalData.employee?.company_email || null;
   const [coach, setCoach] = useState<Coach | null>(null);
   const [matchSummary, setMatchSummary] = useState<string | null>(null);
 

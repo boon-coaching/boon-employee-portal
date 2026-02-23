@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import type { SurveyResponse, BaselineSurvey, CompetencyScore, ProgramType, Session, ActionItem, Checkpoint, WelcomeSurveyScale, CoachingWin, View } from '../lib/types';
-import type { CoachingStateData } from '../lib/coachingState';
+import { useNavigate } from 'react-router-dom';
+import type { SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CoachingWin } from '../lib/types';
 import { isAlumniState, isPreFirstSession, isPendingReflectionState, isUpcomingSession } from '../lib/coachingState';
+import { usePortalData } from './ProtectedLayout';
 import {
   RadarChart,
   PolarGrid,
@@ -19,24 +20,7 @@ import {
   Cell,
 } from 'recharts';
 
-interface ProgressPageProps {
-  progress: SurveyResponse[];
-  baseline: BaselineSurvey | null;
-  welcomeSurveyScale: WelcomeSurveyScale | null;
-  competencyScores: CompetencyScore[];
-  sessions: Session[];
-  actionItems: ActionItem[];
-  programType: ProgramType | null;
-  coachingState: CoachingStateData;
-  onStartReflection?: () => void;
-  checkpoints?: Checkpoint[];
-  onStartCheckpoint?: () => void;
-  coachingWins?: CoachingWin[];
-  onAddWin?: (winText: string) => Promise<boolean>;
-  onDeleteWin?: (winId: string) => Promise<boolean>;
-  onUpdateWin?: (winId: string, winText: string) => Promise<boolean>;
-  onNavigate?: (view: View) => void;
-}
+// Props interface removed - component now uses usePortalData()
 
 // Filter out non-substantive free-text answers (test entries, dismissive responses)
 const NON_ANSWERS = ['no', 'n/a', 'na', 'none', 'nope', 'nothing', 'test', 'asdf', 'xxx'];
@@ -93,24 +77,25 @@ const BOON_BENCHMARKS = {
   work_life_balance: 6.2,
 };
 
-export default function ProgressPage({
-  progress,
-  baseline,
-  welcomeSurveyScale,
-  competencyScores,
-  sessions,
-  actionItems,
-  programType,
-  coachingState,
-  onStartReflection,
-  checkpoints: _checkpoints = [],
-  onStartCheckpoint,
-  coachingWins = [],
-  onAddWin,
-  onDeleteWin,
-  onUpdateWin,
-  onNavigate,
-}: ProgressPageProps) {
+export default function ProgressPage() {
+  const portalData = usePortalData();
+  const navigate = useNavigate();
+  const progress = portalData.progress;
+  const baseline = portalData.baseline;
+  const welcomeSurveyScale = portalData.welcomeSurveyScale;
+  const competencyScores = portalData.competencyScores;
+  const sessions = portalData.sessions;
+  const actionItems = portalData.effectiveActionItems;
+  const programType = portalData.programType;
+  const coachingState = portalData.coachingState;
+  const onStartReflection = portalData.handleStartReflection;
+  const _checkpoints = portalData.checkpoints || [];
+  const onStartCheckpoint = portalData.handleStartCheckpoint;
+  const coachingWins = portalData.coachingWins || [];
+  const onAddWin = portalData.handleAddWin;
+  const onDeleteWin = portalData.handleDeleteWin;
+  const onUpdateWin = portalData.handleUpdateWin;
+  const onNavigate = (view: string) => navigate(`/${view === 'dashboard' ? '' : view}`);
   const [activeTab, setActiveTab] = useState<'competencies' | 'wellbeing'>('competencies');
   // Get latest checkpoint with wellbeing data (Session 6+)
   const latestWellbeingCheckpoint = _checkpoints
@@ -380,7 +365,7 @@ export default function ProgressPage({
                   <span className="text-sm font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200">
                     {coachingWins.length} breakthrough{coachingWins.length !== 1 ? 's' : ''}
                   </span>
-                  {onAddWin && (
+                  {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
                       className="text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 px-4 py-1.5 rounded-full transition-colors"
@@ -434,9 +419,9 @@ export default function ProgressPage({
                           </span>
                         </div>
                         {/* Edit/Delete buttons */}
-                        {(onUpdateWin || onDeleteWin) && (
+                        {(
                           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            {onUpdateWin && (
+                            {(
                               <button
                                 onClick={() => handleStartEdit(win)}
                                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
@@ -447,7 +432,7 @@ export default function ProgressPage({
                                 </svg>
                               </button>
                             )}
-                            {onDeleteWin && (
+                            {(
                               <button
                                 onClick={() => handleDeleteWin(win.id)}
                                 disabled={deletingWinId === win.id}
@@ -480,7 +465,7 @@ export default function ProgressPage({
                   <p className="text-sm text-gray-600 leading-relaxed mb-4">
                     A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
                   </p>
-                  {onAddWin && (
+                  {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
                       className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
@@ -887,7 +872,7 @@ export default function ProgressPage({
         </header>
 
         {/* Check-in Due Banner - Priority CTA */}
-        {coachingState.scaleCheckpointStatus.isCheckpointDue && onStartCheckpoint && (
+        {coachingState.scaleCheckpointStatus.isCheckpointDue && (
           <section className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-[2rem] p-6 border-2 border-purple-200">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
@@ -1204,9 +1189,9 @@ export default function ProgressPage({
                         </p>
                       </div>
                       {/* Edit/Delete buttons */}
-                      {(onUpdateWin || onDeleteWin) && (
+                      {(
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          {onUpdateWin && (
+                          {(
                             <button
                               onClick={() => handleStartEdit(win)}
                               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
@@ -1217,7 +1202,7 @@ export default function ProgressPage({
                               </svg>
                             </button>
                           )}
-                          {onDeleteWin && (
+                          {(
                             <button
                               onClick={() => handleDeleteWin(win.id)}
                               disabled={deletingWinId === win.id}
@@ -1979,7 +1964,7 @@ export default function ProgressPage({
         <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-extrabold text-boon-text">Your Wins</h2>
-            {onAddWin && (
+            {(
               <button
                 onClick={() => setShowAddWinModal(true)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 rounded-xl transition-colors"
@@ -2030,9 +2015,9 @@ export default function ProgressPage({
                         </p>
                       </div>
                       {/* Edit/Delete buttons */}
-                      {(onUpdateWin || onDeleteWin) && (
+                      {(
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          {onUpdateWin && (
+                          {(
                             <button
                               onClick={() => handleStartEdit(win)}
                               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
@@ -2043,7 +2028,7 @@ export default function ProgressPage({
                               </svg>
                             </button>
                           )}
-                          {onDeleteWin && (
+                          {(
                             <button
                               onClick={() => handleDeleteWin(win.id)}
                               disabled={deletingWinId === win.id}
@@ -2075,7 +2060,7 @@ export default function ProgressPage({
                   <p className="text-sm text-gray-600 leading-relaxed mb-3">
                     A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
                   </p>
-                  {onAddWin && (
+                  {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
                       className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"

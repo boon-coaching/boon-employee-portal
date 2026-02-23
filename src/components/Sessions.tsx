@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import type { Session } from '../lib/types';
-import type { CoachingStateData } from '../lib/coachingState';
+// CoachingStateData now accessed via usePortalData()
 import { isAlumniState, isPreFirstSession, isUpcomingSession } from '../lib/coachingState';
+import { usePortalData } from './ProtectedLayout';
 
 function getStatusStyle(status: Session['status']): {
   icon: 'check' | 'clock' | 'x-circle' | 'x';
@@ -57,12 +58,10 @@ function StatusIcon({ type }: { type: 'check' | 'clock' | 'x-circle' | 'x' }) {
   }
 }
 
-interface SessionsPageProps {
-  sessions: Session[];
-  coachingState: CoachingStateData;
-}
-
-export default function SessionsPage({ sessions, coachingState }: SessionsPageProps) {
+export default function SessionsPage() {
+  const data = usePortalData();
+  const sessions = data.sessions;
+  const coachingState = data.coachingState;
   const isCompleted = isAlumniState(coachingState.state);
   const isPreFirst = isPreFirstSession(coachingState.state);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');

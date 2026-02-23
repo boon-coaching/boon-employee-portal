@@ -1,21 +1,19 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { SCENARIOS, CATEGORY_INFO, type PracticeScenario, type ScenarioCategory } from '../data/scenarios';
-import type { Session, CompetencyScore } from '../lib/types';
-import type { CoachingStateData } from '../lib/coachingState';
+// Types now accessed via usePortalData()
 import { isAlumniState } from '../lib/coachingState';
 import PracticeModal from './PracticeModal';
 import TeamManager from './TeamManager';
 import { getTeamMembers, getSavedPlans, deleteSavedPlan, type TeamMember, type SavedPlan } from '../lib/storageService';
+import { usePortalData } from './ProtectedLayout';
 
-interface PracticeProps {
-  sessions: Session[];
-  coachName: string;
-  userEmail: string;
-  coachingState: CoachingStateData;
-  competencyScores?: CompetencyScore[];
-}
-
-export default function Practice({ sessions, coachName, userEmail, coachingState, competencyScores = [] }: PracticeProps) {
+export default function Practice() {
+  const data = usePortalData();
+  const sessions = data.sessions;
+  const coachingState = data.coachingState;
+  const competencyScores = data.competencyScores || [];
+  const userEmail = data.employee?.company_email || '';
+  const coachName = sessions.length > 0 ? sessions[0].coach_name : 'Your Coach';
   const isCompleted = isAlumniState(coachingState.state);
   const [selectedCategory, setSelectedCategory] = useState<ScenarioCategory | 'all'>('all');
   const [selectedScenario, setSelectedScenario] = useState<PracticeScenario | null>(null);
