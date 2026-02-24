@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
   }
 
   const url = new URL(req.url);
+  const origin = url.origin.replace('http://', 'https://');
   const action = url.searchParams.get('action');
 
   try {
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
       }
 
       const clientId = getEnvVar('TEAMS_CLIENT_ID');
-      const redirectUri = `${url.origin}/functions/v1/teams-oauth?action=callback`;
+      const redirectUri = `${origin}/functions/v1/teams-oauth?action=callback`;
 
       // Store email in state param
       const state = btoa(JSON.stringify({ email: employeeEmail }));
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
       // Exchange code for tokens
       const clientId = getEnvVar('TEAMS_CLIENT_ID');
       const clientSecret = getEnvVar('TEAMS_CLIENT_SECRET');
-      const redirectUri = `${url.origin}/functions/v1/teams-oauth?action=callback`;
+      const redirectUri = `${origin}/functions/v1/teams-oauth?action=callback`;
 
       const tokenResponse = await exchangeCodeForTokens(
         clientId,
@@ -106,8 +107,9 @@ Deno.serve(async (req) => {
       const supabase = getSupabaseClient();
       const serviceUrl = DEFAULT_SERVICE_URL;
 
-      // Get a bot token for this tenant
-      const botToken = await getBotAccessToken(clientId, clientSecret, userProfile.tenantId);
+      // Get a bot token using the app registration tenant (not the user's tenant)
+      const appTenantId = Deno.env.get('TEAMS_APP_TENANT_ID') || userProfile.tenantId;
+      const botToken = await getBotAccessToken(clientId, clientSecret, appTenantId);
 
       if (!botToken) {
         console.error('Could not get bot access token');
@@ -136,28 +138,33 @@ Deno.serve(async (req) => {
         return redirectToPortal('error=save_failed');
       }
 
-      // Create proactive 1:1 conversation
-      const conversationId = await createProactiveConversation(
-        botToken.token,
-        serviceUrl,
-        userProfile.tenantId,
-        userProfile.id,
-        botId
-      );
-
-      if (!conversationId) {
-        console.error('Could not create proactive conversation');
-        return redirectToPortal('error=conversation_failed');
+      // Try to create proactive 1:1 conversation
+      // This may fail if the user hasn't installed the Teams app yet
+      let conversationId: string | null = null;
+      try {
+        conversationId = await createProactiveConversation(
+          botToken.token,
+          serviceUrl,
+          userProfile.tenantId,
+          userProfile.id,
+          botId
+        );
+      } catch (e) {
+        console.warn('Proactive conversation creation failed (will retry on first nudge):', e);
       }
 
-      // Save employee Teams connection
+      if (!conversationId) {
+        console.warn('Could not create proactive conversation yet. Connection will be saved without it.');
+      }
+
+      // Save employee Teams connection (conversation_id may be null, will be populated on first nudge)
       const { error: connectionError } = await supabase
         .from('employee_teams_connections')
         .upsert({
           employee_email: employeeEmail,
           tenant_id: userProfile.tenantId,
           teams_user_id: userProfile.id,
-          conversation_id: conversationId,
+          conversation_id: conversationId || '',
           service_url: serviceUrl,
           nudge_enabled: true,
           nudge_frequency: 'smart',

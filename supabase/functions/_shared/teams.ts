@@ -185,24 +185,30 @@ export async function createProactiveConversation(
 ): Promise<string | null> {
   const url = `${serviceUrl.replace(/\/$/, '')}/v3/conversations`;
 
+  // Use AAD object ID directly (not 29: prefixed)
+  const body = {
+    bot: { id: botId },
+    members: [{ id: userId }],
+    channelData: {
+      tenant: { id: tenantId },
+    },
+    isGroup: false,
+  };
+
+  console.log('Creating proactive conversation:', JSON.stringify({ url, botId, userId, tenantId }));
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      bot: { id: botId },
-      members: [{ id: userId }],
-      channelData: {
-        tenant: { id: tenantId },
-      },
-      isGroup: false,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    console.error('Failed to create conversation:', await response.text());
+    const errorText = await response.text();
+    console.error('Failed to create conversation:', response.status, errorText);
     return null;
   }
 

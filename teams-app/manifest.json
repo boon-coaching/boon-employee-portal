@@ -1,0 +1,37 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "172643ea-a3e4-4797-905b-70f187f71a52",
+  "developer": {
+    "name": "Boon",
+    "websiteUrl": "https://boon.coach",
+    "privacyUrl": "https://boon.coach/privacy",
+    "termsOfUseUrl": "https://boon.coach/terms"
+  },
+  "name": {
+    "short": "Boon Coaching",
+    "full": "Boon Coaching Nudges"
+  },
+  "description": {
+    "short": "Coaching nudges and action reminders from Boon",
+    "full": "Receive coaching nudges, action item reminders, goal check-ins, and session prep notifications directly in Microsoft Teams from your Boon coaching program."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#3B82F6",
+  "bots": [
+    {
+      "botId": "4a2f6756-70f8-4802-ba89-eefe3a0aa790",
+      "scopes": ["personal"],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": ["messageTeamMembers"],
+  "validDomains": [
+    "nbwwqreqmxakevkwzmij.supabase.co"
+  ]
+}

@@ -322,7 +322,8 @@ async function sendNudge(
       return { ok: false, channelId: conn.dm_channel_id };
     }
 
-    const botToken = await getBotAccessToken(clientId, clientSecret, conn.team_or_tenant_id);
+    const appTenantId = Deno.env.get('TEAMS_APP_TENANT_ID') || conn.team_or_tenant_id;
+    const botToken = await getBotAccessToken(clientId, clientSecret, appTenantId);
     if (!botToken) {
       return { ok: false, channelId: conn.dm_channel_id };
     }
