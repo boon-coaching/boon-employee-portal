@@ -149,7 +149,7 @@ export default function GettingStartedPage({ sessions }: GettingStartedPageProps
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-400">
             Questions about what to expect?{' '}
-            <a href="mailto:support@boon-health.com" className="text-boon-blue hover:underline">
+            <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">
               Reach out anytime
             </a>
           </p>

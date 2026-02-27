@@ -45,7 +45,7 @@ export default function NoEmployeeFound() {
           </button>
           
           <p className="text-xs text-gray-400 mt-6">
-            Need help? Contact your HR team or email <a href="mailto:support@boon-health.com" className="text-boon-blue hover:underline">support@boon-health.com</a>
+            Need help? Contact your HR team or email <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">hello@boon-health.com</a>
           </p>
         </div>
       </div>

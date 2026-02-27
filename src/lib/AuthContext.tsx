@@ -21,13 +21,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Preview mode: auto-login via URL param using real auth session
+    // SECURITY: If VITE_PREVIEW_MODE=true leaks to production, this allows user impersonation.
+    // Belt-and-suspenders: also check hostname to block on production domains.
     if (import.meta.env.VITE_PREVIEW_MODE) {
-      const urlEmail = new URLSearchParams(window.location.search).get('email');
-      const previewEmail = urlEmail || localStorage.getItem('boon_preview_email');
-      if (previewEmail) {
-        if (urlEmail) localStorage.setItem('boon_preview_email', previewEmail);
-        previewLogin(previewEmail);
-        // Don't return - let onAuthStateChange handle the session once OTP verifies
+      const hostname = window.location.hostname;
+      const isAllowedHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.vercel.app');
+      if (isAllowedHost) {
+        const urlEmail = new URLSearchParams(window.location.search).get('email');
+        const previewEmail = urlEmail || localStorage.getItem('boon_preview_email');
+        if (previewEmail) {
+          if (urlEmail) localStorage.setItem('boon_preview_email', previewEmail);
+          previewLogin(previewEmail);
+          // Don't return - let onAuthStateChange handle the session once OTP verifies
+        }
       }
     }
 

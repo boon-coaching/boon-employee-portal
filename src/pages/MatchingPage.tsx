@@ -79,8 +79,8 @@ export default function MatchingPage() {
           {/* Support link */}
           <p className="text-center text-sm text-gray-400 mt-8">
             Questions? Email{' '}
-            <a href="mailto:support@boon-health.com" className="text-boon-blue hover:underline">
-              support@boon-health.com
+            <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">
+              hello@boon-health.com
             </a>
           </p>
 

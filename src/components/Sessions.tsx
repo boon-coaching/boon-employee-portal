@@ -3,6 +3,7 @@ import type { Session } from '../lib/types';
 // CoachingStateData now accessed via usePortalData()
 import { isAlumniState, isPreFirstSession, isUpcomingSession } from '../lib/coachingState';
 import { usePortalData } from './ProtectedLayout';
+import { submitSessionFeedback } from '../lib/dataFetcher';
 
 function getStatusStyle(status: Session['status']): {
   icon: 'check' | 'clock' | 'x-circle' | 'x';
@@ -73,6 +74,7 @@ export default function SessionsPage() {
   const [feedbackText, setFeedbackText] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -148,17 +150,29 @@ export default function SessionsPage() {
 
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!feedbackSession) return;
     setIsSubmitting(true);
-    // TODO: Submit to Supabase
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    setTimeout(() => {
-      setFeedbackSession(null);
-      setIsSuccess(false);
-      setFeedbackRating(0);
-      setFeedbackText('');
-    }, 2200);
+    setFeedbackError(null);
+    try {
+      const success = await submitSessionFeedback(feedbackSession.id, feedbackRating, feedbackText);
+      if (!success) {
+        setFeedbackError('Unable to save feedback. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+      setIsSubmitting(false);
+      setIsSuccess(true);
+      setTimeout(() => {
+        setFeedbackSession(null);
+        setIsSuccess(false);
+        setFeedbackRating(0);
+        setFeedbackText('');
+        setFeedbackError(null);
+      }, 2200);
+    } catch {
+      setFeedbackError('Something went wrong. Please try again.');
+      setIsSubmitting(false);
+    }
   };
 
   // Calendar Helpers
@@ -645,6 +659,10 @@ export default function SessionsPage() {
                     placeholder="Any additional thoughts? (optional)"
                     className="w-full px-5 py-4 bg-boon-bg border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
                   />
+
+                  {feedbackError && (
+                    <p className="text-red-500 text-sm text-center font-medium">{feedbackError}</p>
+                  )}
 
                   <div className="flex flex-col gap-3">
                     <button

@@ -84,7 +84,12 @@ export default function CompletionAcknowledgment({
         {/* Content */}
         <div className="text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold text-boon-text mb-4">
-            You've completed your {programType === 'EXEC' ? 'Executive Coaching' : programType || 'coaching'} program.
+            You've completed your {
+              programType === 'EXEC' ? 'Executive Coaching'
+              : programType === 'GROW' ? 'GROW'
+              : programType === 'SCALE' ? 'SCALE'
+              : 'coaching'
+            } program.
           </h2>
 
           <div className="bg-gray-50 rounded-2xl p-6 mb-8">
@@ -96,7 +101,7 @@ export default function CompletionAcknowledgment({
               />
               <div className="text-left">
                 <p className="font-bold text-boon-text">{coachName}</p>
-                <p className="text-xs text-gray-400 uppercase tracking-widest">Executive Coach</p>
+                <p className="text-xs text-gray-400 uppercase tracking-widest">Leadership Coach</p>
               </div>
             </div>
 

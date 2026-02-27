@@ -306,8 +306,8 @@ export default function MatchingHome({
       <div className="text-center pb-8">
         <p className="text-sm text-gray-400">
           Questions?{' '}
-          <a href="mailto:support@boon-health.com" className="text-boon-blue hover:underline">
-            Email support@boon-health.com
+          <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">
+            Email hello@boon-health.com
           </a>
         </p>
       </div>

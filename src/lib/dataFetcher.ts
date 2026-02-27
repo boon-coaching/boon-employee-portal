@@ -1,6 +1,10 @@
 import { supabase } from './supabase';
 import type { Employee, Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, TeamsConnectionStatus, Nudge, ReflectionResponse, Checkpoint, Coach } from './types';
 
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
+
 /**
  * Fetch employee profile by email
  */
@@ -27,14 +31,14 @@ export async function fetchEmployeeProfile(email: string): Promise<Employee | nu
  * 3. Via RPC function (bypasses potential RLS issues)
  */
 export async function fetchSessions(employeeId: string, employeeEmail?: string): Promise<Session[]> {
-  console.log('[fetchSessions] Starting lookup for:', { employeeId, employeeEmail });
+  devLog('[fetchSessions] Starting lookup for:', { employeeId, employeeEmail });
 
   // Helper to deduplicate sessions by ID
   const deduplicateSessions = (sessions: Session[]): Session[] => {
     const seen = new Set<string>();
     return sessions.filter(s => {
       if (seen.has(s.id)) {
-        console.log('[fetchSessions] Removing duplicate session:', s.id);
+        devLog('[fetchSessions] Removing duplicate session:', s.id);
         return false;
       }
       seen.add(s.id);
@@ -49,7 +53,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     .eq('employee_id', employeeId)
     .order('session_date', { ascending: false });
 
-  console.log('[fetchSessions] By employee_id:', {
+  devLog('[fetchSessions] By employee_id:', {
     found: idData?.length || 0,
     error: idError?.message || 'none'
   });
@@ -66,7 +70,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
       .ilike('employee_email', employeeEmail)
       .order('session_date', { ascending: false });
 
-    console.log('[fetchSessions] By employee_email ilike:', {
+    devLog('[fetchSessions] By employee_email ilike:', {
       searchEmail: employeeEmail,
       found: emailData?.length || 0,
       error: emailError?.message || 'none'
@@ -83,7 +87,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
       .eq('employee_email', employeeEmail.toLowerCase())
       .order('session_date', { ascending: false });
 
-    console.log('[fetchSessions] By employee_email exact lowercase:', {
+    devLog('[fetchSessions] By employee_email exact lowercase:', {
       searchEmail: employeeEmail.toLowerCase(),
       found: exactData?.length || 0,
       error: exactError?.message || 'none'
@@ -97,7 +101,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     const { data: rpcData, error: rpcError } = await supabase
       .rpc('get_sessions_for_user', { user_email: employeeEmail });
 
-    console.log('[fetchSessions] By RPC get_sessions_for_user:', {
+    devLog('[fetchSessions] By RPC get_sessions_for_user:', {
       found: rpcData?.length || 0,
       error: rpcError?.message || 'none',
       code: rpcError?.code || 'none'
@@ -115,7 +119,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
       .or(`employee_email.ilike.%${employeeEmail.split('@')[0]}%,employee_id.eq.${employeeId}`)
       .limit(5);
 
-    console.log('[fetchSessions] DEBUG - Partial match search:', {
+    devLog('[fetchSessions] DEBUG - Partial match search:', {
       searchPattern: `%${employeeEmail.split('@')[0]}%`,
       found: debugData?.length || 0,
       data: debugData,
@@ -123,7 +127,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     });
   }
 
-  console.log('[fetchSessions] No sessions found for user');
+  devLog('[fetchSessions] No sessions found for user');
   return [];
 }
 
@@ -150,7 +154,7 @@ export async function fetchProgressData(email: string): Promise<SurveyResponse[]
  * Contains both wellbeing metrics and competency baselines
  */
 export async function fetchBaseline(email: string): Promise<BaselineSurvey | null> {
-  console.log('[fetchBaseline] Looking up for email:', email);
+  devLog('[fetchBaseline] Looking up for email:', email);
 
   const { data, error } = await supabase
     .from('welcome_survey_baseline')
@@ -159,7 +163,7 @@ export async function fetchBaseline(email: string): Promise<BaselineSurvey | nul
     .order('id', { ascending: false })
     .limit(1);
 
-  console.log('[fetchBaseline] Result:', {
+  devLog('[fetchBaseline] Result:', {
     found: data?.length || 0,
     error: error?.message,
     firstRecord: data?.[0] ? { id: data[0].id, email: data[0].email, program_type: data[0].program_type } : null
@@ -178,7 +182,7 @@ export async function fetchBaseline(email: string): Promise<BaselineSurvey | nul
  * Contains coaching goals and focus area selections
  */
 export async function fetchWelcomeSurveyScale(email: string): Promise<WelcomeSurveyScale | null> {
-  console.log('[fetchWelcomeSurveyScale] Looking up for email:', email);
+  devLog('[fetchWelcomeSurveyScale] Looking up for email:', email);
 
   const { data, error } = await supabase
     .from('welcome_survey_scale')
@@ -187,7 +191,7 @@ export async function fetchWelcomeSurveyScale(email: string): Promise<WelcomeSur
     .order('id', { ascending: false })
     .limit(1);
 
-  console.log('[fetchWelcomeSurveyScale] Result:', {
+  devLog('[fetchWelcomeSurveyScale] Result:', {
     found: data?.length || 0,
     error: error?.message || 'none',
     errorCode: error?.code || 'none',
@@ -202,7 +206,7 @@ export async function fetchWelcomeSurveyScale(email: string): Promise<WelcomeSur
   }
 
   if (data && data.length > 0) {
-    console.log('[fetchWelcomeSurveyScale] Found data:', {
+    devLog('[fetchWelcomeSurveyScale] Found data:', {
       email: data[0].email,
       satisfaction: data[0].satisfaction,
       productivity: data[0].productivity,
@@ -239,32 +243,32 @@ export async function fetchCompetencyScores(email: string): Promise<CompetencySc
  * Examples: "GROW", "GROW - Cohort 1", "TWC SLX Program 2025", UUID
  */
 export async function fetchProgramType(programId: string | null): Promise<ProgramType | null> {
-  console.log('[fetchProgramType] Input programId:', programId);
+  devLog('[fetchProgramType] Input programId:', programId);
 
   if (!programId) {
-    console.log('[fetchProgramType] No programId, returning null');
+    devLog('[fetchProgramType] No programId, returning null');
     return null;
   }
 
   const upperProgram = programId.toUpperCase();
-  console.log('[fetchProgramType] Checking upperProgram:', upperProgram);
+  devLog('[fetchProgramType] Checking upperProgram:', upperProgram);
 
   // Check if it starts with a known program type (e.g., "GROW - Cohort 1")
   if (upperProgram === 'SCALE' || upperProgram.startsWith('SCALE ') || upperProgram.startsWith('SCALE-') || upperProgram.includes(' SCALE')) {
-    console.log('[fetchProgramType] Matched SCALE pattern');
+    devLog('[fetchProgramType] Matched SCALE pattern');
     return 'SCALE';
   }
   if (upperProgram === 'GROW' || upperProgram.startsWith('GROW ') || upperProgram.startsWith('GROW-') || upperProgram.includes(' GROW')) {
-    console.log('[fetchProgramType] Matched GROW pattern');
+    devLog('[fetchProgramType] Matched GROW pattern');
     return 'GROW';
   }
   if (upperProgram === 'EXEC' || upperProgram.startsWith('EXEC ') || upperProgram.startsWith('EXEC-') || upperProgram.includes(' EXEC')) {
-    console.log('[fetchProgramType] Matched EXEC pattern');
+    devLog('[fetchProgramType] Matched EXEC pattern');
     return 'EXEC';
   }
   // Check for SLX which is SCALE
   if (upperProgram.includes('SLX')) {
-    console.log('[fetchProgramType] Matched SLX -> SCALE');
+    devLog('[fetchProgramType] Matched SLX -> SCALE');
     return 'SCALE';
   }
 
@@ -295,7 +299,7 @@ export async function fetchProgramType(programId: string | null): Promise<Progra
     return byName.program_type as ProgramType;
   }
 
-  console.log('Could not determine program type for:', programId);
+  devLog('Could not determine program type for:', programId);
   return null;
 }
 
@@ -325,7 +329,7 @@ export async function fetchLatestSurveyResponse(email: string): Promise<SurveyRe
  * Fetch action items for an employee
  */
 export async function fetchActionItems(email: string): Promise<ActionItem[]> {
-  console.log('[fetchActionItems] Fetching for email:', email);
+  devLog('[fetchActionItems] Fetching for email:', email);
 
   const { data, error } = await supabase
     .from('action_items')
@@ -334,7 +338,7 @@ export async function fetchActionItems(email: string): Promise<ActionItem[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.log('[fetchActionItems] Error:', {
+    devLog('[fetchActionItems] Error:', {
       errorCode: error.code,
       errorMessage: error.message,
       searchedEmail: email
@@ -346,7 +350,7 @@ export async function fetchActionItems(email: string): Promise<ActionItem[]> {
     return [];
   }
 
-  console.log('[fetchActionItems] Found items:', {
+  devLog('[fetchActionItems] Found items:', {
     count: data?.length || 0,
     items: data
   });
@@ -409,7 +413,7 @@ export async function submitSessionFeedback(
  */
 export async function fetchCoachByName(coachName: string): Promise<Coach | null> {
   const trimmedName = coachName.trim();
-  console.log('[fetchCoachByName] Searching for coach:', trimmedName);
+  devLog('[fetchCoachByName] Searching for coach:', trimmedName);
 
   // First try exact ilike match
   const { data: exactData, error: exactError } = await supabase
@@ -419,7 +423,7 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
     .single();
 
   if (!exactError && exactData) {
-    console.log('[fetchCoachByName] Found coach (exact match):', {
+    devLog('[fetchCoachByName] Found coach (exact match):', {
       name: exactData?.name,
       hasPhotoUrl: !!exactData?.photo_url,
       photoUrl: exactData?.photo_url
@@ -436,7 +440,7 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
     .single();
 
   if (!flexError && flexData) {
-    console.log('[fetchCoachByName] Found coach (flexible match):', {
+    devLog('[fetchCoachByName] Found coach (flexible match):', {
       searchedName: trimmedName,
       foundName: flexData?.name,
       hasPhotoUrl: !!flexData?.photo_url,
@@ -459,7 +463,7 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
       .single();
 
     if (!partsError && partsData) {
-      console.log('[fetchCoachByName] Found coach (name parts match):', {
+      devLog('[fetchCoachByName] Found coach (name parts match):', {
         searchedName: trimmedName,
         foundName: partsData?.name,
         hasPhotoUrl: !!partsData?.photo_url,
@@ -470,13 +474,13 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
   }
 
   // Fallback: Try RPC function which uses SECURITY DEFINER to bypass RLS
-  console.log('[fetchCoachByName] Direct queries failed, trying RPC function');
+  devLog('[fetchCoachByName] Direct queries failed, trying RPC function');
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_coach_by_name', { coach_name_param: trimmedName });
 
   // RPC returns JSONB (single object), not an array
   if (!rpcError && rpcData) {
-    console.log('[fetchCoachByName] Found coach via RPC:', {
+    devLog('[fetchCoachByName] Found coach via RPC:', {
       name: rpcData?.name,
       hasPhotoUrl: !!rpcData?.photo_url,
       photoUrl: rpcData?.photo_url
@@ -484,7 +488,7 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
     return rpcData as Coach;
   }
 
-  console.log('[fetchCoachByName] No coach found for:', {
+  devLog('[fetchCoachByName] No coach found for:', {
     searchedName: trimmedName,
     exactError: exactError?.message,
     flexError: flexError?.message,
@@ -498,7 +502,7 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
  * Tries direct query first, then RPC function to bypass RLS
  */
 export async function fetchCoachById(coachId: string): Promise<Coach | null> {
-  console.log('[fetchCoachById] Searching for coach:', coachId);
+  devLog('[fetchCoachById] Searching for coach:', coachId);
 
   const { data, error } = await supabase
     .from('coaches')
@@ -507,7 +511,7 @@ export async function fetchCoachById(coachId: string): Promise<Coach | null> {
     .single();
 
   if (!error && data) {
-    console.log('[fetchCoachById] Found coach (direct query):', {
+    devLog('[fetchCoachById] Found coach (direct query):', {
       name: data?.name,
       hasPhotoUrl: !!data?.photo_url,
       photoUrl: data?.photo_url
@@ -516,13 +520,13 @@ export async function fetchCoachById(coachId: string): Promise<Coach | null> {
   }
 
   // Fallback: Try RPC function which uses SECURITY DEFINER to bypass RLS
-  console.log('[fetchCoachById] Direct query failed, trying RPC function');
+  devLog('[fetchCoachById] Direct query failed, trying RPC function');
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_coach_by_id', { coach_id_param: coachId });
 
   // RPC returns JSONB (single object), not an array
   if (!rpcError && rpcData) {
-    console.log('[fetchCoachById] Found coach via RPC:', {
+    devLog('[fetchCoachById] Found coach via RPC:', {
       name: rpcData?.name,
       hasPhotoUrl: !!rpcData?.photo_url,
       photoUrl: rpcData?.photo_url
@@ -530,7 +534,7 @@ export async function fetchCoachById(coachId: string): Promise<Coach | null> {
     return rpcData as Coach;
   }
 
-  console.log('[fetchCoachById] No coach found for ID:', {
+  devLog('[fetchCoachById] No coach found for ID:', {
     coachId,
     directError: error?.message,
     rpcError: rpcError?.message
@@ -623,7 +627,7 @@ export function getCoachBackgroundLine(coach: Coach | null): string | null {
  * Uses employee_id for lookup, with email fallback
  */
 export async function fetchMatchSummary(employeeId: string, email?: string): Promise<string | null> {
-  console.log('[fetchMatchSummary] Looking up match_summary for employee_id:', employeeId, 'email:', email);
+  devLog('[fetchMatchSummary] Looking up match_summary for employee_id:', employeeId, 'email:', email);
 
   // Try welcome_survey_scale by employee_id first
   const { data: scaleData, error: scaleError } = await supabase
@@ -633,10 +637,10 @@ export async function fetchMatchSummary(employeeId: string, email?: string): Pro
     .order('created_at', { ascending: false })
     .limit(1);
 
-  console.log('[fetchMatchSummary] welcome_survey_scale by employee_id result:', { scaleData, scaleError });
+  devLog('[fetchMatchSummary] welcome_survey_scale by employee_id result:', { scaleData, scaleError });
 
   if (!scaleError && scaleData && scaleData.length > 0 && scaleData[0].match_summary) {
-    console.log('[fetchMatchSummary] Found in welcome_survey_scale:', scaleData[0].match_summary);
+    devLog('[fetchMatchSummary] Found in welcome_survey_scale:', scaleData[0].match_summary);
     return scaleData[0].match_summary;
   }
 
@@ -649,10 +653,10 @@ export async function fetchMatchSummary(employeeId: string, email?: string): Pro
       .order('created_at', { ascending: false })
       .limit(1);
 
-    console.log('[fetchMatchSummary] welcome_survey_scale by email result:', { scaleByEmail, scaleEmailError });
+    devLog('[fetchMatchSummary] welcome_survey_scale by email result:', { scaleByEmail, scaleEmailError });
 
     if (!scaleEmailError && scaleByEmail && scaleByEmail.length > 0 && scaleByEmail[0].match_summary) {
-      console.log('[fetchMatchSummary] Found in welcome_survey_scale by email:', scaleByEmail[0].match_summary);
+      devLog('[fetchMatchSummary] Found in welcome_survey_scale by email:', scaleByEmail[0].match_summary);
       return scaleByEmail[0].match_summary;
     }
   }
@@ -665,10 +669,10 @@ export async function fetchMatchSummary(employeeId: string, email?: string): Pro
     .order('created_at', { ascending: false })
     .limit(1);
 
-  console.log('[fetchMatchSummary] welcome_survey_baseline result:', { baselineData, baselineError });
+  devLog('[fetchMatchSummary] welcome_survey_baseline result:', { baselineData, baselineError });
 
   if (!baselineError && baselineData && baselineData.length > 0 && baselineData[0].match_summary) {
-    console.log('[fetchMatchSummary] Found in welcome_survey_baseline:', baselineData[0].match_summary);
+    devLog('[fetchMatchSummary] Found in welcome_survey_baseline:', baselineData[0].match_summary);
     return baselineData[0].match_summary;
   }
 
@@ -681,15 +685,15 @@ export async function fetchMatchSummary(employeeId: string, email?: string): Pro
       .order('created_at', { ascending: false })
       .limit(1);
 
-    console.log('[fetchMatchSummary] welcome_survey_baseline by email result:', { baselineByEmail, baselineEmailError });
+    devLog('[fetchMatchSummary] welcome_survey_baseline by email result:', { baselineByEmail, baselineEmailError });
 
     if (!baselineEmailError && baselineByEmail && baselineByEmail.length > 0 && baselineByEmail[0].match_summary) {
-      console.log('[fetchMatchSummary] Found in welcome_survey_baseline by email:', baselineByEmail[0].match_summary);
+      devLog('[fetchMatchSummary] Found in welcome_survey_baseline by email:', baselineByEmail[0].match_summary);
       return baselineByEmail[0].match_summary;
     }
   }
 
-  console.log('[fetchMatchSummary] No match_summary found for employee_id:', employeeId);
+  devLog('[fetchMatchSummary] No match_summary found for employee_id:', employeeId);
   return null;
 }
 
@@ -1160,7 +1164,7 @@ export async function submitCheckpoint(
   if (data.coachMatchRating) outcomesParts.push(`Coach match: ${data.coachMatchRating}/10`);
 
   // Use employee data passed from the component (already loaded at app start)
-  console.log('[submitCheckpoint] Using passed employee data:', {
+  devLog('[submitCheckpoint] Using passed employee data:', {
     firstName: data.firstName,
     lastName: data.lastName,
     companyName: data.companyName,
@@ -1209,7 +1213,7 @@ export async function submitCheckpoint(
     return { success: false, error: error.message };
   }
 
-  console.log('[submitCheckpoint] Survey saved successfully with employee data:', {
+  devLog('[submitCheckpoint] Survey saved successfully with employee data:', {
     id: result.id,
     first_name: result.first_name,
     account_name: result.account_name,
@@ -1318,16 +1322,16 @@ export async function fetchPendingSurvey(
   programType?: string | null,
   loadedSessions?: Array<{ id: string; appointment_number: string | null; session_date: string; coach_name: string; status: string }>
 ): Promise<PendingSurvey | null> {
-  console.log('[fetchPendingSurvey] Checking for pending survey:', { email, programType, hasLoadedSessions: !!loadedSessions });
+  devLog('[fetchPendingSurvey] Checking for pending survey:', { email, programType, hasLoadedSessions: !!loadedSessions });
 
   // First, try the RPC function (uses the comprehensive pending_surveys view)
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_pending_survey', { user_email: email });
 
-  console.log('[fetchPendingSurvey] RPC result:', { rpcData, rpcError });
+  devLog('[fetchPendingSurvey] RPC result:', { rpcData, rpcError });
 
   if (!rpcError && rpcData && rpcData.length > 0) {
-    console.log('[fetchPendingSurvey] Found via RPC:', rpcData[0]);
+    devLog('[fetchPendingSurvey] Found via RPC:', rpcData[0]);
     return rpcData[0] as PendingSurvey;
   }
 
@@ -1341,7 +1345,7 @@ export async function fetchPendingSurvey(
 
   // Use loaded sessions if available, otherwise we can't check (RPC should have worked)
   if (!loadedSessions || loadedSessions.length === 0) {
-    console.log('[fetchPendingSurvey] No loaded sessions available and RPC failed');
+    devLog('[fetchPendingSurvey] No loaded sessions available and RPC failed');
     return null;
   }
 
@@ -1358,7 +1362,7 @@ export async function fetchPendingSurvey(
   // Calculate milestones (SCALE generates dynamically based on session count)
   const milestones = isGrow ? getGrowMilestones(sessionsPerEmployee).milestones : getScaleMilestones(countedSessions.length);
 
-  console.log('[fetchPendingSurvey] Checking milestones:', {
+  devLog('[fetchPendingSurvey] Checking milestones:', {
     milestones,
     isGrow,
     sessionsPerEmployee,
@@ -1370,7 +1374,7 @@ export async function fetchPendingSurvey(
     .filter(s => s.status === 'Completed')
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime());
 
-  console.log('[fetchPendingSurvey] Counted sessions (sorted by date):', countedSessions.map((s, idx) => ({
+  devLog('[fetchPendingSurvey] Counted sessions (sorted by date):', countedSessions.map((s, idx) => ({
     id: s.id,
     sessionNumber: idx + 1,
     session_date: s.session_date,
@@ -1387,7 +1391,7 @@ export async function fetchPendingSurvey(
     }))
     .filter(s => milestones.includes(s.calculatedSessionNumber) && s.status === 'Completed');
 
-  console.log('[fetchPendingSurvey] Sessions at milestones:', {
+  devLog('[fetchPendingSurvey] Sessions at milestones:', {
     total: loadedSessions.length,
     counted: countedSessions.length,
     completed: completedSessions.length,
@@ -1401,7 +1405,7 @@ export async function fetchPendingSurvey(
   });
 
   if (milestoneSessions.length === 0) {
-    console.log('[fetchPendingSurvey] No milestone sessions found');
+    devLog('[fetchPendingSurvey] No milestone sessions found');
     return null;
   }
 
@@ -1433,7 +1437,7 @@ export async function fetchPendingSurvey(
   for (const session of milestoneSessions) {
     const sessionNum = session.calculatedSessionNumber;
     const sessionPattern = `Session ${sessionNum}`;
-    console.log('[fetchPendingSurvey] Checking for existing survey:', {
+    devLog('[fetchPendingSurvey] Checking for existing survey:', {
       sessionPattern,
       sessionId: session.id,
       calculatedSessionNumber: sessionNum
@@ -1446,12 +1450,12 @@ export async function fetchPendingSurvey(
       .ilike('outcomes', `%${sessionPattern}%`)
       .limit(1);
 
-    console.log('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
+    devLog('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
 
     if (!existingSurvey || existingSurvey.length === 0) {
       // Skip stale surveys: if the user is more than 5 sessions past this milestone, don't prompt
       if (countedSessions.length - sessionNum > 5) {
-        console.log('[fetchPendingSurvey] Skipping stale survey for session', sessionNum,
+        devLog('[fetchPendingSurvey] Skipping stale survey for session', sessionNum,
           '(current count:', countedSessions.length, ')');
         continue;
       }
@@ -1475,7 +1479,7 @@ export async function fetchPendingSurvey(
         coach_name: session.coach_name || 'Your Coach',
         survey_type: surveyType,
       };
-      console.log('[fetchPendingSurvey] Found pending survey:', pending);
+      devLog('[fetchPendingSurvey] Found pending survey:', pending);
       return pending;
     }
   }
@@ -2068,7 +2072,7 @@ import type { CoachingWin } from './types';
  * Uses RPC function which joins through employee_manager to find wins by email
  */
 export async function fetchCoachingWins(email: string): Promise<CoachingWin[]> {
-  console.log('[fetchCoachingWins] Fetching wins for email:', email);
+  devLog('[fetchCoachingWins] Fetching wins for email:', email);
 
   // Use RPC function which joins through employee_manager
   // (coaching_wins table doesn't have email column, only employee_id)
@@ -2076,7 +2080,7 @@ export async function fetchCoachingWins(email: string): Promise<CoachingWin[]> {
     .rpc('get_coaching_wins_for_user', { user_email: email });
 
   if (!rpcError && rpcData) {
-    console.log('[fetchCoachingWins] RPC succeeded, found:', rpcData.length);
+    devLog('[fetchCoachingWins] RPC succeeded, found:', rpcData.length);
     return (rpcData as CoachingWin[]) || [];
   }
 
@@ -2106,7 +2110,7 @@ export async function addCoachingWin(
   // Convert employeeId to number (Supabase returns BIGINT as string sometimes)
   const numericEmployeeId = typeof employeeId === 'string' ? parseInt(employeeId, 10) : employeeId;
 
-  console.log('[addCoachingWin] Adding win for:', { email, employeeId: numericEmployeeId, winText: winText.substring(0, 50) });
+  devLog('[addCoachingWin] Adding win for:', { email, employeeId: numericEmployeeId, winText: winText.substring(0, 50) });
 
   // Use RPC function which handles the insert with proper permissions
   // (coaching_wins table doesn't have email column, only employee_id)
@@ -2121,7 +2125,7 @@ export async function addCoachingWin(
     });
 
   if (!rpcError && rpcData) {
-    console.log('[addCoachingWin] RPC succeeded');
+    devLog('[addCoachingWin] RPC succeeded');
     return { success: true, data: rpcData as CoachingWin };
   }
 
@@ -2140,7 +2144,7 @@ export async function addCoachingWin(
 export async function deleteCoachingWin(
   winId: string
 ): Promise<{ success: boolean; error?: string }> {
-  console.log('[deleteCoachingWin] Deleting win:', winId);
+  devLog('[deleteCoachingWin] Deleting win:', winId);
 
   const { error } = await supabase
     .from('coaching_wins')
@@ -2162,7 +2166,7 @@ export async function updateCoachingWin(
   winId: string,
   winText: string
 ): Promise<{ success: boolean; error?: string }> {
-  console.log('[updateCoachingWin] Updating win:', winId);
+  devLog('[updateCoachingWin] Updating win:', winId);
 
   const { error } = await supabase
     .from('coaching_wins')

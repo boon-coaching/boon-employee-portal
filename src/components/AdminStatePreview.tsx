@@ -75,20 +75,15 @@ export default function AdminStatePreview({
   const effectiveProgramType = programTypeOverride || programType;
   const isScaleMode = effectiveProgramType === 'SCALE';
 
-  // Check if admin preview is enabled (via localStorage or URL param)
+  // Check if admin preview is enabled via URL param only (no localStorage persistence)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const adminParam = urlParams.get('admin');
-    const storedAdmin = localStorage.getItem('boon_admin_preview');
 
     if (adminParam === 'true') {
-      localStorage.setItem('boon_admin_preview', 'true');
       setIsEnabled(true);
     } else if (adminParam === 'false') {
-      localStorage.removeItem('boon_admin_preview');
       setIsEnabled(false);
-    } else if (storedAdmin === 'true') {
-      setIsEnabled(true);
     }
   }, []);
 

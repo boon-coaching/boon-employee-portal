@@ -65,7 +65,7 @@ export function HomePage() {
             Your sessions are temporarily on hold. You can still review your past sessions, progress, and practice scenarios while you wait.
           </p>
           <a
-            href="mailto:hello@booncoaching.com?subject=Question%20About%20My%20Paused%20Program"
+            href="mailto:hello@boon-health.com?subject=Question%20About%20My%20Paused%20Program"
             className="inline-flex items-center gap-2 text-amber-700 font-bold hover:underline"
           >
             Questions? Contact Boon Support
@@ -128,7 +128,7 @@ export function HomePage() {
               : 'If you have questions about your program status, please reach out to us.'}
           </p>
           <a
-            href="mailto:hello@booncoaching.com?subject=Question%20About%20My%20Program"
+            href="mailto:hello@boon-health.com?subject=Question%20About%20My%20Program"
             className="inline-flex items-center gap-2 text-boon-blue font-bold hover:underline"
           >
             Contact Boon Support
@@ -216,6 +216,7 @@ export function HomePage() {
         coachingState={coachingState}
         onActionUpdate={onActionUpdate}
         userEmail={userEmail}
+        programType={programType}
       />
     );
   }

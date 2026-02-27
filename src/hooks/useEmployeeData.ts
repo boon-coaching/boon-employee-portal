@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/AuthContext';
+
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
 import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins, addCoachingWin, deleteCoachingWin, updateCoachingWin } from '../lib/dataFetcher';
 import { getCoachingState, type CoachingStateData, type CoachingState } from '../lib/coachingState';
 import type { Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, ReflectionResponse, Checkpoint, PendingSurvey, CoachingWin } from '../lib/types';
@@ -11,6 +15,8 @@ export interface EmployeeData {
 
   // Data loading
   dataLoading: boolean;
+  dataError: string | null;
+  retryLoadData: () => void;
 
   // Core data
   sessions: Session[];
@@ -67,6 +73,7 @@ export function useEmployeeData(): EmployeeData {
   const { employee, loading } = useAuth();
 
   const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [progress, setProgress] = useState<SurveyResponse[]>([]);
   const [baseline, setBaseline] = useState<BaselineSurvey | null>(null);
@@ -82,6 +89,8 @@ export function useEmployeeData(): EmployeeData {
   const [stateOverride, setStateOverride] = useState<CoachingState | null>(null);
   const [programTypeOverride, setProgramTypeOverride] = useState<string | null>(null);
 
+  const [retryCount, setRetryCount] = useState(0);
+
   // Native survey system state
   const [pendingSurvey, setPendingSurvey] = useState<PendingSurvey | null>(null);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
@@ -90,7 +99,7 @@ export function useEmployeeData(): EmployeeData {
     async function loadData() {
       if (!employee?.id || !employee?.company_email) return;
 
-      console.log('[App.loadData] Employee data:', {
+      devLog('[App.loadData] Employee data:', {
         id: employee.id,
         company_email: employee.company_email,
         coach_id: employee.coach_id,
@@ -100,6 +109,7 @@ export function useEmployeeData(): EmployeeData {
       });
 
       setDataLoading(true);
+      setDataError(null);
       try {
         const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData, winsData] = await Promise.all([
           fetchSessions(employee.id, employee.company_email),
@@ -114,12 +124,12 @@ export function useEmployeeData(): EmployeeData {
           fetchCoachingWins(employee.company_email),
         ]);
 
-        console.log('[App.loadData] Sessions loaded:', {
+        devLog('[App.loadData] Sessions loaded:', {
           count: sessionsData.length,
           sessions: sessionsData.map(s => ({ id: s.id, employee_id: s.employee_id, status: s.status, coach_name: s.coach_name }))
         });
 
-        console.log('[App.loadData] Data loaded:', {
+        devLog('[App.loadData] Data loaded:', {
           sessionsCount: sessionsData.length,
           progressCount: progressData.length,
           hasBaseline: !!baselineData,
@@ -145,7 +155,7 @@ export function useEmployeeData(): EmployeeData {
 
         if (!finalProgramType && sessionsData.length > 0) {
           const sessionProgramName = sessionsData[0]?.program_name?.toUpperCase() || '';
-          console.log('[App.loadData] Fallback 1: checking session program_name:', sessionProgramName);
+          devLog('[App.loadData] Fallback 1: checking session program_name:', sessionProgramName);
           if (sessionProgramName.includes('SCALE') || sessionProgramName.includes('SLX')) {
             finalProgramType = 'SCALE';
           } else if (sessionProgramName.includes('GROW')) {
@@ -156,13 +166,13 @@ export function useEmployeeData(): EmployeeData {
         }
 
         if (!finalProgramType && welcomeSurveyScaleData) {
-          console.log('[App.loadData] Fallback 2: User has welcome_survey_scale, deriving SCALE');
+          devLog('[App.loadData] Fallback 2: User has welcome_survey_scale, deriving SCALE');
           finalProgramType = 'SCALE';
         }
 
         if (!finalProgramType && baselineData?.program_type) {
           const baselineProgram = baselineData.program_type.toUpperCase();
-          console.log('[App.loadData] Fallback 3: checking baseline.program_type:', baselineProgram);
+          devLog('[App.loadData] Fallback 3: checking baseline.program_type:', baselineProgram);
           if (baselineProgram.includes('GROW')) {
             finalProgramType = 'GROW';
           } else if (baselineProgram.includes('EXEC')) {
@@ -173,7 +183,7 @@ export function useEmployeeData(): EmployeeData {
         }
 
         if (!finalProgramType && baselineData && !welcomeSurveyScaleData) {
-          console.log('[App.loadData] Fallback 4: User has baseline but no welcome_survey_scale, defaulting to GROW');
+          devLog('[App.loadData] Fallback 4: User has baseline but no welcome_survey_scale, defaulting to GROW');
           finalProgramType = 'GROW';
         }
 
@@ -201,13 +211,14 @@ export function useEmployeeData(): EmployeeData {
         }
       } catch (err) {
         console.error('Error loading data:', err);
+        setDataError('Something went wrong loading your data. Please try refreshing.');
       } finally {
         setDataLoading(false);
       }
     }
 
     loadData();
-  }, [employee?.id, employee?.company_email, employee?.program]);
+  }, [employee?.id, employee?.company_email, employee?.program, retryCount]);
 
   async function reloadActionItems() {
     if (!employee?.company_email) return;
@@ -479,10 +490,14 @@ export function useEmployeeData(): EmployeeData {
       }
     : actualCoachingState;
 
+  const retryLoadData = () => setRetryCount(c => c + 1);
+
   return {
     loading,
     employee,
     dataLoading,
+    dataError,
+    retryLoadData,
     sessions,
     effectiveSessions,
     progress,

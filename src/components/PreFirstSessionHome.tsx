@@ -467,7 +467,7 @@ export default function PreFirstSessionHome({
 
           <div className="mt-6 pt-6 border-t border-boon-blue/10">
             <a
-              href="mailto:hello@booncoaching.com?subject=Scheduling%20My%20First%20Session"
+              href="mailto:hello@boon-health.com?subject=Scheduling%20My%20First%20Session"
               className="inline-flex items-center gap-2 text-boon-blue font-bold hover:underline"
             >
               Contact Boon Support
@@ -676,7 +676,7 @@ export default function PreFirstSessionHome({
       <div className="text-center pb-8">
         <p className="text-sm text-gray-400">
           Questions about what to expect?{' '}
-          <a href="mailto:support@boon-health.com" className="text-boon-blue hover:underline">
+          <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">
             Reach out anytime
           </a>
         </p>

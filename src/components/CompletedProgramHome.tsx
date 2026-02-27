@@ -163,7 +163,7 @@ export function CompletedProgramHome() {
                       {lastSession.coach_name || 'Your Coach'}
                     </p>
                     <p className="text-[11px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
-                      Executive Coach
+                      Leadership Coach
                     </p>
                   </div>
                 </div>
@@ -238,7 +238,7 @@ export function CompletedProgramHome() {
             <p className="text-gray-400 text-sm">
               Some people continue with ongoing 1:1 coaching.{' '}
               <a
-                href="mailto:hello@booncoaching.com?subject=Interest%20in%20SCALE%20Program"
+                href="mailto:hello@boon-health.com?subject=Interest%20in%20SCALE%20Program"
                 className="text-gray-500 hover:text-boon-blue underline underline-offset-2"
               >
                 Learn about SCALE &rarr;

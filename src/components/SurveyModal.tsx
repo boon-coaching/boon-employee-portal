@@ -93,6 +93,15 @@ export default function SurveyModal({
   const [whatCouldImprove, setWhatCouldImprove] = useState('');
   const [remainingFocus, setRemainingFocus] = useState('');
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   // Load competencies for GROW surveys
   useEffect(() => {
     if (surveyType === 'grow_baseline' || surveyType === 'grow_end') {

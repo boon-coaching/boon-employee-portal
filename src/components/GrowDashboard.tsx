@@ -122,6 +122,7 @@ interface GrowDashboardProps {
   coachingState: CoachingStateData;
   onActionUpdate: () => void;
   userEmail: string;
+  programType?: string | null;
 }
 
 export default function GrowDashboard({
@@ -133,6 +134,7 @@ export default function GrowDashboard({
   coachingState,
   onActionUpdate,
   userEmail,
+  programType,
 }: GrowDashboardProps) {
   const navigate = useNavigate();
   const [updatingActionId, setUpdatingActionId] = useState<string | null>(null);
@@ -269,7 +271,7 @@ export default function GrowDashboard({
             Hi {profile?.first_name || 'there'}
           </h1>
           <p className="text-gray-500 mt-2 text-lg font-medium">
-            Your GROW coaching journey
+            Your {programType === 'EXEC' ? 'Executive Coaching' : programType || 'coaching'} journey
           </p>
         </div>
       </header>
@@ -465,7 +467,7 @@ export default function GrowDashboard({
                       {coachProfile.headline}
                     </p>
                   ) : (
-                    <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">Executive Coach</p>
+                    <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">Leadership Coach</p>
                   )}
                   <p className="text-sm text-gray-500 mt-1">
                     {sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'} together

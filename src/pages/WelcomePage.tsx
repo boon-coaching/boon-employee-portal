@@ -69,15 +69,26 @@ export default function WelcomePage({ welcomeSurveyUrl }: WelcomePageProps) {
             </div>
 
             {/* CTA Button */}
-            <a
-              href={welcomeSurveyUrl || '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full py-4 bg-boon-blue text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-[0.98]"
-            >
-              Start Welcome Survey
-            </a>
-            <p className="text-xs text-gray-400 mt-4">Takes about 5 minutes</p>
+            {welcomeSurveyUrl ? (
+              <a
+                href={welcomeSurveyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-4 bg-boon-blue text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-[0.98]"
+              >
+                Start Welcome Survey
+              </a>
+            ) : (
+              <div className="w-full py-4 bg-gray-200 text-gray-400 rounded-2xl font-bold text-sm uppercase tracking-widest text-center cursor-not-allowed">
+                Start Welcome Survey
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-4">
+              {welcomeSurveyUrl
+                ? 'Takes about 5 minutes'
+                : <>Your welcome survey is being prepared. Please check back shortly or <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">contact support</a>.</>
+              }
+            </p>
           </div>
 
           {/* Sign out link */}
