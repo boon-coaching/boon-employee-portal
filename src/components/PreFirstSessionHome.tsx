@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Employee, Session, BaselineSurvey, WelcomeSurveyScale, ProgramType, Coach } from '../lib/types';
+
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
 import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName, fetchCoachById, fetchMatchSummary } from '../lib/dataFetcher';
@@ -181,10 +185,10 @@ export default function PreFirstSessionHome({
   const displayMatchSummary = truncateBio(extractedSummary, 280) || personalizedDesc || truncateBio(coachBio, 280) || coachBio;
 
   // Debug: Log coach data to verify headline and notable_credentials
-  console.log('[PreFirstSessionHome] Coach name:', coach?.name);
-  console.log('[PreFirstSessionHome] Coach headline:', coach?.headline);
-  console.log('[PreFirstSessionHome] Coach notable_credentials:', coach?.notable_credentials);
-  console.log('[PreFirstSessionHome] Coach photo_url:', coach?.photo_url ? 'EXISTS' : 'NULL');
+  devLog('[PreFirstSessionHome] Coach name:', coach?.name);
+  devLog('[PreFirstSessionHome] Coach headline:', coach?.headline);
+  devLog('[PreFirstSessionHome] Coach notable_credentials:', coach?.notable_credentials);
+  devLog('[PreFirstSessionHome] Coach photo_url:', coach?.photo_url ? 'EXISTS' : 'NULL');
 
   // Pre-session note state
   const [preSessionNote, setPreSessionNote] = useState('');
@@ -242,7 +246,7 @@ export default function PreFirstSessionHome({
         });
 
       if (!rpcError) {
-        console.log('[PreFirstSessionHome] Pre-session note saved via RPC');
+        devLog('[PreFirstSessionHome] Pre-session note saved via RPC');
       } else {
         console.warn('[PreFirstSessionHome] RPC failed, trying direct update:', rpcError);
         // Fallback to direct update
@@ -252,7 +256,7 @@ export default function PreFirstSessionHome({
           .eq('id', upcomingSession.id);
 
         if (!updateError) {
-          console.log('[PreFirstSessionHome] Pre-session note saved via direct update');
+          devLog('[PreFirstSessionHome] Pre-session note saved via direct update');
         } else {
           console.error('[PreFirstSessionHome] Direct update also failed:', updateError);
           setSaveError('Saved locally only - database update failed');

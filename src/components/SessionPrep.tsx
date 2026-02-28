@@ -123,7 +123,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
             </div>
           </div>
           <a
-            href={sessions[0]?.coach_name ? `mailto:${coachName.toLowerCase().replace(' ', '.')}@booncoaching.com` : '#'}
+            href="mailto:hello@boon-health.com?subject=Book%20a%20Coaching%20Session"
             className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20"
           >
             Book a session

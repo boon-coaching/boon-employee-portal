@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CoachingWin } from '../lib/types';
+
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
 import { isAlumniState, isPreFirstSession, isPendingReflectionState, isUpcomingSession } from '../lib/coachingState';
 import { usePortalData } from './ProtectedLayout';
 import {
@@ -138,15 +142,15 @@ export default function ProgressPage() {
   };
 
   const handleAddWin = async () => {
-    console.log('[Progress] handleAddWin called', { newWinText: newWinText.trim(), hasOnAddWin: !!onAddWin });
+    devLog('[Progress] handleAddWin called', { newWinText: newWinText.trim(), hasOnAddWin: !!onAddWin });
     if (!newWinText.trim() || !onAddWin) {
-      console.log('[Progress] handleAddWin early return - text empty or no onAddWin');
+      devLog('[Progress] handleAddWin early return - text empty or no onAddWin');
       return;
     }
     setIsSubmittingWin(true);
     try {
       const success = await onAddWin(newWinText.trim());
-      console.log('[Progress] onAddWin result:', success);
+      devLog('[Progress] onAddWin result:', success);
       if (success) {
         setNewWinText('');
         setShowAddWinModal(false);
@@ -179,18 +183,18 @@ export default function ProgressPage() {
 
   // Pre-first-session: Show different content for SCALE vs GROW
   if (isPreFirst) {
-    console.log('[Progress] 🔍 Pre-first-session state detected');
-    console.log('[Progress] programType:', programType, '| isScale:', isScale);
-    console.log('[Progress] welcomeSurveyScale:', welcomeSurveyScale ? 'EXISTS' : 'NULL');
+    devLog('[Progress] 🔍 Pre-first-session state detected');
+    devLog('[Progress] programType:', programType, '| isScale:', isScale);
+    devLog('[Progress] welcomeSurveyScale:', welcomeSurveyScale ? 'EXISTS' : 'NULL');
     if (welcomeSurveyScale) {
-      console.log('[Progress] welcomeSurveyScale data:', {
+      devLog('[Progress] welcomeSurveyScale data:', {
         satisfaction: welcomeSurveyScale.satisfaction,
         productivity: welcomeSurveyScale.productivity,
         work_life_balance: welcomeSurveyScale.work_life_balance,
         additional_topics: welcomeSurveyScale.additional_topics,
       });
     }
-    console.log('[Progress] Will show SCALE view?', isScale && !!welcomeSurveyScale);
+    devLog('[Progress] Will show SCALE view?', isScale && !!welcomeSurveyScale);
 
     // SCALE pre-first-session: Show "Your Coaching Journey" with baseline metrics
     if (isScale && welcomeSurveyScale) {

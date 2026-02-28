@@ -515,7 +515,7 @@ export default function ActiveGrowHome({
                 />
                 <div className="flex-1 text-center sm:text-left">
                   <h3 className="text-xl font-bold text-boon-text">{coachName}</h3>
-                  <p className="text-sm font-bold text-boon-blue uppercase tracking-widest mt-1">Executive Coach</p>
+                  <p className="text-sm font-bold text-boon-blue uppercase tracking-widest mt-1">{coachProfile?.headline || 'Leadership Coach'}</p>
                   {coachProfile?.bio ? (
                     <p className="text-sm text-gray-600 mt-4 leading-relaxed">{coachProfile.bio}</p>
                   ) : (
@@ -720,7 +720,7 @@ export default function ActiveGrowHome({
             />
             <div>
               <p className="text-sm font-bold text-boon-text leading-none">{coachName}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest">Executive Coach</p>
+              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest">{coachProfile?.headline || 'Leadership Coach'}</p>
             </div>
           </div>
         </section>

@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Employee, Session, ActionItem, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
+
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
 import type { CoachingStateData } from '../lib/coachingState';
 import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
@@ -163,7 +167,7 @@ export default function GrowDashboard({
       if (!userEmail) return;
 
       setIsLoadingCoachData(true);
-      console.log('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.program });
+      devLog('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.program });
 
       // Fetch program info and focus areas in parallel (program info is optional)
       const [progInfo, areas] = await Promise.all([
@@ -175,7 +179,7 @@ export default function GrowDashboard({
       let coach: Coach | null = null;
       if (profile?.coach_id) {
         coach = await fetchCoachById(profile.coach_id);
-        console.log('[GrowDashboard] Coach fetch by ID result:', {
+        devLog('[GrowDashboard] Coach fetch by ID result:', {
           coachId: profile.coach_id,
           coachFound: !!coach,
           coachPhotoUrl: coach?.photo_url
@@ -185,14 +189,14 @@ export default function GrowDashboard({
       // Fall back to name lookup if ID lookup didn't work
       if (!coach && coachName !== 'Your Coach') {
         coach = await fetchCoachByName(coachName);
-        console.log('[GrowDashboard] Coach fetch by name result:', {
+        devLog('[GrowDashboard] Coach fetch by name result:', {
           coachName,
           coachFound: !!coach,
           coachPhotoUrl: coach?.photo_url
         });
       }
 
-      console.log('[GrowDashboard] Final coach result:', {
+      devLog('[GrowDashboard] Final coach result:', {
         coachName,
         coachFound: !!coach,
         coachPhotoUrl: coach?.photo_url,
@@ -203,7 +207,7 @@ export default function GrowDashboard({
       let summary: string | null = null;
       if (profile?.id) {
         summary = await fetchMatchSummary(profile.id, userEmail);
-        console.log('[GrowDashboard] Match summary result:', summary);
+        devLog('[GrowDashboard] Match summary result:', summary);
       }
 
       if (progInfo) setProgramInfo(progInfo);
@@ -243,7 +247,7 @@ export default function GrowDashboard({
   });
 
   // Debug: Log action items
-  console.log('[GrowDashboard] Action items:', {
+  devLog('[GrowDashboard] Action items:', {
     totalReceived: actionItems.length,
     pendingCount: pendingActions.length,
     allItems: actionItems,
@@ -479,7 +483,7 @@ export default function GrowDashboard({
               {(() => {
                 // Debug logging for coach description
                 const coachingGoals = baseline?.coaching_goals || welcomeSurveyScale?.coaching_goals || null;
-                console.log('[GrowDashboard] Coach description debug:', {
+                devLog('[GrowDashboard] Coach description debug:', {
                   matchSummary: matchSummary ? 'exists' : 'null',
                   extractedSummary: extractCoachSummary(matchSummary, coachName),
                   hasBaseline: !!baseline,

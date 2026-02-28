@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import type { Session, Coach, ProgramType, WelcomeSurveyScale } from '../lib/types';
 import { fetchCoachByName, fetchMatchSummary } from '../lib/dataFetcher';
 
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
+
 /**
  * Extract the specific coach's summary from the full match_summary text.
  */
@@ -144,7 +148,7 @@ export default function CoachProfile({ sessions, coachName, programType: _progra
   const coachBio = coach?.bio || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential.`;
 
   // Debug logging
-  console.log('[CoachProfile] Description debug:', {
+  devLog('[CoachProfile] Description debug:', {
     hasExtractedSummary: !!extractedSummary,
     coachingGoals,
     personalizedDesc,

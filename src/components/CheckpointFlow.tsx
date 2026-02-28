@@ -2,6 +2,10 @@ import { useState } from 'react';
 import type { Checkpoint } from '../lib/types';
 import { submitCheckpoint, addCoachingWin, type ScaleCheckinData } from '../lib/dataFetcher';
 
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
+
 interface CheckpointFlowProps {
   userEmail: string;
   employeeId: string | number;
@@ -239,9 +243,9 @@ export default function CheckpointFlow({
     };
 
     try {
-      console.log('[CheckpointFlow] Submitting checkin data:', checkinData);
+      devLog('[CheckpointFlow] Submitting checkin data:', checkinData);
       const result = await submitCheckpoint(userEmail, checkinData);
-      console.log('[CheckpointFlow] Submit result:', result);
+      devLog('[CheckpointFlow] Submit result:', result);
 
       if (result.success && result.data) {
         // Store win in coaching_wins table if user entered one
