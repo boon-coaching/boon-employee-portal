@@ -21,12 +21,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Preview mode: auto-login via URL param using real auth session
-    // SECURITY: If VITE_PREVIEW_MODE=true leaks to production, this allows user impersonation.
-    // Belt-and-suspenders: also check hostname to block on production domains.
+    // SECURITY: Strictly localhost only. Never allow on deployed domains.
     if (import.meta.env.VITE_PREVIEW_MODE) {
       const hostname = window.location.hostname;
-      const isAllowedHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.vercel.app');
-      if (isAllowedHost) {
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+      if (isLocalhost) {
         const urlEmail = new URLSearchParams(window.location.search).get('email');
         const previewEmail = urlEmail || localStorage.getItem('boon_preview_email');
         if (previewEmail) {

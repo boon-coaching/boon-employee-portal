@@ -62,11 +62,22 @@ interface EvaluateRequest {
 
 type RequestBody = GeneratePlanRequest | RoleplayRequest | EvaluateRequest;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+function getAllowedOrigin(reqOrigin: string | null): string {
+  const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
+  const allowed = [portalUrl, 'https://my.boon-health.com', 'http://localhost:5173', 'http://localhost:3000'];
+  if (reqOrigin && allowed.includes(reqOrigin)) return reqOrigin;
+  return portalUrl;
+}
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin');
+  return {
+    'Access-Control-Allow-Origin': getAllowedOrigin(origin),
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 async function callClaude(systemPrompt: string, userMessage: string): Promise<string> {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
@@ -315,11 +326,11 @@ Give 1-2 specific examples of what they should have said or done differently.`;
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+    return new Response('Method not allowed', { status: 405, headers: getCorsHeaders(req) });
   }
 
   try {
@@ -336,7 +347,7 @@ Deno.serve(async (req) => {
         const plan = await callClaude(system, user);
         return new Response(
           JSON.stringify({ success: true, plan }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -360,7 +371,7 @@ Deno.serve(async (req) => {
         const response = await callClaudeWithHistory(systemPrompt, claudeMessages);
         return new Response(
           JSON.stringify({ success: true, response }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -375,14 +386,14 @@ Deno.serve(async (req) => {
         const evaluation = await callClaude(system, user);
         return new Response(
           JSON.stringify({ success: true, evaluation }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
     }
 
@@ -390,7 +401,7 @@ Deno.serve(async (req) => {
     console.error('Practice AI error:', error);
     return new Response(
       JSON.stringify({ error: 'Request failed', details: String(error) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

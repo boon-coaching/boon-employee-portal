@@ -7,16 +7,28 @@ import {
   lookupSlackUserByEmail,
   openDMChannel,
 } from '../_shared/slack.ts';
+import { createSignedState, verifySignedState } from '../_shared/oauth-state.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+function getAllowedOrigin(reqOrigin: string | null): string {
+  const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
+  const allowed = [portalUrl, 'https://my.boon-health.com', 'http://localhost:5173', 'http://localhost:3000'];
+  if (reqOrigin && allowed.includes(reqOrigin)) return reqOrigin;
+  return portalUrl;
+}
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin');
+  return {
+    'Access-Control-Allow-Origin': getAllowedOrigin(origin),
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   const url = new URL(req.url);
@@ -29,15 +41,15 @@ Deno.serve(async (req) => {
       if (!employeeEmail) {
         return new Response(
           JSON.stringify({ error: 'Missing email parameter' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
       const clientId = getEnvVar('SLACK_CLIENT_ID');
       const redirectUri = `${url.origin}/functions/v1/slack-oauth?action=callback`;
 
-      // Store email in state param (you could also use a signed JWT for security)
-      const state = btoa(JSON.stringify({ email: employeeEmail }));
+      // HMAC-signed state with nonce for CSRF protection
+      const state = await createSignedState({ email: employeeEmail });
 
       const slackAuthUrl = new URL('https://slack.com/oauth/v2/authorize');
       slackAuthUrl.searchParams.set('client_id', clientId);
@@ -63,14 +75,12 @@ Deno.serve(async (req) => {
         return redirectToPortal('error=missing_params');
       }
 
-      // Decode state to get employee email
-      let employeeEmail: string;
-      try {
-        const stateData = JSON.parse(atob(state));
-        employeeEmail = stateData.email;
-      } catch {
+      // Verify HMAC-signed state and extract employee email
+      const stateData = await verifySignedState(state);
+      if (!stateData || !stateData.email) {
         return redirectToPortal('error=invalid_state');
       }
+      const employeeEmail = stateData.email;
 
       // Exchange code for token
       const clientId = getEnvVar('SLACK_CLIENT_ID');
@@ -161,7 +171,7 @@ Deno.serve(async (req) => {
       if (!authHeader) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -174,7 +184,7 @@ Deno.serve(async (req) => {
       if (authError || !user?.email) {
         return new Response(
           JSON.stringify({ error: 'Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -188,13 +198,13 @@ Deno.serve(async (req) => {
         console.error('Failed to disconnect:', deleteError);
         return new Response(
           JSON.stringify({ error: 'Failed to disconnect' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
       return new Response(
         JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -204,7 +214,7 @@ Deno.serve(async (req) => {
       if (!authHeader) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -216,7 +226,7 @@ Deno.serve(async (req) => {
       if (authError || !user?.email) {
         return new Response(
           JSON.stringify({ error: 'Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -231,7 +241,7 @@ Deno.serve(async (req) => {
           connected: !!connection,
           settings: connection || null,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -241,7 +251,7 @@ Deno.serve(async (req) => {
       if (!authHeader) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -253,7 +263,7 @@ Deno.serve(async (req) => {
       if (authError || !user?.email) {
         return new Response(
           JSON.stringify({ error: 'Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -274,26 +284,26 @@ Deno.serve(async (req) => {
         console.error('Failed to update settings:', updateError);
         return new Response(
           JSON.stringify({ error: 'Failed to update settings' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
       return new Response(
         JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
       JSON.stringify({ error: 'Invalid action' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Slack OAuth error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

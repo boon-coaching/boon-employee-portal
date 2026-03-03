@@ -47,12 +47,28 @@ async function openDMChannel(botToken: string, userId: string) {
 
 // ============ Main Handler ============
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+// WARNING: This is a legacy standalone backup. The active version is slack-oauth/index.ts.
+// CORS restricted to known portal origins.
+function getAllowedOrigin(reqOrigin: string | null): string {
+  const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
+  const allowed = [portalUrl, 'https://my.boon-health.com', 'http://localhost:5173', 'http://localhost:3000'];
+  if (reqOrigin && allowed.includes(reqOrigin)) return reqOrigin;
+  return portalUrl;
+}
+
+let corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': 'http://localhost:5173',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 Deno.serve(async (req) => {
+  corsHeaders = {
+    'Access-Control-Allow-Origin': getAllowedOrigin(req.headers.get('origin')),
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

@@ -4,9 +4,27 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+function getAllowedOrigin(reqOrigin: string | null): string {
+  const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
+  const allowed = [portalUrl, 'https://my.boon-health.com', 'http://localhost:5173', 'http://localhost:3000'];
+  if (reqOrigin && allowed.includes(reqOrigin)) return reqOrigin;
+  return portalUrl;
+}
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin');
+  return {
+    'Access-Control-Allow-Origin': getAllowedOrigin(origin),
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+// Keep corsHeaders as alias for backward compat within this file
+let corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': 'http://localhost:5173',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 interface Coach {
@@ -499,6 +517,9 @@ function buildTeamsMatchCard(
 }
 
 Deno.serve(async (req) => {
+  // Set CORS headers dynamically based on request origin
+  corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });

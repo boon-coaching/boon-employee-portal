@@ -1,19 +1,30 @@
 import { getSupabaseClient, getEnvVar } from '../_shared/supabase.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+function getAllowedOrigin(reqOrigin: string | null): string {
+  const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
+  const allowed = [portalUrl, 'https://my.boon-health.com', 'http://localhost:5173', 'http://localhost:3000'];
+  if (reqOrigin && allowed.includes(reqOrigin)) return reqOrigin;
+  return portalUrl;
+}
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin');
+  return {
+    'Access-Control-Allow-Origin': getAllowedOrigin(origin),
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   if (req.method !== 'POST') {
     return new Response(
       JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 405, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     );
   }
 
@@ -23,7 +34,7 @@ Deno.serve(async (req) => {
     if (!email || !preview_secret) {
       return new Response(
         JSON.stringify({ error: 'Missing email or preview_secret' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
       );
     }
 
@@ -31,7 +42,7 @@ Deno.serve(async (req) => {
     if (preview_secret !== expectedSecret) {
       return new Response(
         JSON.stringify({ error: 'Invalid preview secret' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 403, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
       );
     }
 
@@ -46,7 +57,7 @@ Deno.serve(async (req) => {
       console.error('generateLink error:', error);
       return new Response(
         JSON.stringify({ error: 'Failed to generate login link' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
       );
     }
 
@@ -58,19 +69,19 @@ Deno.serve(async (req) => {
       console.error('generateLink response missing hashed_token:', JSON.stringify(data));
       return new Response(
         JSON.stringify({ error: 'No token_hash in generated link' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
       );
     }
 
     return new Response(
       JSON.stringify({ token_hash: tokenHash, email }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     );
   } catch (err) {
     console.error('preview-login error:', err);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } },
     );
   }
 });
