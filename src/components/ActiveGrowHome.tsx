@@ -254,7 +254,7 @@ export default function ActiveGrowHome({
             Hi {profile?.first_name || 'there'}
           </h1>
           <p className="text-gray-500 mt-2 text-lg font-medium">
-            Your personal coaching space
+            This is your personal coaching space.
           </p>
         </div>
         {profile?.booking_link && (
