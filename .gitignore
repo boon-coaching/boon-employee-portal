@@ -17,6 +17,9 @@ build/
 # IDE
 .idea/
 .vscode/
+
+# Claude Code (contains access tokens)
+.claude/settings.json
 *.swp
 *.swo
 

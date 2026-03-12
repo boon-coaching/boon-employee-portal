@@ -64,7 +64,7 @@ type RequestBody = GeneratePlanRequest | RoleplayRequest | EvaluateRequest;
 
 function getAllowedOrigin(reqOrigin: string | null): string {
   const portalUrl = Deno.env.get('PORTAL_URL') || 'http://localhost:5173';
-  const allowed = [portalUrl, 'https://my.boon-health.com', 'http://localhost:5173', 'http://localhost:3000'];
+  const allowed = [portalUrl, 'https://my.boon-health.com', 'https://practice.boon-health.com', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'];
   if (reqOrigin && allowed.includes(reqOrigin)) return reqOrigin;
   return portalUrl;
 }
