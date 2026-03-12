@@ -118,6 +118,13 @@ export default function LoginPage() {
                 'Continue'
               )}
             </button>
+
+            <p className="text-xs text-gray-400 text-center leading-relaxed">
+              By submitting this form, you acknowledge that you have read and agree to Boon Health's{' '}
+              <a href="https://boon-health.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-boon-blue hover:underline">
+                Privacy Policy
+              </a>.
+            </p>
           </div>
         </form>
 
