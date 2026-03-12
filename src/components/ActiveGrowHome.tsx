@@ -704,27 +704,6 @@ export default function ActiveGrowHome({
         </section>
       )}
 
-      {/* From Your Coach */}
-      {lastSession?.summary && (
-        <section className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">From Your Coach</h2>
-          <div className="absolute top-12 left-6 text-5xl text-boon-amber/30 font-serif">"</div>
-          <p className="font-serif text-gray-600 leading-relaxed italic relative z-10">
-            {lastSession.summary}
-          </p>
-          <div className="mt-6 flex items-center gap-3 relative z-10">
-            <img
-              src={getCoachPhotoUrl(100)}
-              alt="Coach"
-              className="w-9 h-9 rounded-full object-cover object-[center_15%] ring-2 ring-boon-bg"
-            />
-            <div>
-              <p className="text-sm font-bold text-boon-text leading-none">{coachName}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-widest">{coachProfile?.headline || 'Leadership Coach'}</p>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Explore Practice Space - only show contextual prompt if exact participant text exists */}
       <section className="bg-gradient-to-br from-purple-50 to-boon-bg rounded-[2rem] p-8 border border-purple-100/50 text-center">

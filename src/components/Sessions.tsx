@@ -396,7 +396,7 @@ export default function SessionsPage() {
                 <div className="space-y-4">
                   {group.sessions.map((session) => {
                     const isExpanded = expandedSession === session.id;
-                    const hasDetails = session.goals || session.plan || session.summary;
+                    const hasDetails = session.goals || session.plan;
                     const themes = getSessionThemes(session);
 
                     return (
@@ -489,12 +489,6 @@ export default function SessionsPage() {
                               <div>
                                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Plan</h4>
                                 <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.plan}</p>
-                              </div>
-                            )}
-                            {session.summary && (
-                              <div>
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Summary</h4>
-                                <p className="text-sm text-gray-600 leading-relaxed">{session.summary}</p>
                               </div>
                             )}
                             {session.status === 'Completed' && (
