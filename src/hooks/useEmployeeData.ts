@@ -189,16 +189,8 @@ export function useEmployeeData(): EmployeeData {
 
         setProgramType(finalProgramType);
 
-        // Only show action items from recent completed sessions
-        const completedByDate = sessionsData
-          .filter(s => s.status === 'Completed')
-          .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
-        const recentSessionIds = new Set(completedByDate.slice(0, 5).map(s => String(s.id)));
-        const validActionItems = actionItemsData.filter(item => {
-          if (!item.session_id) return true;
-          return recentSessionIds.has(String(item.session_id));
-        });
-        setActionItems(validActionItems);
+        // Action items are already filtered to last 90 days at the query level
+        setActionItems(actionItemsData);
         setReflection(reflectionData);
         setCheckpoints(checkpointsData);
         setCoachingWins(winsData);
@@ -223,15 +215,7 @@ export function useEmployeeData(): EmployeeData {
   async function reloadActionItems() {
     if (!employee?.company_email) return;
     const items = await fetchActionItems(employee.company_email);
-    const completedByDate = sessions
-      .filter(s => s.status === 'Completed')
-      .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
-    const recentSessionIds = new Set(completedByDate.slice(0, 5).map(s => String(s.id)));
-    const validItems = items.filter(item => {
-      if (!item.session_id) return true;
-      return recentSessionIds.has(String(item.session_id));
-    });
-    setActionItems(validItems);
+    setActionItems(items);
   }
 
   function handleReflectionComplete(newReflection: ReflectionResponse) {

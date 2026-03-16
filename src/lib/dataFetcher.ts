@@ -331,10 +331,14 @@ export async function fetchLatestSurveyResponse(email: string): Promise<SurveyRe
 export async function fetchActionItems(email: string): Promise<ActionItem[]> {
   devLog('[fetchActionItems] Fetching for email:', email);
 
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
   const { data, error } = await supabase
     .from('action_items')
     .select('*')
     .ilike('email', email)
+    .gte('created_at', ninetyDaysAgo.toISOString())
     .order('created_at', { ascending: false });
 
   if (error) {
