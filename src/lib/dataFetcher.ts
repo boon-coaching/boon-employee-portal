@@ -33,6 +33,10 @@ export async function fetchEmployeeProfile(email: string): Promise<Employee | nu
 export async function fetchSessions(employeeId: string, employeeEmail?: string): Promise<Session[]> {
   devLog('[fetchSessions] Starting lookup for:', { employeeId, employeeEmail });
 
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const cutoffDate = ninetyDaysAgo.toISOString().split('T')[0];
+
   // Helper to deduplicate sessions by ID
   const deduplicateSessions = (sessions: Session[]): Session[] => {
     const seen = new Set<string>();
@@ -51,6 +55,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     .from('session_tracking')
     .select('*')
     .eq('employee_id', employeeId)
+    .gte('session_date', cutoffDate)
     .order('session_date', { ascending: false });
 
   devLog('[fetchSessions] By employee_id:', {
@@ -68,6 +73,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
       .from('session_tracking')
       .select('*')
       .ilike('employee_email', employeeEmail)
+      .gte('session_date', cutoffDate)
       .order('session_date', { ascending: false });
 
     devLog('[fetchSessions] By employee_email ilike:', {
@@ -85,6 +91,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
       .from('session_tracking')
       .select('*')
       .eq('employee_email', employeeEmail.toLowerCase())
+      .gte('session_date', cutoffDate)
       .order('session_date', { ascending: false });
 
     devLog('[fetchSessions] By employee_email exact lowercase:', {
@@ -108,7 +115,7 @@ export async function fetchSessions(employeeId: string, employeeEmail?: string):
     });
 
     if (!rpcError && rpcData && rpcData.length > 0) {
-      return rpcData as Session[];
+      return (rpcData as Session[]).filter(s => s.session_date >= cutoffDate);
     }
 
     // Final debug: Check if sessions exist at all for this email pattern
