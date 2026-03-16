@@ -20,6 +20,7 @@ export interface EmployeeData {
 
   // Core data
   sessions: Session[];
+  recentSessions: Session[];
   effectiveSessions: Session[];
   progress: SurveyResponse[];
   baseline: BaselineSurvey | null;
@@ -397,10 +398,17 @@ export function useEmployeeData(): EmployeeData {
     comp_time_management_and_productivity: 4,
   };
 
+  // Sessions filtered to last 90 days for display (goals, plans, summaries may be stale beyond this)
+  const recentSessions = sessions.filter(s => {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    return new Date(s.session_date) >= ninetyDaysAgo;
+  });
+
   const isPreviewingPreFirstSession = stateOverride === 'MATCHED_PRE_FIRST_SESSION';
   const isPreviewingActiveProgram = stateOverride === 'ACTIVE_PROGRAM';
 
-  let effectiveSessions = sessions;
+  let effectiveSessions = recentSessions;
   if (isPreviewingPreFirstSession) {
     effectiveSessions = [{ ...mockUpcomingSession, appointment_number: 'SA-000001' }];
   } else if (isPreviewingActiveProgram) {
@@ -483,6 +491,7 @@ export function useEmployeeData(): EmployeeData {
     dataError,
     retryLoadData,
     sessions,
+    recentSessions,
     effectiveSessions,
     progress,
     baseline,

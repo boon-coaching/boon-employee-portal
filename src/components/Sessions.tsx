@@ -61,7 +61,7 @@ function StatusIcon({ type }: { type: 'check' | 'clock' | 'x-circle' | 'x' }) {
 
 export default function SessionsPage() {
   const data = usePortalData();
-  const sessions = data.sessions;
+  const sessions = data.recentSessions;
   const coachingState = data.coachingState;
   const isCompleted = isAlumniState(coachingState.state);
   const isPreFirst = isPreFirstSession(coachingState.state);

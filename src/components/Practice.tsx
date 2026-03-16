@@ -9,7 +9,7 @@ import { usePortalData } from './ProtectedLayout';
 
 export default function Practice() {
   const data = usePortalData();
-  const sessions = data.sessions;
+  const sessions = data.recentSessions;
   const coachingState = data.coachingState;
   const competencyScores = data.competencyScores || [];
   const userEmail = data.employee?.company_email || '';
