@@ -35,6 +35,14 @@ function isSubstantiveText(text: string | null | undefined): text is string {
   return !NON_ANSWERS.includes(normalized);
 }
 
+// Baseline welcome survey (Typeform) stores competency scores on a 1-10 scale,
+// but the portal uses a 1-5 scale. Normalize by dividing by 2 and rounding.
+function normalizeBaselineScore(value: number | null): number | null {
+  if (value === null) return null;
+  if (value <= 5) return value; // Already on 1-5 scale (native survey)
+  return Math.round(value / 2);
+}
+
 // The 12 competencies with their database column keys
 const COMPETENCIES = [
   { key: 'adaptability_and_resilience', label: 'Adaptability & Resilience', shortLabel: 'Adaptability' },
@@ -583,12 +591,12 @@ export default function ProgressPage() {
     // Build baseline competency data for pre-first-session display
     const baselineCompetencyData = COMPETENCIES.map(comp => {
       const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
-      const baselineValue = baseline?.[baselineKey] as number | null;
+      const rawValue = baseline?.[baselineKey] as number | null;
       return {
         key: comp.key,
         label: comp.label,
         shortLabel: comp.shortLabel,
-        baseline: baselineValue ?? 0,
+        baseline: normalizeBaselineScore(rawValue) ?? 0,
       };
     });
 
@@ -1297,12 +1305,12 @@ export default function ProgressPage() {
     // Build baseline-only competency data
     const baselineCompetencyData = COMPETENCIES.map(comp => {
       const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
-      const baselineValue = baseline?.[baselineKey] as number | null;
+      const rawValue = baseline?.[baselineKey] as number | null;
       return {
         key: comp.key,
         label: comp.label,
         shortLabel: comp.shortLabel,
-        baseline: baselineValue ?? 0,
+        baseline: normalizeBaselineScore(rawValue) ?? 0,
       };
     });
 
@@ -1472,7 +1480,8 @@ export default function ProgressPage() {
   const competencyData = COMPETENCIES.map(comp => {
     // Get baseline from welcome_survey_baseline (comp_ prefixed columns)
     const baselineKey = `comp_${comp.key}` as keyof BaselineSurvey;
-    const baselineValue = baseline?.[baselineKey] as number | null;
+    const rawBaseline = baseline?.[baselineKey] as number | null;
+    const baselineValue = normalizeBaselineScore(rawBaseline);
 
     // Get current from competency_scores (match by competency_name)
     const currentScore = competencyScores.find(cs =>
