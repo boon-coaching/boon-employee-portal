@@ -398,7 +398,10 @@ export function useEmployeeData(): EmployeeData {
     comp_time_management_and_productivity: 4,
   };
 
-  // Sessions filtered to last 90 days for display (goals, plans, summaries may be stale beyond this)
+  // ARCHITECTURE NOTE: Two session arrays serve different purposes.
+  // - `sessions` (full history): used by getCoachingState() for state detection, Progress for metrics
+  // - `recentSessions` (90 days): used by display components for goals, plans, summaries
+  // Coaches were asked to review the last 90 days only. Do NOT pass raw `sessions` to display components.
   const recentSessions = sessions.filter(s => {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
