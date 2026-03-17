@@ -110,7 +110,7 @@ async function handleAdd(req: AddRequest) {
     contactBody.Title = req.job_title
   }
   if (programTitle) {
-    contactBody.Program_Title__c = programTitle
+    contactBody.Boon_Program__c = programTitle
   }
 
   const sfRes = await fetch(`${auth.instanceUrl}/services/data/v59.0/sobjects/Contact`, {
@@ -194,14 +194,16 @@ async function handleUpdate(req: UpdateRequest) {
       .single()
 
     if (byType?.program_title) {
-      sfPatch.Program_Title__c = byType.program_title
+      sfPatch.Boon_Program__c = byType.program_title
     } else {
       // Value might already be a program_title (e.g. "TWC Lead Program 2026")
-      sfPatch.Program_Title__c = fields.program
+      sfPatch.Boon_Program__c = fields.program
     }
   }
 
   // 4. PATCH the SF Contact (only if we have the SF id and there are SF-relevant changes)
+  let sfStatus: number | null = null
+  let sfError: string | null = null
   if (employee.salesforce_contact_id && Object.keys(sfPatch).length > 0) {
     const config = getSalesforcePortalConfig()
     const auth = await getSalesforceAuth(config)
@@ -218,9 +220,10 @@ async function handleUpdate(req: UpdateRequest) {
       }
     )
 
+    sfStatus = sfRes.status
     if (!sfRes.ok) {
-      const err = await sfRes.text()
-      console.error('SF Contact PATCH failed:', err)
+      sfError = await sfRes.text()
+      console.error('SF Contact PATCH failed:', sfStatus, sfError)
       // Log but don't block — still update employee_manager
     }
   }
@@ -241,7 +244,8 @@ async function handleUpdate(req: UpdateRequest) {
   return {
     success: true,
     employee_id: updated.id,
-    sf_updated: employee.salesforce_contact_id ? Object.keys(sfPatch).length > 0 : false,
+    sf_updated: sfStatus === 204,
+    sf_error: sfError,
   }
 }
 
