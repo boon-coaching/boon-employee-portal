@@ -90,6 +90,11 @@ async function handleAdd(req: AddRequest) {
     }
   }
 
+  // If program_config lookup didn't yield a title, the value itself may be the title
+  if (!programTitle && req.program) {
+    programTitle = req.program
+  }
+
   // 3. Create Contact in Salesforce
   const contactBody: Record<string, string> = {
     RecordTypeId: '0123h000000R6p5AAC', // Client record type
@@ -177,9 +182,10 @@ async function handleUpdate(req: UpdateRequest) {
   if (fields.company_email !== undefined) sfPatch.Email = fields.company_email
   if (fields.job_title !== undefined) sfPatch.Title = fields.job_title
 
-  // 3. If program changed, look up program_title from program_config
+  // 3. If program changed, resolve the program_title for SF
   if (fields.program !== undefined && fields.program) {
-    const { data: programConfig } = await supabase
+    // Try matching by program_type first (e.g. "Scale", "GROW")
+    const { data: byType } = await supabase
       .from('program_config')
       .select('program_title')
       .eq('company_id', req.company_id)
@@ -187,8 +193,11 @@ async function handleUpdate(req: UpdateRequest) {
       .limit(1)
       .single()
 
-    if (programConfig?.program_title) {
-      sfPatch.Program_Title__c = programConfig.program_title
+    if (byType?.program_title) {
+      sfPatch.Program_Title__c = byType.program_title
+    } else {
+      // Value might already be a program_title (e.g. "TWC Lead Program 2026")
+      sfPatch.Program_Title__c = fields.program
     }
   }
 
