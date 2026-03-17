@@ -229,14 +229,14 @@ export function getCoachingState(
       )[0]
     : null;
 
-  const hasProgram = !!employee?.program;
+  const hasProgram = !!employee?.coaching_program;
   const hasCoach = hasCoachAssigned(employee, sessions);
   const hasBaseline = !!baseline;
   const hasCompletedSessions = countedSessions.length > 0;
   const hasUpcomingSession = !!upcomingSession;
 
   // Use fetched programType (from database lookup) if available, otherwise pattern match
-  const programType = fetchedProgramType || extractProgramType(employee?.program || null);
+  const programType = fetchedProgramType || extractProgramType(employee?.coaching_program || null);
   const isGrowOrExec = programType === 'GROW' || programType === 'EXEC';
   const isScale = programType === 'SCALE';
   const totalExpectedSessions = programType ? PROGRAM_SESSION_COUNTS[programType] || 12 : 12;

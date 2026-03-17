@@ -200,7 +200,7 @@ export function CompletedProgramHome() {
           </section>
         </div>
 
-        {profile?.program !== 'SCALE' && (
+        {programType !== 'SCALE' && (
           <section className="text-center py-4">
             <p className="text-gray-400 text-sm">
               Some people continue with ongoing 1:1 coaching.{' '}

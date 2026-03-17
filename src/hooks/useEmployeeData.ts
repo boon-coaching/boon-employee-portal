@@ -215,7 +215,7 @@ export function useEmployeeData(): EmployeeData {
     }
 
     loadData();
-  }, [employee?.id, employee?.company_email, employee?.program, retryCount]);
+  }, [employee?.id, employee?.company_email, employee?.coaching_program, retryCount]);
 
   async function reloadActionItems() {
     if (!employee?.company_email) return;

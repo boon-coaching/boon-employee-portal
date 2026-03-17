@@ -163,15 +163,15 @@ export default function GrowDashboard({
   // Load GROW-specific data
   useEffect(() => {
     const loadGrowData = async () => {
-      // Only require userEmail - profile.program may be null if derived from session
+      // Only require userEmail - profile.coaching_program may be null if derived from session
       if (!userEmail) return;
 
       setIsLoadingCoachData(true);
-      devLog('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.program });
+      devLog('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.coaching_program });
 
       // Fetch program info and focus areas in parallel (program info is optional)
       const [progInfo, areas] = await Promise.all([
-        profile?.program ? fetchProgramInfo(profile.program) : Promise.resolve(null),
+        profile?.coaching_program ? fetchProgramInfo(profile.coaching_program) : Promise.resolve(null),
         fetchGrowFocusAreas(userEmail),
       ]);
 
@@ -218,7 +218,7 @@ export default function GrowDashboard({
     };
 
     loadGrowData();
-  }, [profile?.program, profile?.coach_id, userEmail, coachName]);
+  }, [profile?.coaching_program, profile?.coach_id, userEmail, coachName]);
 
   // Count sessions with this specific coach (includes late cancel, no-show)
   const sessionsWithCoach = sessions.filter(s =>
