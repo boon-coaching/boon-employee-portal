@@ -188,7 +188,14 @@ export function renderTemplate(
 ): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
     const value = variables[key];
-    return value !== null && value !== undefined ? String(value) : '';
+    if (value === null || value === undefined) return '';
+    // Escape for JSON safety: backslashes, quotes, newlines, tabs
+    return String(value)
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
   });
 }
 

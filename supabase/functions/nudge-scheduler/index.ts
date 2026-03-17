@@ -100,7 +100,13 @@ function renderBlocks(
 ): unknown[] {
   let json = JSON.stringify(blocks);
   for (const [key, value] of Object.entries(vars)) {
-    json = json.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value ?? ''));
+    const safe = String(value ?? '')
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
+    json = json.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), safe);
   }
   return JSON.parse(json);
 }
@@ -112,7 +118,14 @@ function renderAdaptiveCard(
 ): Record<string, unknown> {
   let json = JSON.stringify(template);
   for (const [key, value] of Object.entries(vars)) {
-    json = json.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value ?? ''));
+    // Escape for JSON safety before injecting into stringified JSON
+    const safe = String(value ?? '')
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
+    json = json.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), safe);
   }
   return JSON.parse(json);
 }
