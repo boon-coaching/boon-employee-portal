@@ -1,0 +1,218 @@
+// portal-employee-sync: Syncs employee add/deactivate from portal to Salesforce + employee_manager
+// Uses Client Credentials OAuth against SF production
+
+import { getSalesforceAuth, getSalesforcePortalConfig } from '../_shared/salesforce.ts'
+import { getSupabaseClient } from '../_shared/supabase.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+interface AddRequest {
+  action: 'add'
+  email: string
+  first_name: string
+  last_name: string
+  company_id: string
+  job_title?: string
+  company_name?: string
+  sf_account_id?: string
+}
+
+interface DeactivateRequest {
+  action: 'deactivate'
+  email: string
+  company_id: string
+}
+
+type SyncRequest = AddRequest | DeactivateRequest
+
+function validateAdd(body: Record<string, unknown>): body is AddRequest {
+  return body.action === 'add' &&
+    typeof body.email === 'string' &&
+    typeof body.first_name === 'string' &&
+    typeof body.last_name === 'string' &&
+    typeof body.company_id === 'string'
+}
+
+function validateDeactivate(body: Record<string, unknown>): body is DeactivateRequest {
+  return body.action === 'deactivate' &&
+    typeof body.email === 'string' &&
+    typeof body.company_id === 'string'
+}
+
+async function handleAdd(req: AddRequest) {
+  const supabase = getSupabaseClient()
+
+  // 1. Auth to SF
+  const config = getSalesforcePortalConfig()
+  const auth = await getSalesforceAuth(config)
+
+  // 2. Look up SF Account ID from program_config if not provided
+  let accountId = req.sf_account_id
+  if (!accountId) {
+    const { data: program } = await supabase
+      .from('program_config')
+      .select('sf_account_id')
+      .eq('company_id', req.company_id)
+      .not('sf_account_id', 'is', null)
+      .limit(1)
+      .single()
+
+    if (program?.sf_account_id) {
+      accountId = program.sf_account_id
+    }
+  }
+
+  // 3. Create Contact in Salesforce
+  const contactBody: Record<string, string> = {
+    RecordTypeId: '0123h000000R6p5AAC', // Client record type
+    FirstName: req.first_name,
+    LastName: req.last_name,
+    Email: req.email,
+    Status__c: 'Unregistered',
+  }
+  if (accountId) {
+    contactBody.AccountId = accountId
+  }
+
+  const sfRes = await fetch(`${auth.instanceUrl}/services/data/v59.0/sobjects/Contact`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${auth.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(contactBody),
+  })
+
+  if (!sfRes.ok) {
+    const err = await sfRes.text()
+    throw new Error(`Salesforce Contact create failed (${sfRes.status}): ${err}`)
+  }
+
+  const sfData = await sfRes.json()
+  const salesforceContactId = sfData.id as string
+
+  // 4. Insert into employee_manager
+  const { data: employee, error: dbError } = await supabase
+    .from('employee_manager')
+    .insert({
+      company_email: req.email,
+      first_name: req.first_name,
+      last_name: req.last_name,
+      company_id: req.company_id,
+      job_title: req.job_title || null,
+      company_name: req.company_name || null,
+      status: 'Active',
+      salesforce_contact_id: salesforceContactId,
+    })
+    .select('id')
+    .single()
+
+  if (dbError) {
+    throw new Error(`employee_manager insert failed: ${dbError.message}`)
+  }
+
+  return {
+    success: true,
+    salesforce_contact_id: salesforceContactId,
+    employee_id: employee.id,
+  }
+}
+
+async function handleDeactivate(req: DeactivateRequest) {
+  const supabase = getSupabaseClient()
+
+  // 1. Look up employee to get salesforce_contact_id
+  const { data: employee, error: lookupError } = await supabase
+    .from('employee_manager')
+    .select('id, salesforce_contact_id')
+    .ilike('company_email', req.email)
+    .eq('company_id', req.company_id)
+    .single()
+
+  if (lookupError || !employee) {
+    throw new Error(`Employee not found for ${req.email} in company ${req.company_id}`)
+  }
+
+  // 2. Auth to SF
+  const config = getSalesforcePortalConfig()
+  const auth = await getSalesforceAuth(config)
+
+  // 3. Update Contact status in Salesforce (if we have the SF id)
+  if (employee.salesforce_contact_id) {
+    const sfRes = await fetch(
+      `${auth.instanceUrl}/services/data/v59.0/sobjects/Contact/${employee.salesforce_contact_id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ Status__c: 'Terminated' }),
+      }
+    )
+
+    if (!sfRes.ok) {
+      const err = await sfRes.text()
+      throw new Error(`Salesforce Contact update failed (${sfRes.status}): ${err}`)
+    }
+  }
+
+  // 4. Update employee_manager status + end_date
+  const { error: updateError } = await supabase
+    .from('employee_manager')
+    .update({ status: 'Terminated', end_date: new Date().toISOString().split('T')[0] })
+    .eq('id', employee.id)
+
+  if (updateError) {
+    throw new Error(`employee_manager update failed: ${updateError.message}`)
+  }
+
+  return { success: true }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const body = await req.json()
+
+    if (body.action === 'add' && validateAdd(body)) {
+      const result = await handleAdd(body)
+      return new Response(
+        JSON.stringify(result),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (body.action === 'deactivate' && validateDeactivate(body)) {
+      const result = await handleDeactivate(body)
+      return new Response(
+        JSON.stringify(result),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'Invalid request. Required: action (add|deactivate), email, company_id. For add: first_name, last_name.' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('portal-employee-sync error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})
