@@ -33,9 +33,9 @@ program_info AS (
     COALESCE(
       p.program_type,
       CASE
-        WHEN upper(em.program) LIKE 'GROW%' THEN 'GROW'
-        WHEN upper(em.program) LIKE 'SCALE%' THEN 'SCALE'
-        WHEN upper(em.program) LIKE 'EXEC%' THEN 'EXEC'
+        WHEN upper(em.coaching_program) LIKE 'GROW%' THEN 'GROW'
+        WHEN upper(em.coaching_program) LIKE 'SCALE%' THEN 'SCALE'
+        WHEN upper(em.coaching_program) LIKE 'EXEC%' THEN 'EXEC'
         ELSE 'SCALE'
       END
     ) as program_type,
@@ -43,17 +43,17 @@ program_info AS (
     COALESCE(
       p.sessions_per_employee,
       CASE
-        WHEN upper(em.program) LIKE 'GROW%' THEN 12
-        WHEN upper(em.program) LIKE 'EXEC%' THEN 12
+        WHEN upper(em.coaching_program) LIKE 'GROW%' THEN 12
+        WHEN upper(em.coaching_program) LIKE 'EXEC%' THEN 12
         ELSE 36
       END
     ) as sessions_per_employee,
     p.program_end_date
   FROM employee_manager em
   LEFT JOIN programs p ON (
-    em.program = p.id::text
-    OR upper(em.program) LIKE upper(p.name) || '%'
-    OR upper(em.program) = upper(p.program_type)
+    em.coaching_program = p.id::text
+    OR upper(em.coaching_program) LIKE upper(p.name) || '%'
+    OR upper(em.coaching_program) = upper(p.program_type)
   )
 ),
 -- Milestone-based surveys (regular session feedback)

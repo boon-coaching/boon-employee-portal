@@ -1,8 +1,15 @@
--- Migration: Fix submit_survey_for_user to use employee_manager table
--- Date: 2026-01-25
--- Uses actual survey_type values: feedback, touchpoint, first_session, sixth_session, midpoint, end_of_program
+-- Migration: Consolidate program columns on employee_manager
+-- Date: 2026-03-16
+--
+-- employee_manager had 3 overlapping columns: program, program_title, coaching_program
+-- Data has been backfilled into coaching_program (the canonical column from SF/Zapier).
+-- This migration updates the RPC that references em.program, then drops the redundant columns.
+-- Note: pending_surveys view does not exist in production so is not updated here.
 
--- Drop existing function
+-- ============================================
+-- 1. Update submit_survey_for_user RPC
+-- ============================================
+
 DROP FUNCTION IF EXISTS submit_survey_for_user(TEXT, TEXT, TEXT, INTEGER, TEXT, TEXT, INTEGER, BOOLEAN, INTEGER, BOOLEAN, TEXT[], BOOLEAN);
 
 CREATE OR REPLACE FUNCTION submit_survey_for_user(
@@ -14,7 +21,6 @@ CREATE OR REPLACE FUNCTION submit_survey_for_user(
   p_feedback_suggestions TEXT DEFAULT NULL,
   p_nps INTEGER DEFAULT NULL,
   p_open_to_testimonial BOOLEAN DEFAULT FALSE,
-  -- New fields for check-in survey
   p_match_rating INTEGER DEFAULT NULL,
   p_next_session_booked BOOLEAN DEFAULT NULL,
   p_not_booked_reasons TEXT[] DEFAULT NULL,
@@ -29,7 +35,6 @@ DECLARE
   result survey_submissions;
   emp_record RECORD;
 BEGIN
-  -- Look up employee data from employee_manager table
   SELECT
     em.first_name,
     em.last_name,
@@ -92,3 +97,10 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION submit_survey_for_user TO authenticated;
+
+-- ============================================
+-- 2. Drop redundant columns
+-- ============================================
+
+ALTER TABLE employee_manager DROP COLUMN IF EXISTS program;
+ALTER TABLE employee_manager DROP COLUMN IF EXISTS program_title;

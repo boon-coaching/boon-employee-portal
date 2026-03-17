@@ -107,7 +107,7 @@ export function useEmployeeData(): EmployeeData {
         company_email: employee.company_email,
         coach_id: employee.coach_id,
         booking_link: employee.booking_link ? 'SET' : 'NOT_SET',
-        program: employee.program,
+        coaching_program: employee.coaching_program,
         status: employee.status
       });
 
@@ -120,7 +120,7 @@ export function useEmployeeData(): EmployeeData {
           fetchBaseline(employee.company_email),
           fetchWelcomeSurveyScale(employee.company_email),
           fetchCompetencyScores(employee.company_email),
-          fetchProgramType(employee.program),
+          fetchProgramType(employee.coaching_program),
           fetchActionItems(employee.company_email),
           fetchReflection(employee.company_email),
           fetchCheckpoints(employee.company_email),
@@ -141,7 +141,7 @@ export function useEmployeeData(): EmployeeData {
           welcomeSurveyScaleData: welcomeSurveyScaleData,
           competencyCount: competencyData.length,
           programType: programTypeData,
-          employeeProgram: employee.program,
+          employeeProgram: employee.coaching_program,
           actionItemsCount: actionItemsData.length,
           hasReflection: !!reflectionData,
           checkpointsCount: checkpointsData.length,

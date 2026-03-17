@@ -12,10 +12,8 @@ export interface Employee {
   coach_id: string | null;
   auth_user_id: string | null;
   status: string | null;
-  program: string | null; // Links to programs table
   booking_link: string | null;
   created_at: string;
-  // Actual column names in employee_manager table
   company_name: string | null;
   coaching_program: string | null;
   company_id: string | null;  // Foreign key to companies table
