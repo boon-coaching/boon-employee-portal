@@ -21,13 +21,20 @@ interface AddRequest {
   sf_account_id?: string
 }
 
+interface UpdateRequest {
+  action: 'update'
+  employee_id: number
+  company_id: string
+  fields: Record<string, any>
+}
+
 interface DeactivateRequest {
   action: 'deactivate'
   email: string
   company_id: string
 }
 
-type SyncRequest = AddRequest | DeactivateRequest
+type SyncRequest = AddRequest | UpdateRequest | DeactivateRequest
 
 function validateAdd(body: Record<string, unknown>): body is AddRequest {
   return body.action === 'add' &&
@@ -35,6 +42,14 @@ function validateAdd(body: Record<string, unknown>): body is AddRequest {
     typeof body.first_name === 'string' &&
     typeof body.last_name === 'string' &&
     typeof body.company_id === 'string'
+}
+
+function validateUpdate(body: Record<string, unknown>): body is UpdateRequest {
+  return body.action === 'update' &&
+    typeof body.employee_id === 'number' &&
+    typeof body.company_id === 'string' &&
+    typeof body.fields === 'object' &&
+    body.fields !== null
 }
 
 function validateDeactivate(body: Record<string, unknown>): body is DeactivateRequest {
@@ -50,12 +65,13 @@ async function handleAdd(req: AddRequest) {
   const config = getSalesforcePortalConfig()
   const auth = await getSalesforceAuth(config)
 
-  // 2. Look up SF Account ID from program_config if not provided
+  // 2. Look up SF Account ID + program_title from program_config if not provided
   let accountId = req.sf_account_id
+  let programTitle: string | null = null
   if (!accountId) {
     let query = supabase
       .from('program_config')
-      .select('sf_account_id')
+      .select('sf_account_id, program_title')
       .eq('company_id', req.company_id)
       .not('sf_account_id', 'is', null)
 
@@ -69,6 +85,9 @@ async function handleAdd(req: AddRequest) {
     if (program?.sf_account_id) {
       accountId = program.sf_account_id
     }
+    if (program?.program_title) {
+      programTitle = program.program_title
+    }
   }
 
   // 3. Create Contact in Salesforce
@@ -81,6 +100,12 @@ async function handleAdd(req: AddRequest) {
   }
   if (accountId) {
     contactBody.AccountId = accountId
+  }
+  if (req.job_title) {
+    contactBody.Title = req.job_title
+  }
+  if (programTitle) {
+    contactBody.Program_Title__c = programTitle
   }
 
   const sfRes = await fetch(`${auth.instanceUrl}/services/data/v59.0/sobjects/Contact`, {
@@ -125,6 +150,89 @@ async function handleAdd(req: AddRequest) {
     success: true,
     salesforce_contact_id: salesforceContactId,
     employee_id: employee.id,
+  }
+}
+
+async function handleUpdate(req: UpdateRequest) {
+  const supabase = getSupabaseClient()
+
+  // 1. Look up employee to get salesforce_contact_id
+  const { data: employee, error: lookupError } = await supabase
+    .from('employee_manager')
+    .select('id, salesforce_contact_id')
+    .eq('id', req.employee_id)
+    .eq('company_id', req.company_id)
+    .single()
+
+  if (lookupError || !employee) {
+    throw new Error(`Employee not found: id=${req.employee_id}, company=${req.company_id}`)
+  }
+
+  // 2. Build SF Contact PATCH payload from changed fields
+  const sfPatch: Record<string, string> = {}
+  const fields = req.fields
+
+  if (fields.first_name !== undefined) sfPatch.FirstName = fields.first_name
+  if (fields.last_name !== undefined) sfPatch.LastName = fields.last_name
+  if (fields.company_email !== undefined) sfPatch.Email = fields.company_email
+  if (fields.job_title !== undefined) sfPatch.Title = fields.job_title
+
+  // 3. If program changed, look up program_title from program_config
+  if (fields.program !== undefined && fields.program) {
+    const { data: programConfig } = await supabase
+      .from('program_config')
+      .select('program_title')
+      .eq('company_id', req.company_id)
+      .ilike('program_type', fields.program)
+      .limit(1)
+      .single()
+
+    if (programConfig?.program_title) {
+      sfPatch.Program_Title__c = programConfig.program_title
+    }
+  }
+
+  // 4. PATCH the SF Contact (only if we have the SF id and there are SF-relevant changes)
+  if (employee.salesforce_contact_id && Object.keys(sfPatch).length > 0) {
+    const config = getSalesforcePortalConfig()
+    const auth = await getSalesforceAuth(config)
+
+    const sfRes = await fetch(
+      `${auth.instanceUrl}/services/data/v59.0/sobjects/Contact/${employee.salesforce_contact_id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sfPatch),
+      }
+    )
+
+    if (!sfRes.ok) {
+      const err = await sfRes.text()
+      console.error('SF Contact PATCH failed:', err)
+      // Log but don't block — still update employee_manager
+    }
+  }
+
+  // 5. Update employee_manager with all fields
+  const { data: updated, error: updateError } = await supabase
+    .from('employee_manager')
+    .update(fields)
+    .eq('id', req.employee_id)
+    .eq('company_id', req.company_id)
+    .select('id')
+    .single()
+
+  if (updateError) {
+    throw new Error(`employee_manager update failed: ${updateError.message}`)
+  }
+
+  return {
+    success: true,
+    employee_id: updated.id,
+    sf_updated: employee.salesforce_contact_id ? Object.keys(sfPatch).length > 0 : false,
   }
 }
 
@@ -203,6 +311,14 @@ Deno.serve(async (req) => {
       )
     }
 
+    if (body.action === 'update' && validateUpdate(body)) {
+      const result = await handleUpdate(body)
+      return new Response(
+        JSON.stringify(result),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     if (body.action === 'deactivate' && validateDeactivate(body)) {
       const result = await handleDeactivate(body)
       return new Response(
@@ -212,7 +328,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: 'Invalid request. Required: action (add|deactivate), email, company_id. For add: first_name, last_name.' }),
+      JSON.stringify({ error: 'Invalid request. Required: action (add|update|deactivate). See docs for required fields per action.' }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
