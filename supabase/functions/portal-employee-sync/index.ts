@@ -17,6 +17,7 @@ interface AddRequest {
   company_id: string
   job_title?: string
   company_name?: string
+  program?: string
   sf_account_id?: string
 }
 
@@ -52,13 +53,18 @@ async function handleAdd(req: AddRequest) {
   // 2. Look up SF Account ID from program_config if not provided
   let accountId = req.sf_account_id
   if (!accountId) {
-    const { data: program } = await supabase
+    let query = supabase
       .from('program_config')
       .select('sf_account_id')
       .eq('company_id', req.company_id)
       .not('sf_account_id', 'is', null)
-      .limit(1)
-      .single()
+
+    // Narrow by program type if provided (handles multi-program companies)
+    if (req.program) {
+      query = query.ilike('program_type', req.program)
+    }
+
+    const { data: program } = await query.limit(1).single()
 
     if (program?.sf_account_id) {
       accountId = program.sf_account_id
@@ -104,6 +110,7 @@ async function handleAdd(req: AddRequest) {
       company_id: req.company_id,
       job_title: req.job_title || null,
       company_name: req.company_name || null,
+      program: req.program || null,
       status: 'Active',
       salesforce_contact_id: salesforceContactId,
     })
