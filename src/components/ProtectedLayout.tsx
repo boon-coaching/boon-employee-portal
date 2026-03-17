@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useEmployeeData, type EmployeeData } from '../hooks/useEmployeeData';
@@ -9,8 +10,6 @@ import CheckpointFlow from './CheckpointFlow';
 import AdminStatePreview from './AdminStatePreview';
 import SurveyModal from './SurveyModal';
 
-const WELCOME_SURVEY_URL = import.meta.env.VITE_WELCOME_SURVEY_URL || 'https://boon.typeform.com/welcome';
-
 export function usePortalData() {
   return useOutletContext<EmployeeData>();
 }
@@ -18,10 +17,28 @@ export function usePortalData() {
 export function ProtectedLayout() {
   const { session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [authTimedOut, setAuthTimedOut] = useState(false);
+  const [dataTimedOut, setDataTimedOut] = useState(false);
 
   const data = useEmployeeData();
 
-  // Auth loading
+  useEffect(() => {
+    if (authLoading) {
+      setAuthTimedOut(false);
+      const timer = setTimeout(() => setAuthTimedOut(true), 15_000);
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading]);
+
+  useEffect(() => {
+    if (data.dataLoading) {
+      setDataTimedOut(false);
+      const timer = setTimeout(() => setDataTimedOut(true), 15_000);
+      return () => clearTimeout(timer);
+    }
+  }, [data.dataLoading]);
+
+  // Auth loading (includes employee profile fetch)
   if (authLoading) {
     return (
       <div className="min-h-screen bg-boon-bg flex items-center justify-center">
@@ -32,6 +49,17 @@ export function ProtectedLayout() {
             alt="Loading..."
           />
           <p className="text-boon-blue font-medium">Loading...</p>
+          {authTimedOut && (
+            <div className="mt-4 space-y-2 text-center">
+              <p className="text-amber-600 text-sm">This is taking longer than expected.</p>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-6 py-2.5 bg-white text-boon-blue border border-boon-blue rounded-xl font-bold text-sm hover:bg-blue-50 transition-all"
+              >
+                Back to sign in
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -40,22 +68,6 @@ export function ProtectedLayout() {
   // Not authenticated
   if (!session) {
     return <Navigate to="/login" replace />;
-  }
-
-  // Auth loaded but loading employee data
-  if (data.loading) {
-    return (
-      <div className="min-h-screen bg-boon-bg flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <img
-            src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Icon_Blue_10_i8hkao.png"
-            className="w-12 h-12 animate-bounce mb-4"
-            alt="Loading..."
-          />
-          <p className="text-boon-blue font-medium">Loading...</p>
-        </div>
-      </div>
-    );
   }
 
   // No employee found
@@ -97,6 +109,17 @@ export function ProtectedLayout() {
             alt="Loading..."
           />
           <p className="text-boon-blue font-medium">Getting your dashboard ready...</p>
+          {dataTimedOut && (
+            <div className="mt-4 space-y-2 text-center">
+              <p className="text-amber-600 text-sm">This is taking longer than expected.</p>
+              <button
+                onClick={() => data.retryLoadData()}
+                className="px-6 py-2.5 bg-white text-boon-blue border border-boon-blue rounded-xl font-bold text-sm hover:bg-blue-50 transition-all"
+              >
+                Try again
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -106,7 +129,7 @@ export function ProtectedLayout() {
   if (data.coachingState.state === 'NOT_SIGNED_UP') {
     return (
       <>
-        <WelcomePage welcomeSurveyUrl={WELCOME_SURVEY_URL} />
+        <WelcomePage welcomeSurveyUrl={data.welcomeSurveyLink || import.meta.env.VITE_WELCOME_SURVEY_URL || 'https://boon-health.typeform.com/signup'} />
         <AdminStatePreview
           currentState={data.actualCoachingState.state}
           overrideState={data.stateOverride}

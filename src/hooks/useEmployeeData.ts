@@ -4,7 +4,7 @@ import { useAuth } from '../lib/AuthContext';
 const devLog = (...args: unknown[]) => {
   if (import.meta.env.DEV) console.log(...args);
 };
-import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins, addCoachingWin, deleteCoachingWin, updateCoachingWin } from '../lib/dataFetcher';
+import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins, addCoachingWin, deleteCoachingWin, updateCoachingWin, fetchWelcomeSurveyLink } from '../lib/dataFetcher';
 import { getCoachingState, type CoachingStateData, type CoachingState } from '../lib/coachingState';
 import type { Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, ReflectionResponse, Checkpoint, PendingSurvey, CoachingWin } from '../lib/types';
 
@@ -34,6 +34,7 @@ export interface EmployeeData {
   reflection: ReflectionResponse | null;
   checkpoints: Checkpoint[];
   coachingWins: CoachingWin[];
+  welcomeSurveyLink: string | null;
 
   // Coaching state
   actualCoachingState: CoachingStateData;
@@ -85,6 +86,7 @@ export function useEmployeeData(): EmployeeData {
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [welcomeSurveyScale, setWelcomeSurveyScale] = useState<WelcomeSurveyScale | null>(null);
   const [coachingWins, setCoachingWins] = useState<CoachingWin[]>([]);
+  const [welcomeSurveyLink, setWelcomeSurveyLink] = useState<string | null>(null);
   const [showReflectionFlow, setShowReflectionFlow] = useState(false);
   const [showCheckpointFlow, setShowCheckpointFlow] = useState(false);
   const [stateOverride, setStateOverride] = useState<CoachingState | null>(null);
@@ -112,7 +114,7 @@ export function useEmployeeData(): EmployeeData {
       setDataLoading(true);
       setDataError(null);
       try {
-        const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData, winsData] = await Promise.all([
+        const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData, winsData, welcomeSurveyLinkData] = await Promise.all([
           fetchSessions(employee.id, employee.company_email),
           fetchProgressData(employee.company_email),
           fetchBaseline(employee.company_email),
@@ -123,6 +125,7 @@ export function useEmployeeData(): EmployeeData {
           fetchReflection(employee.company_email),
           fetchCheckpoints(employee.company_email),
           fetchCoachingWins(employee.company_email),
+          employee.company_id ? fetchWelcomeSurveyLink(employee.company_id, employee.coaching_program) : Promise.resolve(null),
         ]);
 
         devLog('[App.loadData] Sessions loaded:', {
@@ -195,6 +198,7 @@ export function useEmployeeData(): EmployeeData {
         setReflection(reflectionData);
         setCheckpoints(checkpointsData);
         setCoachingWins(winsData);
+        setWelcomeSurveyLink(welcomeSurveyLinkData);
 
         // Check for pending survey after data loads
         const pending = await fetchPendingSurvey(employee.company_email, finalProgramType, sessionsData);
@@ -508,6 +512,7 @@ export function useEmployeeData(): EmployeeData {
     reflection,
     checkpoints,
     coachingWins,
+    welcomeSurveyLink,
     actualCoachingState,
     coachingState,
     pendingSurvey,

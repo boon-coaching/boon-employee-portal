@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Component, lazy, Suspense, type ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Static imports (auth flow, always needed immediately)
@@ -33,6 +33,57 @@ function PageLoader() {
   );
 }
 
+// Catches lazy chunk load failures (network errors, CDN timeouts)
+// and shows a retry UI instead of a white screen
+interface ChunkErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ChunkErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ChunkErrorBoundary extends Component<ChunkErrorBoundaryProps, ChunkErrorBoundaryState> {
+  state: ChunkErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-[60vh] flex items-center justify-center p-6">
+          <div className="text-center">
+            <p className="text-boon-text font-medium mb-2">Page failed to load.</p>
+            <p className="text-gray-500 text-sm mb-4">This is usually a network issue.</p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false });
+                window.location.reload();
+              }}
+              className="px-6 py-2.5 bg-boon-blue text-white rounded-xl font-bold text-sm hover:bg-boon-darkBlue transition-all"
+            >
+              Reload page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function LazyPage({ children }: { children: ReactNode }) {
+  return (
+    <ChunkErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        {children}
+      </Suspense>
+    </ChunkErrorBoundary>
+  );
+}
+
 export default function App() {
   return (
     <>
@@ -43,13 +94,13 @@ export default function App() {
         <Route path="/welcome-complete" element={<WelcomeCompletePage />} />
         <Route path="/help/privacy" element={<HelpPrivacyPage />} />
         <Route element={<ProtectedLayout />}>
-          <Route index element={<Suspense fallback={<PageLoader />}><HomePage /></Suspense>} />
-          <Route path="sessions" element={<Suspense fallback={<PageLoader />}><SessionsPage /></Suspense>} />
-          <Route path="progress" element={<Suspense fallback={<PageLoader />}><ProgressPage /></Suspense>} />
-          <Route path="practice" element={<Suspense fallback={<PageLoader />}><Practice /></Suspense>} />
-          <Route path="coach" element={<Suspense fallback={<PageLoader />}><CoachPage /></Suspense>} />
-          <Route path="resources" element={<Suspense fallback={<PageLoader />}><Resources /></Suspense>} />
-          <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+          <Route index element={<LazyPage><HomePage /></LazyPage>} />
+          <Route path="sessions" element={<LazyPage><SessionsPage /></LazyPage>} />
+          <Route path="progress" element={<LazyPage><ProgressPage /></LazyPage>} />
+          <Route path="practice" element={<LazyPage><Practice /></LazyPage>} />
+          <Route path="coach" element={<LazyPage><CoachPage /></LazyPage>} />
+          <Route path="resources" element={<LazyPage><Resources /></LazyPage>} />
+          <Route path="settings" element={<LazyPage><Settings /></LazyPage>} />
           <Route path="feedback" element={<FeedbackPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

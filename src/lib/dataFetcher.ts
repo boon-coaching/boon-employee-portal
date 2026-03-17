@@ -2065,6 +2065,34 @@ export async function fetchAllBaselineScores(email: string): Promise<SurveyCompe
 }
 
 // ============================================
+// WELCOME SURVEY LINK (Dynamic per program)
+// ============================================
+
+/**
+ * Fetch the welcome survey link from program_config for a company
+ * Falls back to null if no active program has a link configured
+ */
+export async function fetchWelcomeSurveyLink(
+  companyId: string,
+  coachingProgram?: string | null
+): Promise<string | null> {
+  let query = supabase
+    .from('program_config')
+    .select('welcome_survey_link')
+    .eq('company_id', companyId)
+    .eq('program_status', 'Active')
+    .not('welcome_survey_link', 'is', null);
+
+  if (coachingProgram) {
+    query = query.ilike('program_title', `%${coachingProgram}%`);
+  }
+
+  const { data, error } = await query.limit(1).maybeSingle();
+  if (error || !data?.welcome_survey_link) return null;
+  return data.welcome_survey_link;
+}
+
+// ============================================
 // COACHING WINS
 // ============================================
 
