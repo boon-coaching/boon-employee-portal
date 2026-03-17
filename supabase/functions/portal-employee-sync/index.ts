@@ -109,8 +109,20 @@ async function handleAdd(req: AddRequest) {
   if (req.job_title) {
     contactBody.Title = req.job_title
   }
+  // Look up SF Program record by title to set the Coaching_Program__c lookup
+  // (Boon_Program__c is a formula that reads from this lookup, so it's read-only)
   if (programTitle) {
-    contactBody.Boon_Program__c = programTitle
+    const soql = `SELECT Id FROM Company_Program__c WHERE Program_Title__c = '${programTitle.replace(/'/g, "\\'")}'  LIMIT 1`
+    const qRes = await fetch(
+      `${auth.instanceUrl}/services/data/v59.0/query?q=${encodeURIComponent(soql)}`,
+      { headers: { Authorization: `Bearer ${auth.accessToken}` } }
+    )
+    if (qRes.ok) {
+      const qData = await qRes.json()
+      if (qData.records?.length > 0) {
+        contactBody.Coaching_Program__c = qData.records[0].Id
+      }
+    }
   }
 
   const sfRes = await fetch(`${auth.instanceUrl}/services/data/v59.0/sobjects/Contact`, {
@@ -182,9 +194,20 @@ async function handleUpdate(req: UpdateRequest) {
   if (fields.company_email !== undefined) sfPatch.Email = fields.company_email
   if (fields.job_title !== undefined) sfPatch.Title = fields.job_title
 
-  // 3. If program changed, resolve the program_title for SF
-  if (fields.program !== undefined && fields.program) {
-    // Try matching by program_type first (e.g. "Scale", "GROW")
+  // 3. Auth to SF once (if we have a contact to update)
+  let sfStatus: number | null = null
+  let sfError: string | null = null
+  let auth: Awaited<ReturnType<typeof getSalesforceAuth>> | null = null
+  if (employee.salesforce_contact_id && (Object.keys(sfPatch).length > 0 || (fields.program !== undefined && fields.program))) {
+    const config = getSalesforcePortalConfig()
+    auth = await getSalesforceAuth(config)
+  }
+
+  // 4. If program changed, find the SF Program record ID and set the lookup
+  // Boon_Program__c is a formula (read-only). The writable field is Coaching_Program__c (lookup).
+  if (fields.program !== undefined && fields.program && auth) {
+    // Resolve program_title to search SF
+    let programTitle = fields.program
     const { data: byType } = await supabase
       .from('program_config')
       .select('program_title')
@@ -192,22 +215,26 @@ async function handleUpdate(req: UpdateRequest) {
       .ilike('program_type', fields.program)
       .limit(1)
       .single()
-
     if (byType?.program_title) {
-      sfPatch.Boon_Program__c = byType.program_title
-    } else {
-      // Value might already be a program_title (e.g. "TWC Lead Program 2026")
-      sfPatch.Boon_Program__c = fields.program
+      programTitle = byType.program_title
+    }
+
+    // Query SF for the Program record by title
+    const soql = `SELECT Id FROM Company_Program__c WHERE Program_Title__c = '${programTitle.replace(/'/g, "\\'")}'  LIMIT 1`
+    const qRes = await fetch(
+      `${auth.instanceUrl}/services/data/v59.0/query?q=${encodeURIComponent(soql)}`,
+      { headers: { Authorization: `Bearer ${auth.accessToken}` } }
+    )
+    if (qRes.ok) {
+      const qData = await qRes.json()
+      if (qData.records?.length > 0) {
+        sfPatch.Coaching_Program__c = qData.records[0].Id
+      }
     }
   }
 
-  // 4. PATCH the SF Contact (only if we have the SF id and there are SF-relevant changes)
-  let sfStatus: number | null = null
-  let sfError: string | null = null
-  if (employee.salesforce_contact_id && Object.keys(sfPatch).length > 0) {
-    const config = getSalesforcePortalConfig()
-    const auth = await getSalesforceAuth(config)
-
+  // 5. PATCH the SF Contact (only if we have the SF id and there are SF-relevant changes)
+  if (auth && employee.salesforce_contact_id && Object.keys(sfPatch).length > 0) {
     const sfRes = await fetch(
       `${auth.instanceUrl}/services/data/v59.0/sobjects/Contact/${employee.salesforce_contact_id}`,
       {
