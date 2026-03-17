@@ -152,7 +152,7 @@ async function handleAdd(req: AddRequest) {
       company_id: req.company_id,
       job_title: req.job_title || null,
       company_name: req.company_name || null,
-      program: req.program || null,
+      coaching_program: req.program || null,
       status: 'Active',
       salesforce_contact_id: salesforceContactId,
     })
@@ -256,9 +256,15 @@ async function handleUpdate(req: UpdateRequest) {
   }
 
   // 5. Update employee_manager with all fields
+  // Remap program -> coaching_program for canonical storage
+  const dbFields = { ...fields }
+  if (dbFields.program !== undefined) {
+    dbFields.coaching_program = dbFields.program
+    delete dbFields.program
+  }
   const { data: updated, error: updateError } = await supabase
     .from('employee_manager')
-    .update(fields)
+    .update(dbFields)
     .eq('id', req.employee_id)
     .eq('company_id', req.company_id)
     .select('id')
