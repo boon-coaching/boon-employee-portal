@@ -15,12 +15,14 @@ const createEmployee = (overrides: Partial<Employee> = {}): Employee => ({
   first_name: 'Test',
   last_name: 'User',
   job_title: 'Manager',
+  department: null,
+  employment_start_date: null,
   manager_name: null,
   client_id: 'client-1',
   coach_id: null,
   auth_user_id: 'auth-1',
   status: null,
-  program: null,
+  last_login_at: null,
   booking_link: null,
   created_at: '2024-01-01T00:00:00Z',
   company_name: null,
@@ -101,7 +103,7 @@ describe('getCoachingState', () => {
     });
 
     it('returns NOT_SIGNED_UP when employee has no program', () => {
-      const employee = createEmployee({ program: null });
+      const employee = createEmployee({ coaching_program: null });
       const result = getCoachingState(employee, [], null);
       expect(result.state).toBe('NOT_SIGNED_UP');
       expect(result.hasProgram).toBe(false);
@@ -110,7 +112,7 @@ describe('getCoachingState', () => {
 
   describe('SIGNED_UP_NOT_MATCHED state', () => {
     it('returns SIGNED_UP_NOT_MATCHED when has program but no coach', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1', coach_id: null });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1', coach_id: null });
       const result = getCoachingState(employee, [], null);
       expect(result.state).toBe('SIGNED_UP_NOT_MATCHED');
       expect(result.hasProgram).toBe(true);
@@ -120,7 +122,7 @@ describe('getCoachingState', () => {
 
   describe('MATCHED_PRE_FIRST_SESSION state', () => {
     it('returns MATCHED_PRE_FIRST_SESSION when has coach but no completed sessions', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1', coach_id: 'coach-1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1', coach_id: 'coach-1' });
       const result = getCoachingState(employee, [], createBaseline());
       expect(result.state).toBe('MATCHED_PRE_FIRST_SESSION');
       expect(result.hasCoach).toBe(true);
@@ -128,7 +130,7 @@ describe('getCoachingState', () => {
     });
 
     it('returns MATCHED_PRE_FIRST_SESSION when has upcoming session but no completed', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1', coach_id: 'coach-1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1', coach_id: 'coach-1' });
       const upcomingSession = createSession({ status: 'Upcoming', session_date: new Date(Date.now() + 7 * 86400000).toISOString() });
       const result = getCoachingState(employee, [upcomingSession], createBaseline());
       expect(result.state).toBe('MATCHED_PRE_FIRST_SESSION');
@@ -139,7 +141,7 @@ describe('getCoachingState', () => {
 
   describe('ACTIVE_PROGRAM state', () => {
     it('returns ACTIVE_PROGRAM when has completed sessions', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1', coach_id: 'coach-1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1', coach_id: 'coach-1' });
       const completedSession = createSession({ status: 'Completed' });
       const result = getCoachingState(employee, [completedSession], createBaseline());
       expect(result.state).toBe('ACTIVE_PROGRAM');
@@ -148,7 +150,7 @@ describe('getCoachingState', () => {
     });
 
     it('calculates program progress correctly', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1' });
       const sessions = Array.from({ length: 6 }, (_, i) =>
         createSession({ id: `session-${i}`, status: 'Completed' })
       );
@@ -159,7 +161,7 @@ describe('getCoachingState', () => {
     });
 
     it('identifies last session correctly', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1' });
       const olderSession = createSession({ id: 'old', session_date: '2024-01-01T10:00:00Z' });
       const newerSession = createSession({ id: 'new', session_date: '2024-03-01T10:00:00Z' });
       const result = getCoachingState(employee, [olderSession, newerSession], null);
@@ -170,7 +172,7 @@ describe('getCoachingState', () => {
   describe('COMPLETED_PROGRAM state', () => {
     it('returns COMPLETED_PROGRAM when employee status is completed', () => {
       const employee = createEmployee({
-        program: 'GROW - Cohort 1',
+        coaching_program: 'GROW - Cohort 1',
         status: 'completed',
       });
       const sessions = [createSession()];
@@ -180,7 +182,7 @@ describe('getCoachingState', () => {
 
     it('returns COMPLETED_PROGRAM when status contains "graduated"', () => {
       const employee = createEmployee({
-        program: 'GROW - Cohort 1',
+        coaching_program: 'GROW - Cohort 1',
         status: 'Program Graduated',
       });
       const result = getCoachingState(employee, [createSession()], null);
@@ -188,7 +190,7 @@ describe('getCoachingState', () => {
     });
 
     it('returns COMPLETED_PROGRAM when has end_of_program competency scores', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1' });
       const sessions = Array.from({ length: 10 }, (_, i) =>
         createSession({ id: `session-${i}` })
       );
@@ -199,7 +201,7 @@ describe('getCoachingState', () => {
     });
 
     it('returns PENDING_REFLECTION when all 12 GROW sessions completed but no reflection', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1' });
       const sessions = Array.from({ length: 12 }, (_, i) =>
         createSession({ id: `session-${i}`, status: 'Completed' })
       );
@@ -211,7 +213,7 @@ describe('getCoachingState', () => {
     });
 
     it('returns ACTIVE_PROGRAM when 12 sessions but has upcoming', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1' });
       const completedSessions = Array.from({ length: 12 }, (_, i) =>
         createSession({ id: `session-${i}`, status: 'Completed' })
       );
@@ -227,21 +229,21 @@ describe('getCoachingState', () => {
 
   describe('Program type detection', () => {
     it('identifies GROW program', () => {
-      const employee = createEmployee({ program: 'GROW - Cohort 1' });
+      const employee = createEmployee({ coaching_program: 'GROW - Cohort 1' });
       const result = getCoachingState(employee, [createSession()], null);
       expect(result.isGrowOrExec).toBe(true);
       expect(result.totalExpectedSessions).toBe(12);
     });
 
     it('identifies EXEC program', () => {
-      const employee = createEmployee({ program: 'EXEC Leadership 2024' });
+      const employee = createEmployee({ coaching_program: 'EXEC Leadership 2024' });
       const result = getCoachingState(employee, [createSession()], null);
       expect(result.isGrowOrExec).toBe(true);
       expect(result.totalExpectedSessions).toBe(12);
     });
 
     it('identifies SCALE program with 6 sessions', () => {
-      const employee = createEmployee({ program: 'SCALE' });
+      const employee = createEmployee({ coaching_program: 'SCALE' });
       const result = getCoachingState(employee, [createSession()], null);
       expect(result.isGrowOrExec).toBe(false);
       expect(result.totalExpectedSessions).toBe(6);
