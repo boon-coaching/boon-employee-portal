@@ -3,6 +3,7 @@
 // This is the Bot Framework messaging endpoint
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import { getBotAccessToken, sendTeamsMessage } from '../_shared/teams.ts';
 
 // Inline helper: create Supabase client
 function getSupabaseClient() {
@@ -26,7 +27,31 @@ Deno.serve(async (req) => {
     // 'conversationUpdate' = bot added/removed from conversation
 
     if (activity.type === 'conversationUpdate') {
-      // Bot was added to a conversation, acknowledge it
+      const botId = '4a2f6756-70f8-4802-ba89-eefe3a0aa790';
+      const botWasAdded = activity.membersAdded?.some(
+        (member: { id: string }) => member.id === botId
+      );
+
+      if (botWasAdded) {
+        try {
+          const clientId = Deno.env.get('TEAMS_BOT_CLIENT_ID')!;
+          const clientSecret = Deno.env.get('TEAMS_BOT_CLIENT_SECRET')!;
+          const tenantId = Deno.env.get('TEAMS_TENANT_ID')!;
+
+          const tokenResult = await getBotAccessToken(clientId, clientSecret, tenantId);
+          if (tokenResult) {
+            const serviceUrl = activity.serviceUrl;
+            const conversationId = activity.conversation?.id;
+
+            if (serviceUrl && conversationId) {
+              await sendTeamsMessage(tokenResult.token, serviceUrl, conversationId, buildWelcomeCard());
+            }
+          }
+        } catch (err) {
+          console.error('Failed to send welcome message:', err);
+        }
+      }
+
       return new Response(JSON.stringify({ status: 'ok' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -158,6 +183,54 @@ Deno.serve(async (req) => {
     return new Response('', { status: 200 });
   }
 });
+
+/**
+ * Build the welcome Adaptive Card shown when the bot is first added.
+ */
+function buildWelcomeCard(): Record<string, unknown> {
+  return {
+    type: 'AdaptiveCard',
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4',
+    body: [
+      {
+        type: 'TextBlock',
+        text: 'Welcome to Boon Coaching!',
+        weight: 'Bolder',
+        size: 'Large',
+        wrap: true,
+      },
+      {
+        type: 'TextBlock',
+        text: "I'm your coaching companion. I'll send you nudges and reminders to help you get the most out of your coaching program.",
+        wrap: true,
+        spacing: 'Medium',
+      },
+      {
+        type: 'TextBlock',
+        text: 'Here is what I can help with:',
+        weight: 'Bolder',
+        spacing: 'Medium',
+        wrap: true,
+      },
+      {
+        type: 'FactSet',
+        facts: [
+          { title: 'Action Reminders', value: 'Stay on track with your coaching action items' },
+          { title: 'Goal Check-ins', value: 'Regular progress updates on your development goals' },
+          { title: 'Session Prep', value: 'Get ready for upcoming coaching sessions' },
+        ],
+      },
+    ],
+    actions: [
+      {
+        type: 'Action.OpenUrl',
+        title: 'Open Boon Portal',
+        url: 'https://portal.boon-health.com',
+      },
+    ],
+  };
+}
 
 /**
  * Build a simple Adaptive Card for post-action confirmation.
