@@ -86,6 +86,24 @@ export const auth = {
   },
 
   /**
+   * Record a login event for analytics (fire-and-forget)
+   */
+  async recordLogin(email: string, userId: string, userAgent: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('record_employee_login', {
+      lookup_email: email,
+      user_id: userId,
+      user_agent_string: userAgent,
+    });
+
+    if (error) {
+      console.error('Error recording login:', error);
+      return false;
+    }
+
+    return data === true;
+  },
+
+  /**
    * Sign out
    */
   async signOut() {

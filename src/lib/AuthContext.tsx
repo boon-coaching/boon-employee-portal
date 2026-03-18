@@ -57,6 +57,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Link auth user to employee record in background (don't block)
         auth.linkAuthUserToEmployee(session.user.email, session.user.id)
           .catch(err => console.error('Link error:', err));
+        // Record login event for analytics (don't block)
+        auth.recordLogin(session.user.email, session.user.id, navigator.userAgent)
+          .catch(err => console.error('Login tracking error:', err));
         // Fetch employee profile using the user's access token
         await fetchEmployeeProfile(session.user.email, session.access_token);
       } else if (event === 'SIGNED_OUT') {

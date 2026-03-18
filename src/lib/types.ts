@@ -7,10 +7,13 @@ export interface Employee {
   first_name: string;
   last_name: string;
   job_title: string | null;
+  department: string | null;
+  employment_start_date: string | null;
   manager_name: string | null;
   client_id: string | null;
   coach_id: string | null;
   auth_user_id: string | null;
+  last_login_at: string | null;
   status: string | null;
   booking_link: string | null;
   created_at: string;
