@@ -104,6 +104,17 @@ export const auth = {
   },
 
   /**
+   * Sign in with email and password (for test/review accounts)
+   */
+  async signInWithPassword(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { session: data.session, user: data.user, error };
+  },
+
+  /**
    * Sign out
    */
   async signOut() {

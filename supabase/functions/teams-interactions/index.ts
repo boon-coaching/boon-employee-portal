@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // 'conversationUpdate' = bot added/removed from conversation
 
     if (activity.type === 'conversationUpdate') {
-      const botId = '4a2f6756-70f8-4802-ba89-eefe3a0aa790';
+      const botId = Deno.env.get('TEAMS_BOT_ID') || '4a2f6756-70f8-4802-ba89-eefe3a0aa790';
       const botWasAdded = activity.membersAdded?.some(
         (member: { id: string }) => member.id === botId
       );

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../lib/supabase';
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,9 +18,23 @@ export default function LoginPage() {
 
     const trimmedEmail = email.trim().toLowerCase();
 
+    // Password login path
+    if (showPassword && password) {
+      const { error: authError } = await auth.signInWithPassword(trimmedEmail, password);
+      if (authError) {
+        setError('Invalid email or password.');
+        console.error('Auth error:', authError);
+      } else {
+        navigate('/');
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Magic link path
     // First check if this email exists in employee_manager
     const exists = await auth.checkEmployeeExists(trimmedEmail);
-    
+
     if (!exists) {
       setError("We couldn't find an account with that email. Please check with your HR team to ensure you're enrolled in coaching.");
       setLoading(false);
@@ -25,14 +43,14 @@ export default function LoginPage() {
 
     // Send magic link
     const { error: authError } = await auth.sendMagicLink(trimmedEmail);
-    
+
     if (authError) {
       setError('Something went wrong. Please try again.');
       console.error('Auth error:', authError);
     } else {
       setSent(true);
     }
-    
+
     setLoading(false);
   }
 
@@ -95,6 +113,22 @@ export default function LoginPage() {
               />
             </div>
 
+            {showPassword && (
+              <div>
+                <label htmlFor="password" className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full px-5 py-4 bg-boon-bg border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none transition-all text-boon-text font-medium"
+                />
+              </div>
+            )}
+
             {error && (
               <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
                 <p className="text-red-600 text-sm font-medium">{error}</p>
@@ -131,6 +165,13 @@ export default function LoginPage() {
         <p className="text-center text-xs text-gray-400 mt-8">
           Don't have access? Contact your HR team to enroll in coaching.
         </p>
+        <button
+          type="button"
+          onClick={() => { setShowPassword(!showPassword); setError(null); }}
+          className="block mx-auto mt-4 text-xs text-gray-300 hover:text-gray-400"
+        >
+          {showPassword ? 'Use magic link instead' : 'Sign in with password'}
+        </button>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import AuthCallback from './pages/AuthCallback';
 import FeedbackPage from './pages/FeedbackPage';
 import WelcomeCompletePage from './pages/WelcomeCompletePage';
 import HelpPrivacyPage from './pages/HelpPrivacyPage';
+import TeamsSupportPage from './pages/TeamsSupportPage';
 import { ProtectedLayout } from './components/ProtectedLayout';
 import { PreviewBanner } from './components/PreviewBanner';
 
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/welcome-complete" element={<WelcomeCompletePage />} />
         <Route path="/help/privacy" element={<HelpPrivacyPage />} />
+        <Route path="/teams-support" element={<TeamsSupportPage />} />
         <Route element={<ProtectedLayout />}>
           <Route index element={<LazyPage><HomePage /></LazyPage>} />
           <Route path="sessions" element={<LazyPage><SessionsPage /></LazyPage>} />
