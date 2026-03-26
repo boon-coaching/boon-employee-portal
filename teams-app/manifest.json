@@ -9,14 +9,14 @@
     "privacyUrl": "https://www.boon-health.com/privacy",
     "termsOfUseUrl": "https://www.boon-health.com/terms"
   },
-  "publisherDocsUrl": "https://portal.boon-health.com/teams-support",
+  "publisherDocsUrl": "https://www.boon-health.com/teams-support",
   "name": {
     "short": "Boon Coaching",
     "full": "Boon Coaching Nudges"
   },
   "description": {
     "short": "Coaching nudges and action reminders from Boon",
-    "full": "Receive coaching nudges, action item reminders, goal check-ins, and session prep notifications directly in Microsoft Teams from your Boon coaching program.\n\nIn order to use this app, you need to have an active Boon Coaching account. Please visit https://www.boon-health.com/contact or contact support@boon-health.com for more details.\n\nSign up: https://www.boon-health.com\nGet started: https://portal.boon-health.com/teams-support\nContact us: support@boon-health.com\nHelp: https://portal.boon-health.com/teams-support"
+    "full": "Receive coaching nudges, action item reminders, goal check-ins, and session prep notifications directly in Microsoft Teams from your Boon coaching program.\n\nIn order to use this app, you need to have an active Boon Coaching account. Please visit https://www.boon-health.com/contact or contact support@boon-health.com for more details.\n\nSign up: https://www.boon-health.com\nGet started: https://www.boon-health.com/teams-support\nContact us: support@boon-health.com\nHelp: https://www.boon-health.com/teams-support"
   },
   "icons": {
     "color": "color.png",

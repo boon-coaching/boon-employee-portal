@@ -24,9 +24,9 @@ Receive coaching nudges, action item reminders, goal check-ins, and session prep
 In order to use this app, you need to have an active Boon Coaching account. Please visit https://www.boon-health.com/contact or contact support@boon-health.com for more details.
 
 Sign up: https://www.boon-health.com
-Get started: https://portal.boon-health.com/teams-support
+Get started: https://www.boon-health.com/teams-support
 Contact us: support@boon-health.com
-Help: https://portal.boon-health.com/teams-support
+Help: https://www.boon-health.com/teams-support
 
 **Screenshots:** Take screenshots of bot in Teams showing welcome message, nudge card, button interaction. Add captions to each.
 
@@ -38,7 +38,7 @@ Start Publisher Attestation in M365 App Compliance Program
 ### Optional (good-to-fix)
 - Mobile screenshots
 - Short demo video
-- publisherDocsUrl already set in manifest -> https://portal.boon-health.com/teams-support
+- publisherDocsUrl already set in manifest -> https://www.boon-health.com/teams-support
 
 ## IMPORTANT
 Do NOT resubmit via Partner Center until Microsoft confirms via email.
