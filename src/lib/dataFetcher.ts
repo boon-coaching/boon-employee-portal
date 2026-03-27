@@ -2094,6 +2094,49 @@ export async function fetchWelcomeSurveyLink(
 }
 
 // ============================================
+// PROGRAM CONFIG (contract periods, session caps)
+// ============================================
+
+export interface ProgramConfig {
+  program_title: string | null;
+  sessions_per_employee: number | null;
+  program_start_date: string | null;
+  program_end_date: string | null;
+  program_status: string | null;
+}
+
+/**
+ * Fetch program config for a company's active program
+ * Used for contract-period-aware session counting (PEPM clients)
+ * Returns null on miss (graceful fallback for non-PEPM clients)
+ */
+export async function fetchProgramConfig(
+  companyId: string,
+  coachingProgram?: string | null
+): Promise<ProgramConfig | null> {
+  let query = supabase
+    .from('program_config')
+    .select('program_title, sessions_per_employee, program_start_date, program_end_date, program_status')
+    .eq('company_id', companyId)
+    .eq('program_status', 'Active');
+
+  if (coachingProgram) {
+    query = query.ilike('program_title', `%${coachingProgram}%`);
+  }
+
+  const { data, error } = await query.limit(1).maybeSingle();
+
+  if (error) {
+    if (error.code !== 'PGRST116' && error.code !== '42P01' && error.code !== 'PGRST205') {
+      console.error('Error fetching program config:', error);
+    }
+    return null;
+  }
+
+  return data as ProgramConfig | null;
+}
+
+// ============================================
 // COACHING WINS
 // ============================================
 
