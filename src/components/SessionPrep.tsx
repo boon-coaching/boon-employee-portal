@@ -21,7 +21,6 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   const recentSessionIds = completedSessions.slice(0, 3).map(s => s.id);
   const oldestRecentSession = completedSessions[2] || completedSessions[completedSessions.length - 1];
   const oldestRecentDate = oldestRecentSession ? new Date(oldestRecentSession.session_date).getTime() : 0;
-  const totalPending = actionItems.filter(a => a.status !== 'completed').length;
   const recentPendingItems = actionItems.filter(a => {
     if (a.status === 'completed') return false;
     // Include if session_id matches one of the recent sessions
@@ -193,7 +192,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
           )}
 
           {/* Action Items - from action_items table */}
-          {actionItems.length > 0 && (
+          {recentPendingItems.length > 0 && (
             <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                 Action Items from your last {recentSessionCount} session{recentSessionCount !== 1 ? 's' : ''}
@@ -226,9 +225,6 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
                   );
                 })}
               </div>
-              {totalPending > recentPendingItems.slice(0, 5).length && (
-                <p className="text-xs text-gray-400 mt-2">{totalPending} open items total</p>
-              )}
             </div>
           )}
         </div>

@@ -339,7 +339,8 @@ export async function fetchActionItems(email: string): Promise<ActionItem[]> {
     .select('*')
     .ilike('email', email)
     .gte('created_at', ninetyDaysAgo.toISOString())
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100);
 
   if (error) {
     devLog('[fetchActionItems] Error:', {
