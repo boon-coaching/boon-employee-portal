@@ -13,7 +13,9 @@ interface SessionPrepProps {
 }
 
 export default function SessionPrep({ sessions, actionItems, coachName, userEmail: _userEmail, onActionUpdate }: SessionPrepProps) {
-  const completedSessions = sessions.filter(s => s.status === 'Completed');
+  const completedSessions = sessions
+    .filter(s => s.status === 'Completed')
+    .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
 
   // Filter action items to pending items from the last 3 completed sessions
   const recentSessionIds = completedSessions.slice(0, 3).map(s => s.id);

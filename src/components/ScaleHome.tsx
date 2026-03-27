@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 import type { ScaleCheckpointStatus } from '../lib/types';
+import type { ProgramConfig } from '../lib/dataFetcher';
 import { updateActionItemStatus } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
@@ -18,6 +19,8 @@ interface ScaleHomeProps {
   userEmail: string;
   onStartCheckpoint?: () => void;
   onDismissCheckpoint?: () => void;
+  programConfig?: ProgramConfig | null;
+  contractPeriodSessions?: Session[] | null;
 }
 
 export default function ScaleHome({
@@ -31,6 +34,8 @@ export default function ScaleHome({
   userEmail,
   onStartCheckpoint,
   onDismissCheckpoint,
+  programConfig,
+  contractPeriodSessions,
 }: ScaleHomeProps) {
   const navigate = useNavigate();
   // Unused props reserved for future use
@@ -38,7 +43,17 @@ export default function ScaleHome({
 
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
 
-  const completedSessions = sessions.filter(s => s.status === 'Completed');
+  const completedSessions = sessions
+    .filter(s => s.status === 'Completed')
+    .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+
+  // Session progress for PEPM clients with session caps
+  const sessionCap = programConfig?.sessions_per_employee ?? null;
+  const contractSessionCount = contractPeriodSessions !== null && contractPeriodSessions !== undefined
+    ? contractPeriodSessions.length
+    : completedSessions.length;
+  const showSessionProgress = sessionCap !== null && sessionCap > 0;
+
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
     .filter(isUpcomingSession)
@@ -76,6 +91,44 @@ export default function ScaleHome({
           </p>
         </div>
       </header>
+
+      {/* Session Progress - PEPM clients with session caps */}
+      {showSessionProgress && (
+        <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-boon-lightBlue flex items-center justify-center">
+                <svg className="w-5 h-5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-boon-text">
+                  Session {Math.min(contractSessionCount, sessionCap!)} of {sessionCap}
+                </p>
+                {programConfig?.program_end_date && (
+                  <p className="text-xs text-gray-400">
+                    Through {new Date(programConfig.program_end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            </div>
+            {contractSessionCount >= sessionCap! && (
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                Complete
+              </span>
+            )}
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2.5">
+            <div
+              className={`h-2.5 rounded-full transition-all duration-500 ${
+                contractSessionCount >= sessionCap! ? 'bg-emerald-500' : 'bg-boon-blue'
+              }`}
+              style={{ width: `${Math.min((contractSessionCount / sessionCap!) * 100, 100)}%` }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* 1. Session Prep - FIRST when there's an upcoming session */}
       {upcomingSession && (
@@ -134,17 +187,23 @@ export default function ScaleHome({
                     </svg>
                   </div>
                   <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">
-                    {checkpointStatus.currentCheckpointNumber === 1 ? 'First check-in' : `Check-in ${checkpointStatus.currentCheckpointNumber}`}
+                    {checkpointStatus.currentCheckpointNumber === 1
+                      ? (completedSessions.length > 6 ? 'Check-in due' : 'First check-in')
+                      : `Check-in ${checkpointStatus.currentCheckpointNumber}`}
                   </span>
                 </div>
                 <h2 className="text-2xl font-extrabold text-boon-text mb-2">
                   {checkpointStatus.currentCheckpointNumber === 1
-                    ? 'Time for your first check-in'
+                    ? (completedSessions.length > 6
+                      ? 'Time for a check-in'
+                      : 'Time for your first check-in')
                     : `${checkpointStatus.nextCheckpointDueAtSession} sessions in. See what's shifted.`}
                 </h2>
                 <p className="text-gray-600 mb-6">
                   {checkpointStatus.currentCheckpointNumber === 1
-                    ? 'Establish your baseline and start tracking your evolution over time.'
+                    ? (completedSessions.length > 6
+                      ? 'Take 2 minutes to reflect on your coaching journey so far.'
+                      : 'Establish your baseline and start tracking your evolution over time.')
                     : 'Take 2 minutes to reflect on your progress and set your focus.'}
                 </p>
                 <button
@@ -189,45 +248,37 @@ export default function ScaleHome({
               </div>
             </div>
           </section>
-        ) : sessionWithGoals ? (
+        ) : (sessionWithGoals || actionItems.length > 0) ? (
           <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
             <div className="flex items-start justify-between mb-6">
               <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where You Left Off</h2>
-              <span className="text-xs font-medium text-gray-400">
-                {new Date(sessionWithGoals.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
+              {sessionWithGoals && (
+                <span className="text-xs font-medium text-gray-400">
+                  {new Date(sessionWithGoals.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              )}
             </div>
 
             {/* Goals */}
-            {sessionWithGoals.goals && (
+            {sessionWithGoals?.goals && (
               <div className="mb-6">
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Goals</h3>
                 <p className="font-serif text-gray-700 leading-relaxed whitespace-pre-line">{sessionWithGoals.goals}</p>
               </div>
             )}
 
-            {/* Action Items from plan - with checkboxes */}
-            {sessionWithGoals.plan && (
+            {/* Action Items - primary source: action_items table */}
+            {actionItems.length > 0 ? (
               <div>
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Action Items</h3>
                 <div className="space-y-2">
-                  {sessionWithGoals.plan.split('\n').filter(line => line.trim()).map((item, idx) => {
-                    // Clean up the item text (remove leading bullets, dashes, numbers)
-                    const cleanText = item.trim().replace(/^[\s•\-\*\d\.:\)]+/, '').trim();
-                    if (!cleanText || cleanText.length < 5) return null;
-
-                    // Check if this item exists in actionItems and get its status
-                    const matchingAction = actionItems.find(ai =>
-                      ai.action_text.toLowerCase().includes(cleanText.toLowerCase().slice(0, 30)) ||
-                      cleanText.toLowerCase().includes(ai.action_text.toLowerCase().slice(0, 30))
-                    );
-                    const isCompleted = matchingAction?.status === 'completed';
-
-                    const isUpdating = matchingAction && updatingItem === matchingAction.id;
+                  {actionItems.map(item => {
+                    const isCompleted = item.status === 'completed';
+                    const isUpdating = updatingItem === item.id;
 
                     return (
                       <label
-                        key={idx}
+                        key={item.id}
                         className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${
                           isCompleted
                             ? 'bg-green-50/50 text-gray-400'
@@ -237,23 +288,40 @@ export default function ScaleHome({
                         <input
                           type="checkbox"
                           checked={isCompleted}
-                          disabled={!matchingAction || isUpdating}
-                          onChange={() => {
-                            if (matchingAction) {
-                              handleToggleAction(matchingAction.id, matchingAction.status);
-                            }
-                          }}
+                          disabled={isUpdating}
+                          onChange={() => handleToggleAction(item.id, item.status)}
                           className="mt-0.5 w-4 h-4 rounded border-gray-300 text-boon-amber focus:ring-boon-amber disabled:opacity-50"
                         />
                         <span className={`text-sm leading-relaxed ${isCompleted ? 'line-through' : ''}`}>
-                          {cleanText}
+                          {item.action_text}
                         </span>
                       </label>
                     );
                   })}
                 </div>
               </div>
-            )}
+            ) : sessionWithGoals?.plan ? (
+              /* Fallback: parse plan text only when no action_items exist */
+              <div>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Action Items</h3>
+                <div className="space-y-2">
+                  {sessionWithGoals.plan.split(/[\n;]/).filter(line => line.trim()).map((item, idx) => {
+                    const cleanText = item.trim().replace(/^[\s•\-\*\d\.:\)]+/, '').trim();
+                    if (!cleanText || cleanText.length < 5) return null;
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-white/60 text-gray-700"
+                      >
+                        <div className="mt-0.5 w-4 h-4 rounded border border-gray-300 flex-shrink-0" />
+                        <span className="text-sm leading-relaxed">{cleanText}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null
       )}
