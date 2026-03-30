@@ -3,12 +3,14 @@
 // Deploy: supabase functions deploy session-reconciliation
 // Schedule: set cron "0 7 * * *" via Supabase Dashboard > Edge Functions
 //
-// Pass 1: Stale sessions — finds sessions stuck as "Scheduled" (session_date > 24h ago)
-//         and reconciles status AND date against Salesforce.
-// Pass 2: Missing appointments — finds recent SF appointments that don't exist in
-//         session_tracking and inserts them.
-// Pass 3: Count verification — compares SF vs Supabase appointment counts within the
-//         lookback window, alerts on drift.
+// Pass 1:   Stale sessions — finds sessions stuck as "Scheduled" (session_date > 24h ago)
+//           and reconciles status AND date against Salesforce.
+// Pass 1.5: Content backfill — syncs Goals, Plan, and theme fields from SF for
+//           Completed sessions where plan IS NULL (last 90 days).
+// Pass 2:   Missing appointments — finds recent SF appointments that don't exist in
+//           session_tracking and inserts them.
+// Pass 3:   Count verification — compares SF vs Supabase appointment counts within the
+//           lookback window, alerts on drift.
 //
 // Query params:
 //   ?lookback_days=N    — how far back to search for missing appointments (default 30)
@@ -52,6 +54,16 @@ interface SfAppointmentFull {
   Account?: { Name: string } | null
   Contact?: { Name: string; Email: string } | null
   Coach__r?: { Name: string } | null
+}
+
+interface SfContentRecord {
+  AppointmentNumber: string
+  Goals__c: string | null
+  Plan__c: string | null
+  Leadership_Management_Skills__c: string | null
+  Communication_Skills__c: string | null
+  Mental_Well_Being__c: string | null
+  Other_Themes__c: string | null
 }
 
 interface SessionUpdate {
@@ -111,6 +123,9 @@ Deno.serve(async (req) => {
     no_sf_match: 0,
     already_correct: 0,
     updates_by_status: {} as Record<string, number>,
+    // Pass 1.5
+    content_candidates: 0,
+    content_synced: 0,
     // Pass 2
     missing_found: 0,
     missing_inserted: 0,
@@ -264,6 +279,111 @@ Deno.serve(async (req) => {
       }
 
       console.log(`[RECONCILE] Pass 1 complete: ${results.updated} updated, ${results.dates_corrected} dates corrected, ${results.durations_corrected} durations corrected`)
+    }
+
+    // ================================================================
+    // PASS 1.5: Content backfill (Goals, Plan, Themes from SF)
+    // ================================================================
+    console.log('[RECONCILE] === Pass 1.5: Content backfill ===')
+
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+
+    const { data: contentCandidates, error: contentQueryError } = await supabase
+      .from('session_tracking')
+      .select('id, appointment_number')
+      .eq('status', 'Completed')
+      .is('plan', null)
+      .gte('session_date', ninetyDaysAgo)
+      .not('appointment_number', 'is', null)
+
+    if (contentQueryError) {
+      console.error('[RECONCILE] Pass 1.5 query failed:', contentQueryError.message)
+      results.errors++
+    } else if (!contentCandidates || contentCandidates.length === 0) {
+      console.log('[RECONCILE] No completed sessions missing content')
+    } else {
+      results.content_candidates = contentCandidates.length
+      console.log(`[RECONCILE] Found ${contentCandidates.length} completed sessions missing plan/goals`)
+
+      const contentMap = new Map<string, number>()
+      for (const row of contentCandidates) {
+        if (row.appointment_number) {
+          contentMap.set(row.appointment_number, row.id)
+        }
+      }
+
+      const contentApptNumbers = Array.from(contentMap.keys())
+      const contentChunks = chunk(contentApptNumbers, SOQL_CHUNK_SIZE)
+
+      const sfContentMap = new Map<string, SfContentRecord>()
+
+      for (const batch of contentChunks) {
+        const inClause = batch.map(n => `'${n}'`).join(',')
+        const soql = `SELECT AppointmentNumber, Goals__c, Plan__c, Leadership_Management_Skills__c, Communication_Skills__c, Mental_Well_Being__c, Other_Themes__c FROM ServiceAppointment WHERE AppointmentNumber IN (${inClause})`
+
+        try {
+          const records = await salesforceQuery<SfContentRecord>(sfAuth, soql)
+          for (const record of records) {
+            // Only include if SF actually has content
+            if (record.Goals__c || record.Plan__c || record.Leadership_Management_Skills__c || record.Communication_Skills__c || record.Mental_Well_Being__c || record.Other_Themes__c) {
+              sfContentMap.set(record.AppointmentNumber, record)
+            }
+          }
+        } catch (queryError) {
+          console.error(`[RECONCILE] Pass 1.5 SOQL batch failed:`, String(queryError))
+          results.errors++
+        }
+      }
+
+      console.log(`[RECONCILE] ${sfContentMap.size} SF records have content to sync`)
+
+      // Build and execute updates
+      const contentUpdates: Array<{ id: number; changes: Record<string, unknown> }> = []
+
+      for (const [apptNum, sfRecord] of sfContentMap) {
+        const sessionId = contentMap.get(apptNum)
+        if (!sessionId) continue
+
+        const changes: Record<string, unknown> = {}
+        if (sfRecord.Goals__c) changes.goals = sfRecord.Goals__c
+        if (sfRecord.Plan__c) changes.plan = sfRecord.Plan__c
+        if (sfRecord.Leadership_Management_Skills__c) changes.leadership_management_skills = sfRecord.Leadership_Management_Skills__c
+        if (sfRecord.Communication_Skills__c) changes.communication_skills = sfRecord.Communication_Skills__c
+        if (sfRecord.Mental_Well_Being__c) changes.mental_well_being = sfRecord.Mental_Well_Being__c
+        if (sfRecord.Other_Themes__c) changes.other_themes = sfRecord.Other_Themes__c
+
+        if (Object.keys(changes).length > 0) {
+          contentUpdates.push({ id: sessionId, changes })
+        }
+      }
+
+      const contentBatches = chunk(contentUpdates, UPDATE_BATCH_SIZE)
+
+      for (const batch of contentBatches) {
+        const promises = batch.map(async (update) => {
+          try {
+            const { error: updateError } = await supabase
+              .from('session_tracking')
+              .update(update.changes)
+              .eq('id', update.id)
+
+            if (updateError) {
+              console.error(`[RECONCILE] Pass 1.5 update failed for session ${update.id}:`, updateError)
+              results.errors++
+              return
+            }
+
+            results.content_synced++
+          } catch (err) {
+            console.error(`[RECONCILE] Pass 1.5 update error for session ${update.id}:`, err)
+            results.errors++
+          }
+        })
+
+        await Promise.all(promises)
+      }
+
+      console.log(`[RECONCILE] Pass 1.5 complete: ${results.content_synced} sessions synced with content`)
     }
 
     // ================================================================
@@ -433,6 +553,9 @@ Deno.serve(async (req) => {
     console.log(`  Status changes: ${JSON.stringify(results.updates_by_status)}`)
     console.log(`No SF match: ${results.no_sf_match}`)
     console.log(`Already correct: ${results.already_correct}`)
+    console.log(`--- Pass 1.5: Content Backfill ---`)
+    console.log(`Candidates (plan IS NULL): ${results.content_candidates}`)
+    console.log(`Content synced: ${results.content_synced}`)
     console.log(`--- Pass 2: Missing Appointments ---`)
     console.log(`Missing found: ${results.missing_found}`)
     console.log(`Missing inserted: ${results.missing_inserted}`)
@@ -449,7 +572,7 @@ Deno.serve(async (req) => {
     // Slack alert (skip silently if webhook not configured)
     // ================================================================
     const slackWebhookUrl = Deno.env.get('SLACK_OPS_WEBHOOK_URL')
-    const workDone = results.updated > 0 || results.missing_inserted > 0 || results.errors > 0
+    const workDone = results.updated > 0 || results.content_synced > 0 || results.missing_inserted > 0 || results.errors > 0
     const driftAlert = !results.counts_in_sync
 
     if (slackWebhookUrl && (workDone || driftAlert)) {
@@ -462,6 +585,7 @@ Deno.serve(async (req) => {
         `*Session Reconciliation - ${today}*`,
         '',
         `Pass 1: ${results.updated} updated (${results.dates_corrected} dates, ${results.durations_corrected} durations) | ${results.already_correct} already correct | ${results.no_sf_match} no SF match`,
+        `Pass 1.5: ${results.content_synced} sessions backfilled with goals/plan/themes (${results.content_candidates} candidates)`,
         `Pass 2: ${results.missing_found} missing found | ${results.missing_inserted} inserted`,
         `Counts (last ${lookbackDays}d, excl. cancelled): SF ${sfFmt} | In Supabase ${supFmt} | Missing: ${results.count_delta} ${driftIcon}`,
         `Errors: ${results.errors} | Duration: ${duration}s`,
