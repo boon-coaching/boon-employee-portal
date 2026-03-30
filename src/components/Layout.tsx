@@ -19,6 +19,7 @@ export default function Layout({ children, coachingState }: LayoutProps) {
     { to: '/sessions', label: isCompleted ? 'Archive' : 'Sessions', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { to: '/progress', label: isCompleted ? 'Profile' : 'Progress', icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
     { to: '/practice', label: 'Practice', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+    { to: '/resources', label: 'Resources', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
   ];
 
   const initials = employee
@@ -142,7 +143,7 @@ export default function Layout({ children, coachingState }: LayoutProps) {
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1.5 min-w-[64px] transition-all active:scale-90 ${
+              `flex flex-col items-center gap-1.5 min-w-0 transition-all active:scale-90 ${
                 isActive ? 'text-boon-blue' : 'text-gray-400'
               }`
             }

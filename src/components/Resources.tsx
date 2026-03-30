@@ -1,252 +1,424 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useResources } from '../hooks/useResources';
+import { usePortalData } from './ProtectedLayout';
 
-interface Resource {
-  title: string;
-  description: string;
-  type: 'article' | 'video' | 'exercise' | 'book';
-  duration: string;
-  url: string;
-  featured?: boolean;
-}
-
-// Easy to update - just edit this array
-const resources: Resource[] = [
-  // Featured
-  {
-    title: 'How to Deal with Difficult People',
-    description: 'Harvard-backed strategies for navigating challenging workplace relationships with empathy and boundaries.',
-    type: 'article',
-    duration: '7 min read',
-    url: 'https://hbr.org/2022/09/how-to-deal-with-a-mean-colleague',
-    featured: true,
+const TYPE_CONFIG: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
+  article: {
+    label: 'Article',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
   },
-  {
-    title: 'The Secret to Giving Great Feedback',
-    description: 'LeeAnn Renninger shares a science-based method for delivering feedback that actually lands.',
-    type: 'video',
-    duration: '8 min watch',
-    url: 'https://www.ted.com/talks/leeann_renninger_the_secret_to_giving_great_feedback',
-    featured: true,
+  video: {
+    label: 'Video',
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   },
-  // Articles
-  {
-    title: 'What Great Listeners Actually Do',
-    description: 'Research reveals that great listening goes beyond staying quiet—it\'s about making people feel heard.',
-    type: 'article',
-    duration: '6 min read',
-    url: 'https://hbr.org/2016/07/what-great-listeners-actually-do',
+  framework: {
+    label: 'Framework',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
   },
-  {
-    title: 'Manage Your Energy, Not Your Time',
-    description: 'Tony Schwartz on why sustainable high performance requires managing your energy, not just your calendar.',
-    type: 'article',
-    duration: '10 min read',
-    url: 'https://hbr.org/2007/10/manage-your-energy-not-your-time',
+  worksheet: {
+    label: 'Worksheet',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
   },
-  {
-    title: 'How to Say No to Taking on More Work',
-    description: 'Practical scripts and strategies for setting boundaries without damaging relationships.',
-    type: 'article',
-    duration: '5 min read',
-    url: 'https://hbr.org/2022/12/how-to-say-no-to-taking-on-more-work',
+  podcast: {
+    label: 'Podcast',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z',
   },
-  // Videos
-  {
-    title: 'How to Lead in a Crisis',
-    description: 'Amy Edmondson on the leadership behaviors that help teams navigate uncertainty and change.',
-    type: 'video',
-    duration: '12 min watch',
-    url: 'https://www.ted.com/talks/amy_c_edmondson_how_to_lead_in_a_crisis',
+  guide: {
+    label: 'Guide',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
   },
-  {
-    title: 'Building a Psychologically Safe Workplace',
-    description: 'Amy Edmondson explains why psychological safety is the foundation of high-performing teams.',
-    type: 'video',
-    duration: '14 min watch',
-    url: 'https://www.youtube.com/watch?v=LhoLuui9gX8',
-  },
-  {
-    title: 'How to Have Better Conversations',
-    description: 'Celeste Headlee shares 10 rules for having more meaningful, connected conversations.',
-    type: 'video',
-    duration: '12 min watch',
-    url: 'https://www.ted.com/talks/celeste_headlee_10_ways_to_have_a_better_conversation',
-  },
-  // Exercises
-  {
-    title: '5-Minute Journal Template',
-    description: 'A simple morning and evening reflection practice to build gratitude and intention.',
-    type: 'exercise',
-    duration: '5 min daily',
-    url: 'https://www.intelligentchange.com/pages/five-minute-journal-app',
-  },
-  {
-    title: 'Difficult Conversation Planner',
-    description: 'A structured worksheet from Crucial Conversations to prepare for high-stakes discussions.',
-    type: 'exercise',
-    duration: '15 min prep',
-    url: 'https://cruciallearning.com/blog/how-to-prepare-for-a-crucial-conversation/',
-  },
-  {
-    title: 'Energy Audit Worksheet',
-    description: 'Identify what energizes vs. drains you to make better decisions about where to focus.',
-    type: 'exercise',
-    duration: '20 min exercise',
-    url: 'https://www.mindtools.com/aycnkop/managing-your-energy',
-  },
-  // Books
-  {
-    title: 'Radical Candor',
-    description: 'Kim Scott\'s framework for caring personally while challenging directly—the key to being a great boss.',
-    type: 'book',
-    duration: 'Book',
-    url: 'https://www.radicalcandor.com/the-book/',
-  },
-  {
-    title: 'Essentialism',
-    description: 'Greg McKeown\'s disciplined pursuit of less—a guide to doing what matters most.',
-    type: 'book',
-    duration: 'Book',
-    url: 'https://gregmckeown.com/books/essentialism/',
-  },
-  {
-    title: 'Crucial Conversations',
-    description: 'Tools for talking when stakes are high, opinions vary, and emotions run strong.',
-    type: 'book',
-    duration: 'Book',
-    url: 'https://cruciallearning.com/crucial-conversations-book/',
-  },
-];
-
-const typeConfig: Record<string, { icon: string; label: string; color: string }> = {
-  article: { icon: '📄', label: 'Articles', color: 'blue' },
-  video: { icon: '▶️', label: 'Videos', color: 'purple' },
-  exercise: { icon: '✏️', label: 'Exercises', color: 'green' },
-  book: { icon: '📚', label: 'Books', color: 'orange' },
 };
 
+function TypeIcon({ type, size = 'md' }: { type: string; size?: 'sm' | 'md' }) {
+  const config = TYPE_CONFIG[type] || TYPE_CONFIG.article;
+  const sizeClass = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
+  const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
+
+  return (
+    <div className={`${sizeClass} rounded-xl ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
+      <svg className={`${iconSize} ${config.color}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={config.icon} />
+      </svg>
+    </div>
+  );
+}
+
 export default function Resources() {
-  const [activeType, setActiveType] = useState<string>('all');
+  const data = usePortalData();
+  const email = data.employee?.company_email;
+  const { resources, tags, focusAreas, loading, error } = useResources(email);
+
+  const [activeTopics, setActiveTopics] = useState<string[]>([]);
+  const [activeType, setActiveType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAllTopics, setShowAllTopics] = useState(false);
 
-  const featuredResources = resources.filter(r => r.featured);
+  const topicTags = useMemo(() => tags.filter(t => t.category === 'topic'), [tags]);
 
-  const filteredResources = resources.filter(r => {
-    const matchesType = activeType === 'all' || r.type === activeType;
-    const matchesSearch = !searchQuery ||
-      r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesType && matchesSearch && !r.featured;
-  });
+  const resourceTypes = useMemo(() => {
+    const types = new Set(resources.map(r => r.resource_type));
+    return Array.from(types).sort();
+  }, [resources]);
 
-  const types = ['all', 'article', 'video', 'exercise', 'book'];
+  // Recommended: resources whose competencies overlap with user's focus areas
+  const focusAreaNames = useMemo(() => focusAreas.map(f => f.focus_area_name), [focusAreas]);
+
+  const recommendedResources = useMemo(() => {
+    if (focusAreaNames.length === 0) return [];
+    return resources.filter(r =>
+      r.competencies?.some(c => focusAreaNames.includes(c))
+    );
+  }, [resources, focusAreaNames]);
+
+  // Filter logic
+  const filteredResources = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return resources.filter(r => {
+      if (query) {
+        const matchesTitle = r.title.toLowerCase().includes(query);
+        const matchesDesc = r.description?.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesDesc) return false;
+      }
+      if (activeType && r.resource_type !== activeType) return false;
+      if (activeTopics.length > 0) {
+        const resourceTags = r.tags || [];
+        const resourceCompetencies = r.competencies || [];
+        const allResourceLabels = [...resourceTags, ...resourceCompetencies];
+        if (!activeTopics.some(topic => allResourceLabels.includes(topic))) return false;
+      }
+      return true;
+    });
+  }, [resources, activeType, activeTopics, searchQuery]);
+
+  const toggleTopic = (name: string) => {
+    setActiveTopics(prev =>
+      prev.includes(name) ? prev.filter(t => t !== name) : [...prev, name]
+    );
+  };
+
+  const toggleType = (type: string) => {
+    setActiveType(prev => prev === type ? null : type);
+  };
+
+  const getResourceUrl = (r: { url: string | null; file_url: string | null }) => r.url || r.file_url || null;
+  const hasUrl = (r: { url: string | null; file_url: string | null }) => !!(r.url || r.file_url);
+
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <header className="text-center sm:text-left">
+          <div className="h-9 w-48 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-5 w-72 bg-gray-100 rounded-lg animate-pulse mt-3" />
+        </header>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="h-10 w-10 bg-gray-100 rounded-xl animate-pulse" />
+              <div className="h-5 w-3/4 bg-gray-100 rounded animate-pulse mt-4" />
+              <div className="h-4 w-full bg-gray-50 rounded animate-pulse mt-3" />
+              <div className="h-4 w-2/3 bg-gray-50 rounded animate-pulse mt-2" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <header className="text-center sm:text-left">
+          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Resources</h1>
+        </header>
+        <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+          <p className="text-gray-400">Something went wrong loading resources. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Header */}
       <header className="text-center sm:text-left">
         <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Resources</h1>
         <p className="text-gray-500 mt-2 font-medium">Curated content to support your growth journey.</p>
       </header>
 
-      {/* Featured Section */}
-      {activeType === 'all' && !searchQuery && featuredResources.length > 0 && (
+      {/* Recommended for You — hidden when searching */}
+      {recommendedResources.length > 0 && !searchQuery && (
         <section>
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Featured</h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {featuredResources.map((resource, idx) => (
-              <a
-                key={idx}
-                href={resource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 p-6 rounded-2xl border border-boon-blue/10 hover:border-boon-blue/30 transition-all"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{typeConfig[resource.type].icon}</span>
-                  <span className="text-[10px] font-bold text-boon-blue uppercase tracking-widest">
-                    {resource.type}
-                  </span>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Recommended for You</h2>
+            <span
+              className="text-gray-300 cursor-help"
+              title="Based on the focus areas you selected during your welcome survey"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-5 px-5 sm:mx-0 sm:px-0 scrollbar-hide">
+            {recommendedResources.slice(0, 6).map(r => {
+              const cardClass = `group flex-shrink-0 w-64 bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 p-5 rounded-2xl border border-boon-blue/10 transition-all ${
+                hasUrl(r) ? 'hover:border-boon-blue/30 cursor-pointer' : 'opacity-75'
+              }`;
+              const cardContent = (
+                <>
+                  <div className="flex items-center gap-2">
+                    <TypeIcon type={r.resource_type} size="sm" />
+                    {!hasUrl(r) && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider rounded-lg">
+                        Coming soon
+                      </span>
+                    )}
+                  </div>
+                  <h3 className={`font-bold transition-colors mt-3 line-clamp-2 leading-snug ${
+                    hasUrl(r) ? 'text-boon-text group-hover:text-boon-blue' : 'text-gray-500'
+                  }`}>
+                    {r.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-2 line-clamp-2">{r.description}</p>
+                  {r.duration && (
+                    <p className="text-xs text-gray-400 mt-2">{r.duration}</p>
+                  )}
+                  {r.competencies?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {r.competencies.slice(0, 2).map(c => (
+                        <span key={c} className="text-[10px] font-bold text-boon-blue/70 uppercase tracking-widest">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+              return hasUrl(r) ? (
+                <a key={r.id} href={getResourceUrl(r)!} target="_blank" rel="noopener noreferrer" className={cardClass}>
+                  {cardContent}
+                </a>
+              ) : (
+                <div key={r.id} className={cardClass}>
+                  {cardContent}
                 </div>
-                <h3 className="font-bold text-boon-text group-hover:text-boon-blue transition-colors text-lg">
-                  {resource.title}
-                </h3>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                  {resource.description}
-                </p>
-                <p className="text-xs text-gray-400 mt-3 font-medium">
-                  {resource.duration}
-                </p>
-              </a>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
 
-      {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search resources..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:border-boon-blue focus:ring-2 focus:ring-boon-blue/20 outline-none transition-all"
-          />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
-          {types.map(type => (
-            <button
-              key={type}
-              onClick={() => setActiveType(type)}
-              className={`px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all flex items-center gap-2 ${
-                activeType === type
-                  ? 'bg-boon-blue text-white shadow-lg shadow-boon-blue/20'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-              }`}
-            >
-              {type !== 'all' && <span>{typeConfig[type].icon}</span>}
-              <span>{type === 'all' ? 'All' : typeConfig[type].label}</span>
-            </button>
-          ))}
-        </div>
+      {/* Search */}
+      <div className="relative">
+        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search resources..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm text-sm font-medium text-boon-text placeholder:text-gray-300 focus:outline-none focus:border-boon-blue/30 focus:ring-2 focus:ring-boon-blue/10 transition-all"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
+
+      {/* Filter Bar */}
+      {(topicTags.length > 0 || resourceTypes.length > 1) && (
+        <div className="space-y-3">
+          {/* Topic Filters */}
+          {topicTags.length > 0 && (
+            <div className={`bg-white p-2 rounded-2xl shadow-sm border border-gray-100 ${showAllTopics ? '' : 'overflow-x-auto'}`}>
+              <div className={`flex gap-2 ${showAllTopics ? 'flex-wrap' : ''}`}>
+                {(showAllTopics ? topicTags : topicTags.slice(0, 6)).map(tag => (
+                  <button
+                    key={tag.id}
+                    onClick={() => toggleTopic(tag.name)}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                      activeTopics.includes(tag.name)
+                        ? 'bg-boon-blue text-white shadow-sm'
+                        : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {tag.name}
+                  </button>
+                ))}
+                {topicTags.length > 6 && (
+                  <button
+                    onClick={() => setShowAllTopics(prev => !prev)}
+                    className="px-4 py-2 rounded-xl text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 whitespace-nowrap transition-all"
+                  >
+                    {showAllTopics ? 'Less' : `+${topicTags.length - 6} More`}
+                  </button>
+                )}
+                {activeTopics.length > 0 && (
+                  <button
+                    onClick={() => setActiveTopics([])}
+                    className="px-3 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-600 whitespace-nowrap transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Type Filters */}
+          {resourceTypes.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {resourceTypes.map(type => {
+                const config = TYPE_CONFIG[type];
+                if (!config) return null;
+                return (
+                  <button
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                      activeType === type
+                        ? 'bg-boon-blue text-white shadow-sm'
+                        : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100 shadow-sm'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={config.icon} />
+                    </svg>
+                    {config.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Resource Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredResources.map((resource, idx) => (
-          <a
-            key={idx}
-            href={resource.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-boon-blue/30 transition-all flex flex-col"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span>{typeConfig[resource.type].icon}</span>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                {resource.type}
-              </span>
-            </div>
-            <h3 className="font-bold text-boon-text group-hover:text-boon-blue transition-colors leading-snug">
-              {resource.title}
-            </h3>
-            <p className="text-sm text-gray-500 mt-2 line-clamp-2 flex-1">
-              {resource.description}
-            </p>
-            <p className="text-xs text-gray-400 mt-3 font-medium">
-              {resource.duration}
-            </p>
-          </a>
-        ))}
-      </div>
+      {filteredResources.length > 0 ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredResources.map(r => {
+            const cardClass = `group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm transition-all flex flex-col ${
+              hasUrl(r) ? 'hover:shadow-md hover:border-boon-blue/30 cursor-pointer' : 'opacity-75'
+            }`;
+            const cardContent = (
+              <>
+                {/* Thumbnail or type icon */}
+                {r.thumbnail_url ? (
+                  <div className="w-full h-36 rounded-xl bg-gray-100 overflow-hidden mb-4">
+                    <img
+                      src={r.thumbnail_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <TypeIcon type={r.resource_type} />
+                )}
 
-      {/* Empty State */}
-      {filteredResources.length === 0 && (
+                {/* Source + Type */}
+                <div className="flex items-center gap-2 mt-3">
+                  {r.source && (
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">
+                      {r.source}
+                    </span>
+                  )}
+                  {r.source && (
+                    <span className="text-gray-200">|</span>
+                  )}
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${TYPE_CONFIG[r.resource_type]?.color || 'text-gray-400'}`}>
+                    {TYPE_CONFIG[r.resource_type]?.label || r.resource_type}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3 className={`font-bold transition-colors leading-snug mt-2 line-clamp-2 ${
+                  hasUrl(r) ? 'text-boon-text group-hover:text-boon-blue' : 'text-gray-500'
+                }`}>
+                  {r.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-gray-500 mt-2 line-clamp-2 flex-1">
+                  {r.description}
+                </p>
+
+                {/* Duration */}
+                {r.duration && (
+                  <p className="text-xs text-gray-400 mt-2">{r.duration}</p>
+                )}
+
+                {/* Tags + Badges */}
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  {(r.competencies || []).slice(0, 2).map(c => (
+                    <span key={c} className="px-2 py-0.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider rounded-lg">
+                      {c}
+                    </span>
+                  ))}
+                  {(r.competencies || []).length > 2 && (
+                    <span className="text-[10px] font-bold text-gray-300">
+                      +{r.competencies.length - 2} more
+                    </span>
+                  )}
+                  {(r.is_featured || r.is_boon_original || !hasUrl(r)) && (
+                    <div className="ml-auto flex gap-1.5">
+                      {!hasUrl(r) && (
+                        <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider rounded-lg">
+                          Coming soon
+                        </span>
+                      )}
+                      {r.is_featured && (
+                        <span className="px-2 py-0.5 bg-amber-50 text-[10px] font-bold text-amber-600 uppercase tracking-wider rounded-lg">
+                          Featured
+                        </span>
+                      )}
+                      {r.is_boon_original && (
+                        <span className="px-2 py-0.5 bg-boon-lightBlue text-[10px] font-bold text-boon-blue uppercase tracking-wider rounded-lg">
+                          Boon Original
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+            return hasUrl(r) ? (
+              <a key={r.id} href={getResourceUrl(r)!} target="_blank" rel="noopener noreferrer" className={cardClass}>
+                {cardContent}
+              </a>
+            ) : (
+              <div key={r.id} className={cardClass}>
+                {cardContent}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
         <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-          <p className="text-gray-400">No resources found{searchQuery && ` matching "${searchQuery}"`}</p>
+          <svg className="w-12 h-12 text-gray-200 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <p className="text-gray-400 font-medium">
+            No resources found. {searchQuery ? 'Try a different search term.' : 'Try adjusting your filters.'}
+          </p>
         </div>
       )}
 
