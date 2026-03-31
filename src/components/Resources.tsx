@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useResources } from '../hooks/useResources';
 import { usePortalData } from './ProtectedLayout';
 
@@ -56,6 +57,7 @@ function TypeIcon({ type, size = 'md' }: { type: string; size?: 'sm' | 'md' }) {
 }
 
 export default function Resources() {
+  const navigate = useNavigate();
   const data = usePortalData();
   const email = data.employee?.company_email;
   const { resources, tags, focusAreas, loading, error } = useResources(email);
@@ -114,6 +116,8 @@ export default function Resources() {
 
   const getResourceUrl = (r: { url: string | null; file_url: string | null }) => r.url || r.file_url || null;
   const hasUrl = (r: { url: string | null; file_url: string | null }) => !!(r.url || r.file_url);
+  const hasContent = (r: { body_html: string | null }) => !!r.body_html;
+  const isClickable = (r: { url: string | null; file_url: string | null; body_html: string | null }) => hasContent(r) || hasUrl(r);
 
   if (loading) {
     return (
@@ -173,21 +177,15 @@ export default function Resources() {
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-5 px-5 sm:mx-0 sm:px-0 scrollbar-hide">
             {recommendedResources.slice(0, 6).map(r => {
+              const clickable = isClickable(r);
               const cardClass = `group flex-shrink-0 w-64 bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 p-5 rounded-2xl border border-boon-blue/10 transition-all ${
-                hasUrl(r) ? 'hover:border-boon-blue/30 cursor-pointer' : 'opacity-75'
+                clickable ? 'hover:border-boon-blue/30 cursor-pointer' : 'opacity-75'
               }`;
               const cardContent = (
                 <>
-                  <div className="flex items-center gap-2">
-                    <TypeIcon type={r.resource_type} size="sm" />
-                    {!hasUrl(r) && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider rounded-lg">
-                        Coming soon
-                      </span>
-                    )}
-                  </div>
+                  <TypeIcon type={r.resource_type} size="sm" />
                   <h3 className={`font-bold transition-colors mt-3 line-clamp-2 leading-snug ${
-                    hasUrl(r) ? 'text-boon-text group-hover:text-boon-blue' : 'text-gray-500'
+                    clickable ? 'text-boon-text group-hover:text-boon-blue' : 'text-gray-500'
                   }`}>
                     {r.title}
                   </h3>
@@ -206,6 +204,13 @@ export default function Resources() {
                   )}
                 </>
               );
+              if (hasContent(r)) {
+                return (
+                  <div key={r.id} className={cardClass} onClick={() => navigate(`/resources/${r.id}`)}>
+                    {cardContent}
+                  </div>
+                );
+              }
               return hasUrl(r) ? (
                 <a key={r.id} href={getResourceUrl(r)!} target="_blank" rel="noopener noreferrer" className={cardClass}>
                   {cardContent}
@@ -316,8 +321,9 @@ export default function Resources() {
       {filteredResources.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResources.map(r => {
+            const clickable = isClickable(r);
             const cardClass = `group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm transition-all flex flex-col ${
-              hasUrl(r) ? 'hover:shadow-md hover:border-boon-blue/30 cursor-pointer' : 'opacity-75'
+              clickable ? 'hover:shadow-md hover:border-boon-blue/30 cursor-pointer' : 'opacity-75'
             }`;
             const cardContent = (
               <>
@@ -351,7 +357,7 @@ export default function Resources() {
 
                 {/* Title */}
                 <h3 className={`font-bold transition-colors leading-snug mt-2 line-clamp-2 ${
-                  hasUrl(r) ? 'text-boon-text group-hover:text-boon-blue' : 'text-gray-500'
+                  clickable ? 'text-boon-text group-hover:text-boon-blue' : 'text-gray-500'
                 }`}>
                   {r.title}
                 </h3>
@@ -378,13 +384,8 @@ export default function Resources() {
                       +{r.competencies.length - 2} more
                     </span>
                   )}
-                  {(r.is_featured || r.is_boon_original || !hasUrl(r)) && (
+                  {(r.is_featured || r.is_boon_original) && (
                     <div className="ml-auto flex gap-1.5">
-                      {!hasUrl(r) && (
-                        <span className="px-2 py-0.5 bg-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider rounded-lg">
-                          Coming soon
-                        </span>
-                      )}
                       {r.is_featured && (
                         <span className="px-2 py-0.5 bg-amber-50 text-[10px] font-bold text-amber-600 uppercase tracking-wider rounded-lg">
                           Featured
@@ -400,6 +401,13 @@ export default function Resources() {
                 </div>
               </>
             );
+            if (hasContent(r)) {
+              return (
+                <div key={r.id} className={cardClass} onClick={() => navigate(`/resources/${r.id}`)}>
+                  {cardContent}
+                </div>
+              );
+            }
             return hasUrl(r) ? (
               <a key={r.id} href={getResourceUrl(r)!} target="_blank" rel="noopener noreferrer" className={cardClass}>
                 {cardContent}

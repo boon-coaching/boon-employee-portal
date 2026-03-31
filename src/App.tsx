@@ -18,6 +18,7 @@ const ProgressPage = lazy(() => import('./components/Progress'));
 const Practice = lazy(() => import('./components/Practice'));
 const CoachPage = lazy(() => import('./components/Coach'));
 const Resources = lazy(() => import('./components/Resources'));
+const ResourceDetail = lazy(() => import('./components/ResourceDetail'));
 const Settings = lazy(() => import('./components/Settings'));
 
 function PageLoader() {
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="practice" element={<LazyPage><Practice /></LazyPage>} />
           <Route path="coach" element={<LazyPage><CoachPage /></LazyPage>} />
           <Route path="resources" element={<LazyPage><Resources /></LazyPage>} />
+          <Route path="resources/:id" element={<LazyPage><ResourceDetail /></LazyPage>} />
           <Route path="settings" element={<LazyPage><Settings /></LazyPage>} />
           <Route path="feedback" element={<FeedbackPage />} />
         </Route>

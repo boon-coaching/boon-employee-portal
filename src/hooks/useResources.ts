@@ -16,6 +16,7 @@ interface Resource {
   program_types: string[] | null;
   is_featured: boolean;
   duration: string | null;
+  body_html: string | null;
   is_published: boolean;
   display_order: number;
   created_at: string;
