@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { ActionItem } from '../lib/types';
 import { updateActionItemStatus } from '../lib/dataFetcher';
 
@@ -27,7 +28,10 @@ export default function ActionItems({ items, onUpdate }: ActionItemsProps) {
     setUpdating(itemId);
     const success = await updateActionItemStatus(itemId, 'completed');
     if (success) {
+      toast.success('Action item completed');
       onUpdate();
+    } else {
+      toast.error('Could not update action item');
     }
     setUpdating(null);
   }
@@ -36,7 +40,10 @@ export default function ActionItems({ items, onUpdate }: ActionItemsProps) {
     setUpdating(itemId);
     const success = await updateActionItemStatus(itemId, 'dismissed');
     if (success) {
+      toast('Action item dismissed');
       onUpdate();
+    } else {
+      toast.error('Could not update action item');
     }
     setUpdating(null);
   }
@@ -53,9 +60,15 @@ export default function ActionItems({ items, onUpdate }: ActionItemsProps) {
     return { text: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), className: 'text-gray-500 bg-gray-50' };
   }
 
-  // Hide entirely when empty per spec
   if (items.length === 0) {
-    return null;
+    return (
+      <section className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-sm border border-gray-100">
+        <h2 className="text-xl font-extrabold text-boon-text mb-3">Action Items</h2>
+        <p className="text-gray-400 text-sm leading-relaxed">
+          No action items yet. After your next coaching session, action items from your coach will appear here.
+        </p>
+      </section>
+    );
   }
 
   return (

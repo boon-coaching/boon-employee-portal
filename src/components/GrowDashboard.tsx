@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { Employee, Session, ActionItem, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 
 const devLog = (...args: unknown[]) => {
@@ -259,7 +260,10 @@ export default function GrowDashboard({
     setUpdatingActionId(itemId);
     const success = await updateActionItemStatus(itemId, 'completed');
     if (success) {
+      toast.success('Action item completed');
       onActionUpdate();
+    } else {
+      toast.error('Could not update action item');
     }
     setUpdatingActionId(null);
   }

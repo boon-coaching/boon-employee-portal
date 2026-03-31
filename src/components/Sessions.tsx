@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import type { Session } from '../lib/types';
 // CoachingStateData now accessed via usePortalData()
 import { isAlumniState, isPreFirstSession, isUpcomingSession } from '../lib/coachingState';
@@ -156,10 +157,12 @@ export default function SessionsPage() {
     try {
       const success = await submitSessionFeedback(feedbackSession.id, feedbackRating, feedbackText);
       if (!success) {
+        toast.error('Unable to save feedback. Please try again.');
         setFeedbackError('Unable to save feedback. Please try again.');
         setIsSubmitting(false);
         return;
       }
+      toast.success('Feedback submitted, thank you!');
       setIsSubmitting(false);
       setIsSuccess(true);
       setTimeout(() => {
@@ -170,6 +173,7 @@ export default function SessionsPage() {
         setFeedbackError(null);
       }, 2200);
     } catch {
+      toast.error('Something went wrong. Please try again.');
       setFeedbackError('Something went wrong. Please try again.');
       setIsSubmitting(false);
     }
@@ -508,7 +512,11 @@ export default function SessionsPage() {
               </div>
             )) : (
               <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-                <p className="text-gray-400">No sessions found.</p>
+                <svg className="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-gray-500 font-medium mb-1">No upcoming sessions</p>
+                <p className="text-gray-400 text-sm">Your next session will appear here once it's scheduled.</p>
               </div>
             )}
           </div>

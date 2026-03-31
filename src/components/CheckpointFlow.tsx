@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import type { Checkpoint } from '../lib/types';
 import { submitCheckpoint, addCoachingWin, type ScaleCheckinData } from '../lib/dataFetcher';
 
@@ -260,17 +261,20 @@ export default function CheckpointFlow({
           );
         }
 
+        toast.success('Checkpoint saved');
         setStep('complete');
         setTimeout(() => {
           onComplete(result.data!);
         }, 2000);
       } else {
         console.error('[CheckpointFlow] Submit failed:', result.error);
+        toast.error('Something went wrong. Please try again.');
         setError(result.error || 'Something went wrong. Please try again.');
         setStep('open_to_chat');
       }
     } catch (err) {
       console.error('[CheckpointFlow] Unexpected error:', err);
+      toast.error('An unexpected error occurred. Please try again.');
       setError('An unexpected error occurred. Please try again.');
       setStep('open_to_chat');
     }

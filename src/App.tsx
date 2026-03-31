@@ -10,6 +10,7 @@ import HelpPrivacyPage from './pages/HelpPrivacyPage';
 import TeamsSupportPage from './pages/TeamsSupportPage';
 import { ProtectedLayout } from './components/ProtectedLayout';
 import { PreviewBanner } from './components/PreviewBanner';
+import { Toaster } from 'sonner';
 
 // Lazy-loaded route children (loaded after auth, on demand)
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
@@ -90,6 +91,16 @@ export default function App() {
   return (
     <>
       <PreviewBanner />
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
+          style: {
+            borderRadius: '1rem',
+            fontWeight: 600,
+          },
+        }}
+        richColors
+      />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />

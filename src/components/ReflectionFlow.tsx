@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import type { BaselineSurvey, ReflectionResponse } from '../lib/types';
 import { submitReflection } from '../lib/dataFetcher';
 
@@ -81,12 +82,14 @@ export default function ReflectionFlow({
     const result = await submitReflection(userEmail, reflectionData);
 
     if (result.success && result.data) {
+      toast.success('Reflection submitted');
       setStep('complete');
       // Brief delay to show completion, then trigger callback
       setTimeout(() => {
         onComplete(result.data!);
       }, 2000);
     } else {
+      toast.error('Something went wrong. Please try again.');
       setError(result.error || 'Something went wrong. Please try again.');
       setStep('qualitative');
     }

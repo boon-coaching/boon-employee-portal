@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
 import type { PracticeScenario } from '../data/scenarios';
 import { generatePlan, getRoleplayResponse, evaluateRoleplay, type ChatMessage } from '../lib/practiceService';
 import { savePlan, saveEvaluation, type TeamMember } from '../lib/storageService';
@@ -90,6 +91,7 @@ export default function PracticeModal({ scenario, initialContext = '', coachName
         team_member_name: teamMember?.name,
         plan: plan,
       });
+      toast.success('Plan saved to playbook');
       onPlanSaved?.();
     }
     setIsGenerating(false);

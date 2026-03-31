@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import type { SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CoachingWin } from '../lib/types';
 
 const devLog = (...args: unknown[]) => {
@@ -127,6 +128,7 @@ export default function ProgressPage() {
     if (!onDeleteWin) return;
     setDeletingWinId(winId);
     await onDeleteWin(winId);
+    toast('Coaching win removed');
     setDeletingWinId(null);
   };
 
@@ -144,8 +146,11 @@ export default function ProgressPage() {
     if (!onUpdateWin || !editingWinId || !editWinText.trim()) return;
     const success = await onUpdateWin(editingWinId, editWinText.trim());
     if (success) {
+      toast.success('Coaching win updated');
       setEditingWinId(null);
       setEditWinText('');
+    } else {
+      toast.error('Could not update coaching win');
     }
   };
 
@@ -160,11 +165,15 @@ export default function ProgressPage() {
       const success = await onAddWin(newWinText.trim());
       devLog('[Progress] onAddWin result:', success);
       if (success) {
+        toast.success('Coaching win saved');
         setNewWinText('');
         setShowAddWinModal(false);
+      } else {
+        toast.error('Could not save coaching win');
       }
     } catch (err) {
       console.error('[Progress] handleAddWin error:', err);
+      toast.error('Could not save coaching win');
     } finally {
       setIsSubmittingWin(false);
     }

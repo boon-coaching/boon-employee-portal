@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { SCENARIOS, CATEGORY_INFO, type PracticeScenario, type ScenarioCategory } from '../data/scenarios';
 // Types now accessed via usePortalData()
 import { isAlumniState } from '../lib/coachingState';
@@ -49,6 +50,7 @@ export default function Practice() {
   const handleDeletePlan = async (id: string) => {
     if (confirm('Delete this saved plan?')) {
       await deleteSavedPlan(id);
+      toast('Plan removed from playbook');
       refreshData();
     }
   };
