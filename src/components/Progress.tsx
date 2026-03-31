@@ -2182,6 +2182,51 @@ export default function ProgressPage() {
           ))}
         </div>
       </section>
+
+      {/* Add Win Modal */}
+      {showAddWinModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-2xl">🏆</span>
+              <h3 className="text-lg font-extrabold text-boon-text">Add a Win</h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              What breakthrough or accomplishment would you like to celebrate?
+            </p>
+            <textarea
+              value={newWinText}
+              onChange={(e) => setNewWinText(e.target.value)}
+              placeholder="e.g., Had a difficult conversation that went well, got positive feedback, set a boundary..."
+              className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+              rows={4}
+              maxLength={500}
+              autoFocus
+            />
+            <div className="flex justify-between items-center mt-2 mb-4">
+              <span className="text-xs text-gray-400">{newWinText.length}/500</span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddWinModal(false);
+                  setNewWinText('');
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddWin}
+                disabled={!newWinText.trim() || isSubmittingWin}
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl transition-colors"
+              >
+                {isSubmittingWin ? 'Saving...' : 'Save Win'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
