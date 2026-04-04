@@ -162,7 +162,7 @@ export function ProtectedLayout() {
     : null;
 
   return (
-    <GoalProvider>
+    <GoalProvider sessions={data.sessions} actionItems={data.actionItems}>
     <Layout coachingState={data.coachingState}>
       <Outlet context={data} />
 

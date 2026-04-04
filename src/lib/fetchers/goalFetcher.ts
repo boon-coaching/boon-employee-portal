@@ -1,36 +1,79 @@
 import { supabase } from '../supabase';
 import type {
-  Goal,
+  Session,
+  ActionItem,
   WeeklyCommitment,
   GoalCheckin,
-  GoalStatus,
   CommitmentStatus,
   CheckinType,
-  FocusAreaSelection,
 } from '../types';
 
 const devLog = (...args: unknown[]) => {
   if (import.meta.env.DEV) console.log(...args);
 };
 
-export async function fetchGoals(email: string): Promise<Goal[]> {
-  devLog('[fetchGoals] Fetching goals for:', email);
+// ============================================
+// SESSION-ANCHORED GOAL DATA
+// ============================================
 
-  const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .ilike('employee_email', email)
-    .in('status', ['active', 'completed'])
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching goals:', error);
-    return [];
-  }
-
-  devLog('[fetchGoals] Found:', data?.length || 0);
-  return (data || []) as Goal[];
+export interface CoachingGoal {
+  goals: string;
+  plan: string | null;
+  session_date: string;
+  coach_name: string;
+  session_id: string;
 }
+
+/**
+ * Get the current coaching goal from the most recent session that has goals set.
+ * This is the coach-set goal that anchors the accountability system.
+ */
+export function getLatestCoachingGoal(sessions: Session[]): CoachingGoal | null {
+  const completed = sessions
+    .filter(s => s.status === 'Completed' && s.goals)
+    .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+
+  if (completed.length === 0) return null;
+
+  const session = completed[0];
+  return {
+    goals: session.goals!,
+    plan: session.plan,
+    session_date: session.session_date,
+    coach_name: session.coach_name,
+    session_id: session.id,
+  };
+}
+
+/**
+ * Get the history of coaching goals across sessions (how goals evolved over time).
+ */
+export function getGoalHistory(sessions: Session[]): CoachingGoal[] {
+  return sessions
+    .filter(s => s.status === 'Completed' && s.goals)
+    .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime())
+    .map(s => ({
+      goals: s.goals!,
+      plan: s.plan,
+      session_date: s.session_date,
+      coach_name: s.coach_name,
+      session_id: s.id,
+    }));
+}
+
+/**
+ * Get pending action items for the employee (from the action_items table).
+ * These are coach-prescribed steps, not self-created.
+ */
+export function getPendingActionItems(actionItems: ActionItem[]): ActionItem[] {
+  return actionItems
+    .filter(a => a.status === 'pending')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+// ============================================
+// WEEKLY COMMITMENTS (employee-set, anchored to coaching goal)
+// ============================================
 
 export async function fetchWeeklyCommitments(
   email: string,
@@ -46,7 +89,6 @@ export async function fetchWeeklyCommitments(
   if (weekStart) {
     query = query.eq('week_start', weekStart);
   } else {
-    // Last 8 weeks
     const eightWeeksAgo = new Date();
     eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
     query = query.gte('week_start', eightWeeksAgo.toISOString().split('T')[0]);
@@ -63,114 +105,10 @@ export async function fetchWeeklyCommitments(
   return (data || []) as WeeklyCommitment[];
 }
 
-export async function fetchGoalCheckins(
-  email: string,
-  commitmentIds?: string[]
-): Promise<GoalCheckin[]> {
-  devLog('[fetchGoalCheckins] Fetching for:', { email, commitmentIds });
-
-  let query = supabase
-    .from('goal_checkins')
-    .select('*')
-    .ilike('employee_email', email);
-
-  if (commitmentIds && commitmentIds.length > 0) {
-    query = query.in('commitment_id', commitmentIds);
-  } else {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    query = query.gte('created_at', thirtyDaysAgo.toISOString());
-  }
-
-  const { data, error } = await query.order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching goal checkins:', error);
-    return [];
-  }
-
-  devLog('[fetchGoalCheckins] Found:', data?.length || 0);
-  return (data || []) as GoalCheckin[];
-}
-
-export async function fetchFocusAreas(email: string): Promise<FocusAreaSelection[]> {
-  devLog('[fetchFocusAreas] Fetching for:', email);
-
-  const { data, error } = await supabase
-    .from('focus_area_selections')
-    .select('*')
-    .ilike('email', email)
-    .eq('selected', true);
-
-  if (error) {
-    console.error('Error fetching focus areas:', error);
-    return [];
-  }
-
-  devLog('[fetchFocusAreas] Found:', data?.length || 0);
-  return (data || []) as FocusAreaSelection[];
-}
-
-export async function createGoal(goal: {
-  employee_email: string;
-  company_id: string;
-  title: string;
-  description?: string;
-  competency_area?: string;
-}): Promise<Goal | null> {
-  devLog('[createGoal] Creating:', goal.title);
-
-  const { data, error } = await supabase
-    .from('goals')
-    .insert({
-      employee_email: goal.employee_email,
-      company_id: goal.company_id,
-      title: goal.title,
-      description: goal.description || null,
-      competency_area: goal.competency_area || null,
-      status: 'active' as GoalStatus,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error creating goal:', error);
-    return null;
-  }
-
-  devLog('[createGoal] Created:', data?.id);
-  return data as Goal;
-}
-
-export async function updateGoal(
-  goalId: string,
-  updates: {
-    title?: string;
-    description?: string;
-    status?: GoalStatus;
-    completed_at?: string;
-  }
-): Promise<boolean> {
-  devLog('[updateGoal] Updating:', goalId, updates);
-
-  const { error } = await supabase
-    .from('goals')
-    .update(updates)
-    .eq('id', goalId);
-
-  if (error) {
-    console.error('Error updating goal:', error);
-    return false;
-  }
-
-  devLog('[updateGoal] Success');
-  return true;
-}
-
 export async function createWeeklyCommitment(commitment: {
   employee_email: string;
   company_id: string;
-  goal_id: string;
+  goal_id?: string;
   commitment_text: string;
   week_start: string;
 }): Promise<WeeklyCommitment | null> {
@@ -181,7 +119,7 @@ export async function createWeeklyCommitment(commitment: {
     .insert({
       employee_email: commitment.employee_email,
       company_id: commitment.company_id,
-      goal_id: commitment.goal_id,
+      goal_id: commitment.goal_id || null,
       commitment_text: commitment.commitment_text,
       week_start: commitment.week_start,
       status: 'active' as CommitmentStatus,
@@ -220,8 +158,41 @@ export async function updateCommitmentStatus(
     return false;
   }
 
-  devLog('[updateCommitmentStatus] Success');
   return true;
+}
+
+// ============================================
+// CHECK-INS
+// ============================================
+
+export async function fetchGoalCheckins(
+  email: string,
+  commitmentIds?: string[]
+): Promise<GoalCheckin[]> {
+  devLog('[fetchGoalCheckins] Fetching for:', { email, commitmentIds });
+
+  let query = supabase
+    .from('goal_checkins')
+    .select('*')
+    .ilike('employee_email', email);
+
+  if (commitmentIds && commitmentIds.length > 0) {
+    query = query.in('commitment_id', commitmentIds);
+  } else {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    query = query.gte('created_at', thirtyDaysAgo.toISOString());
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching goal checkins:', error);
+    return [];
+  }
+
+  devLog('[fetchGoalCheckins] Found:', data?.length || 0);
+  return (data || []) as GoalCheckin[];
 }
 
 export async function createGoalCheckin(checkin: {
@@ -258,70 +229,13 @@ export async function createGoalCheckin(checkin: {
   return data as GoalCheckin;
 }
 
-export async function seedGoalsFromFocusAreas(
-  email: string,
-  companyId: string
-): Promise<Goal[]> {
-  devLog('[seedGoalsFromFocusAreas] Checking existing goals for:', email);
-
-  const existingGoals = await fetchGoals(email);
-  if (existingGoals.length > 0) {
-    devLog('[seedGoalsFromFocusAreas] Goals already exist, returning:', existingGoals.length);
-    return existingGoals;
-  }
-
-  const focusAreas = await fetchFocusAreas(email);
-  if (focusAreas.length === 0) {
-    devLog('[seedGoalsFromFocusAreas] No focus areas selected');
-    return [];
-  }
-
-  devLog('[seedGoalsFromFocusAreas] Seeding from', focusAreas.length, 'focus areas');
-
-  const createdGoals: Goal[] = [];
-  for (const area of focusAreas) {
-    const goal = await createGoal({
-      employee_email: email,
-      company_id: companyId,
-      title: area.focus_area_name,
-      competency_area: area.focus_area_name,
-    });
-    if (goal) {
-      createdGoals.push(goal);
-    }
-  }
-
-  devLog('[seedGoalsFromFocusAreas] Created:', createdGoals.length, 'goals');
-  return createdGoals;
-}
-
-export async function fetchActionItemsForGoal(goalId: string): Promise<{
-  id: string;
-  action_text: string;
-  status: string;
-  created_at: string;
-}[]> {
-  devLog('[fetchActionItemsForGoal] Fetching for goal:', goalId);
-
-  const { data, error } = await supabase
-    .from('action_items')
-    .select('id, action_text, status, created_at')
-    .eq('goal_id', goalId)
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  if (error) {
-    console.error('Error fetching action items for goal:', error);
-    return [];
-  }
-
-  return data || [];
-}
+// ============================================
+// HELPERS
+// ============================================
 
 export function getWeekStart(): string {
   const now = new Date();
   const day = now.getDay();
-  // Subtract days to get to Monday (day 0 = Sunday, so Monday = 1)
   const diff = day === 0 ? 6 : day - 1;
   const monday = new Date(now);
   monday.setDate(now.getDate() - diff);
@@ -338,26 +252,21 @@ export async function getCurrentWeekCommitmentStatus(email: string): Promise<{
   commitment: WeeklyCommitment | null;
 }> {
   const weekStart = getWeekStart();
-  devLog('[getCurrentWeekCommitmentStatus] Week start:', weekStart, 'for:', email);
+  devLog('[getCurrentWeekCommitmentStatus] Week start:', weekStart);
 
   const commitments = await fetchWeeklyCommitments(email, weekStart);
   const commitment = commitments.length > 0 ? commitments[0] : null;
 
   if (!commitment) {
-    return {
-      hasCommitment: false,
-      hasMidweekCheckin: false,
-      hasEndweekCheckin: false,
-      commitment: null,
-    };
+    return { hasCommitment: false, hasMidweekCheckin: false, hasEndweekCheckin: false, commitment: null };
   }
 
   const checkins = await fetchGoalCheckins(email, [commitment.id]);
 
   return {
     hasCommitment: true,
-    hasMidweekCheckin: checkins.some((c) => c.checkin_type === 'midweek'),
-    hasEndweekCheckin: checkins.some((c) => c.checkin_type === 'endweek'),
+    hasMidweekCheckin: checkins.some(c => c.checkin_type === 'midweek'),
+    hasEndweekCheckin: checkins.some(c => c.checkin_type === 'endweek'),
     commitment,
   };
 }

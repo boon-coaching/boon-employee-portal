@@ -1,42 +1,32 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useAuth } from '../lib/AuthContext';
+import type { Session, ActionItem, WeeklyCommitment, GoalCheckin, CommitmentStatus, CheckinType } from '../lib/types';
 import {
-  fetchGoals,
+  type CoachingGoal,
+  getLatestCoachingGoal,
+  getGoalHistory,
+  getPendingActionItems,
   fetchWeeklyCommitments,
-  fetchGoalCheckins,
-  seedGoalsFromFocusAreas,
-  createGoal,
-  updateGoal,
   createWeeklyCommitment,
   updateCommitmentStatus,
   createGoalCheckin,
+  fetchGoalCheckins,
   getCurrentWeekCommitmentStatus,
   getWeekStart,
 } from '../lib/fetchers/goalFetcher';
-import type {
-  Goal,
-  WeeklyCommitment,
-  GoalCheckin,
-  GoalStatus,
-  CommitmentStatus,
-  CheckinType,
-} from '../lib/types';
-
-const devLog = (...args: unknown[]) => {
-  if (import.meta.env.DEV) console.log(...args);
-};
 
 export interface GoalData {
-  // Loading state
   loading: boolean;
   error: string | null;
 
-  // Data
-  goals: Goal[];
+  // Session-anchored coaching goal (from coach)
+  coachingGoal: CoachingGoal | null;
+  goalHistory: CoachingGoal[];
+  pendingActionItems: ActionItem[];
+
+  // Employee-set accountability
   commitments: WeeklyCommitment[];
   checkins: GoalCheckin[];
-
-  // Current week status (for home dashboard card)
   currentWeek: {
     hasCommitment: boolean;
     hasMidweekCheckin: boolean;
@@ -45,27 +35,33 @@ export interface GoalData {
   };
 
   // Actions
-  addGoal: (title: string, description?: string, competencyArea?: string) => Promise<Goal | null>;
-  editGoal: (goalId: string, updates: { title?: string; description?: string; status?: GoalStatus }) => Promise<boolean>;
-  completeGoal: (goalId: string) => Promise<boolean>;
-  addCommitment: (goalId: string, commitmentText: string) => Promise<WeeklyCommitment | null>;
+  addCommitment: (commitmentText: string) => Promise<WeeklyCommitment | null>;
   updateCommitment: (commitmentId: string, status: CommitmentStatus, reflectionText?: string) => Promise<boolean>;
   submitCheckin: (commitmentId: string, checkinType: CheckinType, progressRating: number, reflectionText?: string, blockers?: string) => Promise<GoalCheckin | null>;
   reload: () => Promise<void>;
+
 }
 
 const GoalContext = createContext<GoalData | null>(null);
 
 interface GoalProviderProps {
   children: ReactNode;
+  sessions: Session[];
+  actionItems: ActionItem[];
 }
 
-export function GoalProvider({ children }: GoalProviderProps) {
+export function GoalProvider({ children, sessions, actionItems }: GoalProviderProps) {
   const { employee } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [goals, setGoals] = useState<Goal[]>([]);
+
+  // Derived from sessions (computed, not fetched)
+  const coachingGoal = getLatestCoachingGoal(sessions);
+  const goalHistory = getGoalHistory(sessions);
+  const pendingActionItems = getPendingActionItems(actionItems);
+
+  // Commitment/check-in data (fetched from DB)
   const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);
   const [checkins, setCheckins] = useState<GoalCheckin[]>([]);
   const [currentWeek, setCurrentWeek] = useState<GoalData['currentWeek']>({
@@ -75,36 +71,21 @@ export function GoalProvider({ children }: GoalProviderProps) {
     commitment: null,
   });
 
-  const loadGoalData = useCallback(async () => {
+  const loadCommitmentData = useCallback(async () => {
     if (!employee?.company_email) return;
-
-    const companyId = employee.company_id || '';
 
     setLoading(true);
     setError(null);
 
     try {
-      // Seed goals from focus areas (no-op if goals already exist)
-      await seedGoalsFromFocusAreas(employee.company_email, companyId);
-
-      // Fetch goals, recent commitments, and current week status in parallel
-      const [goalsData, commitmentsData, weekStatus] = await Promise.all([
-        fetchGoals(employee.company_email),
+      const [commitmentsData, weekStatus] = await Promise.all([
         fetchWeeklyCommitments(employee.company_email),
         getCurrentWeekCommitmentStatus(employee.company_email),
       ]);
 
-      devLog('[useGoalData] Data loaded:', {
-        goalsCount: goalsData.length,
-        commitmentsCount: commitmentsData.length,
-        weekStatus,
-      });
-
-      setGoals(goalsData);
       setCommitments(commitmentsData);
       setCurrentWeek(weekStatus);
 
-      // Fetch checkins for current week's commitment
       if (weekStatus.commitment) {
         const checkinsData = await fetchGoalCheckins(
           employee.company_email,
@@ -115,85 +96,20 @@ export function GoalProvider({ children }: GoalProviderProps) {
         setCheckins([]);
       }
     } catch (err) {
-      console.error('[useGoalData] Error loading goal data:', err);
-      setError('Something went wrong loading your goals. Please try refreshing.');
+      console.error('[useGoalData] Error loading commitment data:', err);
+      setError('Something went wrong loading your goals.');
     } finally {
       setLoading(false);
     }
-  }, [employee?.company_email, employee?.company_id]);
+  }, [employee?.company_email]);
 
   useEffect(() => {
-    loadGoalData();
-  }, [loadGoalData]);
-
-  const addGoal = useCallback(async (
-    title: string,
-    description?: string,
-    competencyArea?: string,
-  ): Promise<Goal | null> => {
-    if (!employee?.company_email) return null;
-
-    const companyId = employee.company_id || '';
-
-    try {
-      const newGoal = await createGoal({
-        employee_email: employee.company_email,
-        company_id: companyId,
-        title,
-        description,
-        competency_area: competencyArea,
-      });
-      if (newGoal) {
-        setGoals(prev => [...prev, newGoal]);
-      }
-      return newGoal;
-    } catch (err) {
-      console.error('[useGoalData] Error adding goal:', err);
-      return null;
+    if (employee?.company_email) {
+      loadCommitmentData();
     }
-  }, [employee?.company_email, employee?.company_id]);
+  }, [loadCommitmentData]);
 
-  const editGoal = useCallback(async (
-    goalId: string,
-    updates: { title?: string; description?: string; status?: GoalStatus },
-  ): Promise<boolean> => {
-    if (!employee?.company_email) return false;
-
-    try {
-      const success = await updateGoal(goalId, updates);
-      if (success) {
-        setGoals(prev => prev.map(g =>
-          g.id === goalId ? { ...g, ...updates } : g,
-        ));
-      }
-      return success;
-    } catch (err) {
-      console.error('[useGoalData] Error editing goal:', err);
-      return false;
-    }
-  }, [employee?.company_email]);
-
-  const completeGoal = useCallback(async (goalId: string): Promise<boolean> => {
-    if (!employee?.company_email) return false;
-
-    try {
-      const success = await updateGoal(goalId, { status: 'completed' as GoalStatus });
-      if (success) {
-        setGoals(prev => prev.map(g =>
-          g.id === goalId ? { ...g, status: 'completed' as GoalStatus } : g,
-        ));
-      }
-      return success;
-    } catch (err) {
-      console.error('[useGoalData] Error completing goal:', err);
-      return false;
-    }
-  }, [employee?.company_email]);
-
-  const addCommitment = useCallback(async (
-    goalId: string,
-    commitmentText: string,
-  ): Promise<WeeklyCommitment | null> => {
+  const addCommitment = useCallback(async (commitmentText: string): Promise<WeeklyCommitment | null> => {
     if (!employee?.company_email) return null;
 
     const companyId = employee.company_id || '';
@@ -203,12 +119,11 @@ export function GoalProvider({ children }: GoalProviderProps) {
       const newCommitment = await createWeeklyCommitment({
         employee_email: employee.company_email,
         company_id: companyId,
-        goal_id: goalId,
         commitment_text: commitmentText,
         week_start: weekStart,
       });
       if (newCommitment) {
-        setCommitments(prev => [...prev, newCommitment]);
+        setCommitments(prev => [newCommitment, ...prev]);
         setCurrentWeek(prev => ({
           ...prev,
           hasCommitment: true,
@@ -237,10 +152,7 @@ export function GoalProvider({ children }: GoalProviderProps) {
         ));
         setCurrentWeek(prev => {
           if (prev.commitment?.id === commitmentId) {
-            return {
-              ...prev,
-              commitment: { ...prev.commitment, status, reflection_text: reflectionText ?? prev.commitment.reflection_text },
-            };
+            return { ...prev, commitment: { ...prev.commitment, status, reflection_text: reflectionText ?? prev.commitment.reflection_text } };
           }
           return prev;
         });
@@ -274,7 +186,7 @@ export function GoalProvider({ children }: GoalProviderProps) {
         blockers,
       });
       if (newCheckin) {
-        setCheckins(prev => [...prev, newCheckin]);
+        setCheckins(prev => [newCheckin, ...prev]);
         setCurrentWeek(prev => ({
           ...prev,
           hasMidweekCheckin: checkinType === 'midweek' ? true : prev.hasMidweekCheckin,
@@ -289,19 +201,18 @@ export function GoalProvider({ children }: GoalProviderProps) {
   }, [employee?.company_email, employee?.company_id]);
 
   const reload = useCallback(async () => {
-    await loadGoalData();
-  }, [loadGoalData]);
+    await loadCommitmentData();
+  }, [loadCommitmentData]);
 
   const value: GoalData = {
     loading,
     error,
-    goals,
+    coachingGoal,
+    goalHistory,
+    pendingActionItems,
     commitments,
     checkins,
     currentWeek,
-    addGoal,
-    editGoal,
-    completeGoal,
     addCommitment,
     updateCommitment,
     submitCheckin,
