@@ -298,7 +298,7 @@ export default function GoalTracker() {
             <p className="text-boon-text text-sm mb-4">
               Based on your coaching goal, what will you focus on this week?
             </p>
-            <CommitmentInput goalTitle="" onSubmit={handleSetCommitment} />
+            <CommitmentInput onSubmit={handleSetCommitment} />
           </div>
         )}
 

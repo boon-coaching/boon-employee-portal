@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 interface CommitmentInputProps {
-  goalTitle: string;
   onSubmit: (text: string) => Promise<void>;
 }
 

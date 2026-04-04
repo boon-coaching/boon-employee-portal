@@ -78,7 +78,7 @@ export function GoalHomeCard() {
         {!hasCommitment && (
           <div>
             <p className="text-boon-text text-sm font-medium mb-3">What will you focus on this week?</p>
-            <CommitmentInput goalTitle="" onSubmit={handleSetCommitment} />
+            <CommitmentInput onSubmit={handleSetCommitment} />
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import type { Session, ActionItem, WeeklyCommitment, GoalCheckin, CommitmentStatus, CheckinType } from '../lib/types';
 import {
@@ -64,10 +64,10 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Derived from sessions (computed, not fetched)
-  const coachingGoal = getLatestCoachingGoal(sessions);
-  const goalHistory = getGoalHistory(sessions);
-  const pendingActionItems = getPendingActionItems(actionItems);
+  // Derived from sessions (memoized to avoid recomputing on every render)
+  const coachingGoal = useMemo(() => getLatestCoachingGoal(sessions), [sessions]);
+  const goalHistory = useMemo(() => getGoalHistory(sessions), [sessions]);
+  const pendingActionItems = useMemo(() => getPendingActionItems(actionItems), [actionItems]);
 
   // Commitment/check-in data (fetched from DB)
   const [commitments, setCommitments] = useState<WeeklyCommitment[]>([]);

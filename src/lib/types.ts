@@ -276,7 +276,7 @@ export interface TeamsConnectionStatus {
 
 export type NudgeChannel = 'slack' | 'teams';
 
-export type NudgeType = 'action_reminder' | 'goal_checkin' | 'session_prep' | 'weekly_digest' | 'daily_digest' | 'streak_celebration';
+export type NudgeType = 'action_reminder' | 'goal_checkin' | 'goal_midweek_checkin' | 'goal_endweek_checkin' | 'session_prep' | 'weekly_digest' | 'daily_digest' | 'streak_celebration';
 
 export interface Nudge {
   id: string;
@@ -501,7 +501,7 @@ export interface WeeklyCommitment {
   id: string;
   employee_email: string;
   company_id: string;
-  goal_id: string;
+  goal_id: string | null;
   commitment_text: string;
   week_start: string;
   status: CommitmentStatus;
