@@ -481,6 +481,8 @@ export type GoalStatus = 'active' | 'completed' | 'paused' | 'archived';
 export type CommitmentStatus = 'active' | 'completed' | 'partial' | 'missed';
 export type CheckinType = 'midweek' | 'endweek' | 'adhoc';
 
+export type SelfProgress = 'not_started' | 'working_on_it' | 'feeling_confident';
+
 export interface Goal {
   id: string;
   employee_email: string;
@@ -489,6 +491,7 @@ export interface Goal {
   description: string | null;
   competency_area: string | null;
   status: GoalStatus;
+  self_progress: SelfProgress | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;

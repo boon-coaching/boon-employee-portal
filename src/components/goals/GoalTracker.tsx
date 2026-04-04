@@ -46,6 +46,13 @@ export default function GoalTracker() {
     if (reflection !== null) setReflectionText(reflection);
   }, [reflection]);
 
+  // Clean up reflection timer on unmount
+  useEffect(() => {
+    return () => {
+      if (reflectionTimer.current) clearTimeout(reflectionTimer.current);
+    };
+  }, []);
+
   function handleReflectionChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const text = e.target.value;
     setReflectionText(text);
@@ -138,7 +145,8 @@ export default function GoalTracker() {
     );
   }
 
-  const today = new Date().getDay();
+  const rawDay = new Date().getDay();
+  const today = rawDay === 0 ? 7 : rawDay; // Treat Sunday as 7 (end of week)
   const isMidweekOrLater = today >= 3;
   const isEndweekOrLater = today >= 5;
   const { hasCommitment, hasMidweekCheckin, hasEndweekCheckin, commitment } = currentWeek;

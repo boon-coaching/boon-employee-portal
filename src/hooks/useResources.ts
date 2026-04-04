@@ -107,6 +107,7 @@ export function useResources(email: string | undefined, competencyScores?: { com
   const lowCompetencyNames = useMemo(() => {
     if (!competencyScores || competencyScores.length === 0) return [];
     return [...competencyScores]
+      .filter(c => c.score <= 3)
       .sort((a, b) => a.score - b.score)
       .slice(0, 3)
       .map(c => c.competency_name);

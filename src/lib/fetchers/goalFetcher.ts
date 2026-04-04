@@ -244,7 +244,7 @@ export async function fetchGoalReflection(email: string): Promise<{
     .eq('status', 'active')
     .order('updated_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return { reflection: data.description, selfProgress: data.self_progress };
@@ -264,7 +264,7 @@ export async function upsertGoalReflection(params: {
     .ilike('employee_email', params.email)
     .eq('status', 'active')
     .limit(1)
-    .single();
+    .maybeSingle();
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (params.reflection !== undefined) updates.description = params.reflection;

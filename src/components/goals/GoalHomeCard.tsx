@@ -13,7 +13,8 @@ export function GoalHomeCard() {
   // Don't render if no coaching goal or still loading
   if (loading || !coachingGoal) return null;
 
-  const today = new Date().getDay();
+  const rawDay = new Date().getDay();
+  const today = rawDay === 0 ? 7 : rawDay; // Treat Sunday as 7 (end of week)
   const { hasCommitment, hasMidweekCheckin, hasEndweekCheckin, commitment } = currentWeek;
   const isMidweekOrLater = today >= 3;
   const isEndweekOrLater = today >= 5;

@@ -73,16 +73,15 @@ export default function ScaleHome({
   // Get current focus from latest checkpoint
   const currentFocus = checkpointStatus.latestCheckpoint?.focus_area;
 
+  const coachName = completedSessions[0]?.coach_name || upcomingSession?.coach_name || null;
+
   // Fetch coach profile for the compact card
   useEffect(() => {
-    const name = completedSessions[0]?.coach_name || upcomingSession?.coach_name;
-    if (name && name !== 'Your Coach') {
-      fetchCoachByName(name).then(c => setCoachProfile(c));
+    if (coachName && coachName !== 'Your Coach') {
+      fetchCoachByName(coachName).then(c => setCoachProfile(c));
     }
-  }, [completedSessions, upcomingSession]);
-
-  const coachName = completedSessions[0]?.coach_name || upcomingSession?.coach_name || null;
-  const coachPhotoUrl = coachProfile?.photo_url || (coachName ? `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200` : null);
+  }, [coachName]);
+  const coachPhotoUrl = coachProfile?.photo_url || null;
 
   // Toggle action item status
   async function handleToggleAction(itemId: string, currentStatus: string) {
@@ -117,11 +116,19 @@ export default function ScaleHome({
       {coachName && (
         <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-4">
-            <img
-              src={coachPhotoUrl!}
-              alt={coachName}
-              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
-            />
+            {coachPhotoUrl ? (
+              <img
+                src={coachPhotoUrl}
+                alt={coachName}
+                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-boon-lightBlue flex items-center justify-center border-2 border-white shadow">
+                <span className="text-boon-blue text-sm font-bold">
+                  {coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </span>
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="font-bold text-boon-text text-sm">{coachName}</p>
               {coachProfile?.headline && (
@@ -379,7 +386,7 @@ export default function ScaleHome({
       )}
 
       {/* 4. Practice Prompt - above Coach */}
-      <PracticePrompt sessions={sessions} competencyScores={[]} />
+      <PracticePrompt />
 
       {/* Full coach profile is now at /coach; compact card shown above */}
     </div>

@@ -714,7 +714,7 @@ export default function ActiveGrowHome({
 
 
       {/* Practice Prompt */}
-      <PracticePrompt sessions={sessions} competencyScores={[]} />
+      <PracticePrompt />
     </div>
   );
 }

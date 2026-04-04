@@ -569,7 +569,7 @@ export default function GrowDashboard({
       )}
 
       {/* Practice Prompt */}
-      <PracticePrompt sessions={sessions} competencyScores={[]} />
+      <PracticePrompt />
     </div>
   );
 }

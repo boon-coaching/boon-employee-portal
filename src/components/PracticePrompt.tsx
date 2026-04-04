@@ -1,19 +1,14 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Session, CompetencyScore } from '../lib/types';
+import { usePortalData } from './ProtectedLayout';
 import { SCENARIOS, CATEGORY_INFO } from '../data/scenarios';
 import type { ScenarioCategory, PracticeScenario } from '../data/scenarios';
 
-interface PracticePromptProps {
-  sessions: Session[];
-  competencyScores: CompetencyScore[];
-}
-
-export function PracticePrompt({ sessions, competencyScores }: PracticePromptProps) {
+export function PracticePrompt() {
   const navigate = useNavigate();
+  const { sessions, competencyScores } = usePortalData();
 
   const scenario = useMemo(() => {
-    // 1. Extract coaching themes from 3 most recent completed sessions
     const completed = sessions
       .filter(s => s.status === 'Completed')
       .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime())
@@ -28,12 +23,10 @@ export function PracticePrompt({ sessions, competencyScores }: PracticePromptPro
       if (s.mental_well_being) themes.wellbeing = true;
     }
 
-    // 2. Find lowest competency scores (score <= 3)
     const lowScores = competencyScores
       .filter(c => c.score <= 3)
       .sort((a, b) => a.score - b.score);
 
-    // Map competency names to scenario categories
     const competencyToCategory: Record<string, ScenarioCategory> = {
       'Delegation & Accountability': 'leadership',
       'Strategic Thinking': 'leadership',
@@ -46,15 +39,19 @@ export function PracticePrompt({ sessions, competencyScores }: PracticePromptPro
       'Self-Confidence & Imposter Syndrome': 'wellbeing',
     };
 
-    // 3. Pick a scenario: prefer low competency match, then active theme match
     let match: PracticeScenario | null = null;
 
     // Try matching lowest competency first
     for (const cs of lowScores) {
       const cat = competencyToCategory[cs.competency_name];
       if (cat) {
-        const found = SCENARIOS.find(s => s.category === cat);
-        if (found) { match = found; break; }
+        const candidates = SCENARIOS.filter(s => s.category === cat);
+        if (candidates.length > 0) {
+          // Rotate based on day of year to avoid always showing the same scenario
+          const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+          match = candidates[dayOfYear % candidates.length];
+          break;
+        }
       }
     }
 
@@ -66,7 +63,11 @@ export function PracticePrompt({ sessions, competencyScores }: PracticePromptPro
       if (themes.wellbeing) activeCategories.push('wellbeing');
 
       if (activeCategories.length > 0) {
-        match = SCENARIOS.find(s => s.category === activeCategories[0]) || null;
+        const candidates = SCENARIOS.filter(s => s.category === activeCategories[0]);
+        if (candidates.length > 0) {
+          const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+          match = candidates[dayOfYear % candidates.length];
+        }
       }
     }
 
