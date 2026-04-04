@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useGoalData } from '../../hooks/useGoalData';
 import { usePortalData } from '../ProtectedLayout';
 import { updateActionItemStatus } from '../../lib/dataFetcher';
 import { CommitmentInput } from './CommitmentInput';
 import { CheckinModal } from './CheckinModal';
+import { SCENARIOS } from '../../data/scenarios';
+
+function findMatchingScenario(actionText: string) {
+  const words = actionText.toLowerCase().split(/\s+/);
+  return SCENARIOS.find(s =>
+    s.tags.some(tag => words.some(w => w.length > 3 && tag.toLowerCase().includes(w)))
+  ) || null;
+}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -18,6 +26,7 @@ function formatWeekLabel(weekStart: string): string {
 
 export default function GoalTracker() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { reloadActionItems } = usePortalData();
   const {
     loading,
@@ -257,6 +266,7 @@ export default function GoalTracker() {
             {pendingActionItems.map(item => {
               const isCompleted = item.status === 'completed';
               const isUpdating = updatingItem === item.id;
+              const matchingScenario = findMatchingScenario(item.action_text);
 
               return (
                 <label
@@ -272,9 +282,22 @@ export default function GoalTracker() {
                     onChange={() => handleToggleAction(item.id, item.status)}
                     className="mt-0.5 w-4 h-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
                   />
-                  <span className={`text-sm leading-relaxed ${isCompleted ? 'line-through' : ''}`}>
-                    {item.action_text}
-                  </span>
+                  <div className="flex-1">
+                    <span className={`text-sm leading-relaxed ${isCompleted ? 'line-through' : ''}`}>
+                      {item.action_text}
+                    </span>
+                    {matchingScenario && !isCompleted && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/practice'); }}
+                        className="mt-1 text-xs font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                      >
+                        Practice this
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </label>
               );
             })}

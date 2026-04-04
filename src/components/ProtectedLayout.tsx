@@ -163,7 +163,7 @@ export function ProtectedLayout() {
 
   return (
     <GoalProvider sessions={data.sessions} actionItems={data.actionItems}>
-    <Layout coachingState={data.coachingState}>
+    <Layout coachingState={data.coachingState} badges={{ '/journal': true }}>
       <Outlet context={data} />
 
       {/* Reflection Flow Modal */}

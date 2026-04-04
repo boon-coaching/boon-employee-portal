@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import { fetchCoachByName } from '../lib/dataFetcher';
 import { GoalHomeCard } from './goals/GoalHomeCard';
 import { PracticePrompt } from './PracticePrompt';
+import { MilestoneCelebration } from './MilestoneCelebration';
+import { JournalPromptCard } from './journal/JournalPromptCard';
 
 interface ActiveGrowHomeProps {
   profile: Employee | null;
@@ -272,6 +274,14 @@ export default function ActiveGrowHome({
           </a>
         )}
       </header>
+
+      {/* Session Milestone Celebration */}
+      <MilestoneCelebration
+        completedSessionCount={completedSessions.length}
+        programType="GROW"
+        totalExpected={12}
+        userEmail={userEmail}
+      />
 
       {/* Goal Accountability Card */}
       <GoalHomeCard />
@@ -712,6 +722,9 @@ export default function ActiveGrowHome({
         </section>
       )}
 
+
+      {/* Journal Prompt */}
+      <JournalPromptCard compact />
 
       {/* Practice Prompt */}
       <PracticePrompt />

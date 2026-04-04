@@ -8,6 +8,8 @@ import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
 import { GoalHomeCard } from './goals/GoalHomeCard';
 import { PracticePrompt } from './PracticePrompt';
+import { MilestoneCelebration } from './MilestoneCelebration';
+import { JournalPromptCard } from './journal/JournalPromptCard';
 
 interface ScaleHomeProps {
   profile: Employee | null;
@@ -108,6 +110,14 @@ export default function ScaleHome({
           </p>
         </div>
       </header>
+
+      {/* Session Milestone Celebration */}
+      <MilestoneCelebration
+        completedSessionCount={completedSessions.length}
+        programType="SCALE"
+        totalExpected={6}
+        userEmail={userEmail}
+      />
 
       {/* Goal Accountability Card */}
       <GoalHomeCard />
@@ -385,7 +395,10 @@ export default function ScaleHome({
         ) : null
       )}
 
-      {/* 4. Practice Prompt - above Coach */}
+      {/* Journal Prompt */}
+      <JournalPromptCard compact />
+
+      {/* Practice Prompt */}
       <PracticePrompt />
 
       {/* Full coach profile is now at /coach; compact card shown above */}

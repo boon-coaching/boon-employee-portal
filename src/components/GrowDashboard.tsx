@@ -14,6 +14,8 @@ import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas
 import ProgramProgressCard from './ProgramProgressCard';
 import CompetencyProgressCard from './CompetencyProgressCard';
 import SessionPrep from './SessionPrep';
+import { MilestoneCelebration } from './MilestoneCelebration';
+import { JournalPromptCard } from './journal/JournalPromptCard';
 
 /**
  * Extract the specific coach's summary from the full match_summary text.
@@ -288,6 +290,14 @@ export default function GrowDashboard({
           </p>
         </div>
       </header>
+
+      {/* Session Milestone Celebration */}
+      <MilestoneCelebration
+        completedSessionCount={completedSessions.length}
+        programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
+        totalExpected={12}
+        userEmail={userEmail}
+      />
 
       {/* Goal Accountability Card */}
       <GoalHomeCard />
@@ -567,6 +577,9 @@ export default function GrowDashboard({
           </div>
         </section>
       )}
+
+      {/* Journal Prompt */}
+      <JournalPromptCard compact />
 
       {/* Practice Prompt */}
       <PracticePrompt />

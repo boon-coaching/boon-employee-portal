@@ -1511,6 +1511,12 @@ export default function ProgressPage() {
     };
   });
 
+  // Top improved competencies for callout banner
+  const topImprovements = competencyData
+    .filter(c => c.improvement !== null && c.improvement > 0)
+    .sort((a, b) => (b.improvement || 0) - (a.improvement || 0))
+    .slice(0, 2);
+
   // Calculate average improvement for competencies
   const competenciesWithImprovement = competencyData.filter(c => c.improvement !== null);
   const avgCompetencyImprovement = competenciesWithImprovement.length > 0
@@ -1693,6 +1699,22 @@ export default function ProgressPage() {
       {/* Competencies Tab */}
       {activeTab === 'competencies' && isGrowOrExec && (
         <div className="space-y-8">
+          {/* Competency improvement callouts */}
+          {topImprovements.length > 0 && (
+            <div className="space-y-2">
+              {topImprovements.map(comp => (
+                <div key={comp.key} className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100 rounded-xl">
+                  <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <p className="text-sm text-emerald-700 font-medium">
+                    Your {comp.label} improved {comp.improvement}% since your baseline
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Competency Cards Grid */}
           <section>
             <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
