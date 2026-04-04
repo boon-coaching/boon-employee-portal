@@ -107,7 +107,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
         setOpenEnded(note);
       }
     }
-  }, [upcomingSession]);
+  }, [upcomingSession?.id, upcomingSession?.employee_pre_session_note]);
 
   // Save all structured notes to session_tracking.employee_pre_session_note
   const saveAllNotes = useCallback(async () => {

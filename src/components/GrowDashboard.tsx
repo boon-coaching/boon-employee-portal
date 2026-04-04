@@ -146,7 +146,9 @@ export default function GrowDashboard({
 }: GrowDashboardProps) {
   const [updatingActionId, setUpdatingActionId] = useState<string | null>(null);
 
-  const completedSessions = sessions.filter(s => s.status === 'Completed');
+  const completedSessions = sessions
+    .filter(s => s.status === 'Completed')
+    .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
   // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
     .filter(isUpcomingSession)
@@ -234,14 +236,7 @@ export default function GrowDashboard({
   );
   const sessionCountWithCoach = sessionsWithCoach.length;
 
-  // Helper: Get coach photo URL or generate placeholder
-  const getCoachPhotoUrl = () => {
-    if (coachProfile?.photo_url) {
-      return coachProfile.photo_url;
-    }
-    // Use picsum.photos as placeholder (same as SCALE coach page)
-    return `https://picsum.photos/seed/${coachName.replace(/\s/g, '')}/200/200`;
-  };
+  const getCoachPhotoUrl = () => coachProfile?.photo_url || null;
 
   // Action items for "Things You're Working On"
   const pendingActions = actionItems.filter(a => a.status === 'pending');
@@ -486,11 +481,17 @@ export default function GrowDashboard({
           ) : (
             <>
               <div className="flex items-center gap-4">
-                <img
-                  src={getCoachPhotoUrl()}
-                  alt={coachName}
-                  className="w-16 h-20 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
-                />
+                {getCoachPhotoUrl() ? (
+                  <img
+                    src={getCoachPhotoUrl()!}
+                    alt={coachName}
+                    className="w-16 h-20 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
+                  />
+                ) : (
+                  <div className="w-16 h-20 rounded-xl bg-boon-lightBlue ring-2 ring-boon-bg shadow-sm flex items-center justify-center">
+                    <span className="text-boon-blue text-lg font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                  </div>
+                )}
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-boon-text">{coachName}</h3>
                   {coachProfile?.headline ? (
