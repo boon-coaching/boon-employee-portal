@@ -3,6 +3,9 @@ import type { Session, ActionItem } from '../lib/types';
 import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { updateActionItemStatus } from '../lib/dataFetcher';
+import { useGoalData } from '../hooks/useGoalData';
+import { useJournalData } from '../hooks/useJournalData';
+import { ResourceSuggestion } from './ResourceSuggestion';
 
 interface SessionPrepProps {
   sessions: Session[];
@@ -13,6 +16,9 @@ interface SessionPrepProps {
 }
 
 export default function SessionPrep({ sessions, actionItems, coachName, userEmail: _userEmail, onActionUpdate }: SessionPrepProps) {
+  const { currentWeek, selfProgress } = useGoalData();
+  const { entries: journalEntries } = useJournalData();
+
   const completedSessions = sessions
     .filter(s => s.status === 'Completed')
     .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
@@ -39,8 +45,16 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   // Find most recent session with goals or plan (for showing relevant context)
   const sessionWithGoals = completedSessions.find(s => s.goals || s.plan) || null;
 
-  // Session prep intention state
-  const [intention, setIntention] = useState('');
+  // Count entries since last completed session
+  const lastSessionDate = completedSessions[0]?.session_date;
+  const entriesSinceLastSession = lastSessionDate
+    ? journalEntries.filter(e => new Date(e.created_at) > new Date(lastSessionDate)).length
+    : journalEntries.length;
+
+  // Session prep state
+  const [goalReflection, setGoalReflection] = useState('');
+  const [actionReflection, setActionReflection] = useState('');
+  const [openEnded, setOpenEnded] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
@@ -75,36 +89,49 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
     return { dayName, monthDay, time, full: `${dayName}, ${monthDay}` };
   };
 
-  // Load existing note from session_tracking
+  // Load existing note from session_tracking, parsing structured format
   useEffect(() => {
     if (upcomingSession?.employee_pre_session_note) {
-      setIntention(upcomingSession.employee_pre_session_note);
+      const note = upcomingSession.employee_pre_session_note;
+      // Try to parse structured format
+      const goalMatch = note.match(/Goal progress: ([\s\S]*?)(?=\n\nAction items:|\n\nOther:|$)/);
+      const actionMatch = note.match(/Action items: ([\s\S]*?)(?=\n\nOther:|$)/);
+      const otherMatch = note.match(/Other: ([\s\S]*?)$/);
+
+      if (goalMatch || actionMatch || otherMatch) {
+        if (goalMatch) setGoalReflection(goalMatch[1].trim());
+        if (actionMatch) setActionReflection(actionMatch[1].trim());
+        if (otherMatch) setOpenEnded(otherMatch[1].trim());
+      } else {
+        // Legacy: put entire note in open-ended
+        setOpenEnded(note);
+      }
     }
   }, [upcomingSession]);
 
-  // Save intention to session_tracking.employee_pre_session_note
-  const saveIntention = useCallback(async () => {
+  // Save all structured notes to session_tracking.employee_pre_session_note
+  const saveAllNotes = useCallback(async () => {
     if (!upcomingSession) return;
-
     setIsSaving(true);
+
+    // Combine structured answers into a single note
+    const parts: string[] = [];
+    if (goalReflection.trim()) parts.push(`Goal progress: ${goalReflection.trim()}`);
+    if (actionReflection.trim()) parts.push(`Action items: ${actionReflection.trim()}`);
+    if (openEnded.trim()) parts.push(`Other: ${openEnded.trim()}`);
+    const combinedNote = parts.join('\n\n');
 
     try {
       const { error } = await supabase
         .from('session_tracking')
-        .update({ employee_pre_session_note: intention })
+        .update({ employee_pre_session_note: combinedNote })
         .eq('id', upcomingSession.id);
-
-      if (!error) {
-        setLastSaved(new Date());
-      } else {
-        console.error('Error saving pre-session note:', error);
-      }
+      if (!error) setLastSaved(new Date());
     } catch (e) {
       console.error('Failed to save pre-session note:', e);
     }
-
     setIsSaving(false);
-  }, [upcomingSession, intention]);
+  }, [upcomingSession, goalReflection, actionReflection, openEnded]);
 
   // If no upcoming session, show a different message
   if (!upcomingSession) {
@@ -178,6 +205,31 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
           )}
         </div>
 
+        {/* Since Your Last Session */}
+        {completedSessions.length > 0 && (
+          <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-gray-100 mb-6">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Since your last session</p>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-lg font-black text-boon-text">{entriesSinceLastSession}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">Reflections</p>
+              </div>
+              <div>
+                <p className="text-lg font-black text-boon-text">
+                  {currentWeek.hasCommitment ? (currentWeek.hasMidweekCheckin || currentWeek.hasEndweekCheckin ? '✓' : '—') : '—'}
+                </p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">Check-ins</p>
+              </div>
+              <div>
+                <p className="text-lg font-black text-boon-text">
+                  {selfProgress === 'feeling_confident' ? '💪' : selfProgress === 'working_on_it' ? '🔄' : '—'}
+                </p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">Goal Status</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Prepare for your session label */}
         <p className="text-xs font-bold text-boon-blue uppercase tracking-widest mb-4">Prepare for your session</p>
 
@@ -229,20 +281,56 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
           )}
         </div>
 
-        {/* THE KEY INPUT - Session Intention */}
-        <div className="space-y-3">
-          <label className="block">
-            <span className="text-sm font-bold text-boon-text">
-              What do you want to make sure you talk about?
-            </span>
-            <span className="text-xs text-gray-400 ml-2">(optional)</span>
-          </label>
-          <textarea
-            value={intention}
-            onChange={(e) => setIntention(e.target.value)}
-            placeholder="Anything on your mind—big or small"
-            className="w-full p-5 rounded-2xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
-          />
+        {/* Guided Session Prep */}
+        <div className="space-y-4">
+          {/* Goal-specific prompt (only if they have a coaching goal) */}
+          {sessionWithGoals?.goals && (
+            <div>
+              <label className="block text-sm font-bold text-boon-text mb-2">
+                How's your goal going?
+              </label>
+              <p className="text-xs text-gray-400 mb-2 italic">"{sessionWithGoals.goals.slice(0, 100)}{sessionWithGoals.goals.length > 100 ? '...' : ''}"</p>
+              <textarea
+                value={goalReflection}
+                onChange={(e) => setGoalReflection(e.target.value)}
+                placeholder="What progress have you made? What's been challenging?"
+                className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+                rows={3}
+              />
+            </div>
+          )}
+
+          {/* Action items prompt (only if they have pending items) */}
+          {recentPendingItems.length > 0 && (
+            <div>
+              <label className="block text-sm font-bold text-boon-text mb-2">
+                Which action items do you want to discuss?
+              </label>
+              <textarea
+                value={actionReflection}
+                onChange={(e) => setActionReflection(e.target.value)}
+                placeholder="Any progress, blockers, or questions about your action items?"
+                className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[60px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+                rows={2}
+              />
+            </div>
+          )}
+
+          {/* Open-ended */}
+          <div>
+            <label className="block text-sm font-bold text-boon-text mb-2">
+              Anything else on your mind?
+            </label>
+            <textarea
+              value={openEnded}
+              onChange={(e) => setOpenEnded(e.target.value)}
+              placeholder="Big or small, what do you want to make sure you talk about?"
+              className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+              rows={3}
+            />
+          </div>
+
+          {/* Save + coach visibility note */}
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400 flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -261,24 +349,29 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
                 </span>
               )}
               <button
-                onClick={saveIntention}
-                disabled={isSaving || !intention.trim()}
+                onClick={saveAllNotes}
+                disabled={isSaving || (!goalReflection.trim() && !actionReflection.trim() && !openEnded.trim())}
                 className="px-4 py-2 bg-boon-blue text-white text-sm font-semibold rounded-xl hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {isSaving ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  'Save'
-                )}
+                {isSaving ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Resource suggestion */}
+        {sessionWithGoals && (
+          <div className="mt-6">
+            <ResourceSuggestion
+              sessionThemes={{
+                leadership: !!sessionWithGoals.leadership_management_skills,
+                communication: !!sessionWithGoals.communication_skills,
+                wellbeing: !!sessionWithGoals.mental_well_being,
+              }}
+              label="Review before your session"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

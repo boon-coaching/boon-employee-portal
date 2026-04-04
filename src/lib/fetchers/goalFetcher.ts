@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import type {
   Session,
   ActionItem,
+  Goal,
   WeeklyCommitment,
   GoalCheckin,
   CommitmentStatus,
@@ -289,6 +290,63 @@ export async function upsertGoalReflection(params: {
       });
     return !error;
   }
+}
+
+// ============================================
+// EMPLOYEE-OWNED GOALS & ACTION ITEM NOTES
+// ============================================
+
+export async function fetchEmployeeGoals(email: string): Promise<Goal[]> {
+  const { data, error } = await supabase
+    .from('goals')
+    .select('*')
+    .ilike('employee_email', email)
+    .eq('source', 'employee')
+    .in('status', ['active', 'completed'])
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching employee goals:', error);
+    return [];
+  }
+  return (data || []) as Goal[];
+}
+
+export async function createEmployeeGoal(params: {
+  email: string;
+  companyId: string;
+  title: string;
+}): Promise<Goal | null> {
+  const { data, error } = await supabase
+    .from('goals')
+    .insert({
+      employee_email: params.email,
+      company_id: params.companyId,
+      title: params.title,
+      source: 'employee',
+      status: 'active',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating employee goal:', error);
+    return null;
+  }
+  return data as Goal;
+}
+
+export async function updateActionItemNote(itemId: string, note: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('action_items')
+    .update({ employee_note: note })
+    .eq('id', itemId);
+
+  if (error) {
+    console.error('Error updating action item note:', error);
+    return false;
+  }
+  return true;
 }
 
 // ============================================

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useAuth } from '../lib/AuthContext';
-import type { Session, ActionItem, WeeklyCommitment, GoalCheckin, CommitmentStatus, CheckinType } from '../lib/types';
+import type { Session, ActionItem, Goal, WeeklyCommitment, GoalCheckin, CommitmentStatus, CheckinType } from '../lib/types';
 import {
   type CoachingGoal,
   getLatestCoachingGoal,
@@ -15,6 +15,8 @@ import {
   getWeekStart,
   fetchGoalReflection,
   upsertGoalReflection,
+  fetchEmployeeGoals,
+  createEmployeeGoal,
 } from '../lib/fetchers/goalFetcher';
 
 export interface GoalData {
@@ -41,6 +43,10 @@ export interface GoalData {
   selfProgress: string | null;
   updateReflection: (text: string) => Promise<void>;
   updateSelfProgress: (status: string) => Promise<void>;
+
+  // Employee-owned goals
+  employeeGoals: Goal[];
+  addEmployeeGoal: (title: string) => Promise<Goal | null>;
 
   // Actions
   addCommitment: (commitmentText: string) => Promise<WeeklyCommitment | null>;
@@ -79,6 +85,9 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     commitment: null,
   });
 
+  // Employee-owned goals
+  const [employeeGoals, setEmployeeGoals] = useState<Goal[]>([]);
+
   // Reflection & self-progress
   const [reflection, setReflection] = useState<string | null>(null);
   const [selfProgress, setSelfProgress] = useState<string | null>(null);
@@ -90,14 +99,16 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     setError(null);
 
     try {
-      const [commitmentsData, weekStatus, reflectionData] = await Promise.all([
+      const [commitmentsData, weekStatus, reflectionData, empGoals] = await Promise.all([
         fetchWeeklyCommitments(employee.company_email),
         getCurrentWeekCommitmentStatus(employee.company_email),
         fetchGoalReflection(employee.company_email),
+        fetchEmployeeGoals(employee.company_email),
       ]);
 
       setCommitments(commitmentsData);
       setCurrentWeek(weekStatus);
+      setEmployeeGoals(empGoals);
 
       if (reflectionData) {
         setReflection(reflectionData.reflection);
@@ -242,6 +253,25 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     if (success) setSelfProgress(status);
   }, [employee?.company_email, employee?.company_id, coachingGoal?.goals]);
 
+  const addEmployeeGoal = useCallback(async (title: string): Promise<Goal | null> => {
+    if (!employee?.company_email) return null;
+    const companyId = employee.company_id || '';
+    try {
+      const newGoal = await createEmployeeGoal({
+        email: employee.company_email,
+        companyId,
+        title,
+      });
+      if (newGoal) {
+        setEmployeeGoals(prev => [newGoal, ...prev]);
+      }
+      return newGoal;
+    } catch (err) {
+      console.error('[useGoalData] Error adding employee goal:', err);
+      return null;
+    }
+  }, [employee?.company_email, employee?.company_id]);
+
   const reload = useCallback(async () => {
     await loadCommitmentData();
   }, [loadCommitmentData]);
@@ -252,6 +282,8 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     coachingGoal,
     goalHistory,
     pendingActionItems,
+    employeeGoals,
+    addEmployeeGoal,
     commitments,
     checkins,
     currentWeek,

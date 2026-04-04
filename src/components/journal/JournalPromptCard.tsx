@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useJournalData } from '../../hooks/useJournalData';
+import { ResourceSuggestion } from '../ResourceSuggestion';
 
 interface JournalPromptCardProps {
   compact?: boolean;
@@ -23,6 +24,7 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
   const [shareWithCoach, setShareWithCoach] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedCompetency, setSavedCompetency] = useState<string | null>(null);
 
   async function handleSave() {
     if (!body.trim()) return;
@@ -35,6 +37,7 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
         const { updateJournalEntry } = await import('../../lib/fetchers/journalFetcher');
         await updateJournalEntry(entry.id, { is_shared_with_coach: true });
       }
+      setSavedCompetency(competencyArea || null);
       setBody('');
       setCompetencyArea('');
       setShareWithCoach(false);
@@ -172,9 +175,16 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
       </button>
 
       {saved && !compact && (
-        <p className="mt-3 text-sm text-emerald-600 font-medium text-center">
-          Reflection saved
-        </p>
+        <div className="mt-3">
+          <p className="text-sm text-emerald-600 font-medium text-center">
+            Reflection saved
+          </p>
+          {savedCompetency && (
+            <div className="mt-3">
+              <ResourceSuggestion competencyArea={savedCompetency} label="Related resource" />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

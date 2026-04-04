@@ -4,8 +4,10 @@ import { toast } from 'sonner';
 import { useGoalData } from '../../hooks/useGoalData';
 import { usePortalData } from '../ProtectedLayout';
 import { updateActionItemStatus } from '../../lib/dataFetcher';
+import { updateActionItemNote } from '../../lib/fetchers/goalFetcher';
 import { CommitmentInput } from './CommitmentInput';
 import { CheckinModal } from './CheckinModal';
+import { ResourceSuggestion } from '../ResourceSuggestion';
 import { SCENARIOS } from '../../data/scenarios';
 
 function findMatchingScenario(actionText: string) {
@@ -27,12 +29,14 @@ function formatWeekLabel(weekStart: string): string {
 export default function GoalTracker() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { reloadActionItems } = usePortalData();
+  const { reloadActionItems, sessions } = usePortalData();
   const {
     loading,
     coachingGoal,
     goalHistory,
     pendingActionItems,
+    employeeGoals,
+    addEmployeeGoal,
     currentWeek,
     commitments,
     addCommitment,
@@ -49,6 +53,15 @@ export default function GoalTracker() {
   const [reflectionText, setReflectionText] = useState(reflection || '');
   const [reflectionSaved, setReflectionSaved] = useState(false);
   const reflectionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Employee goals state
+  const [newGoalText, setNewGoalText] = useState('');
+  const [addingGoal, setAddingGoal] = useState(false);
+
+  // Action item notes state
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+  const [noteTexts, setNoteTexts] = useState<Record<string, string>>({});
+  const [_savingNote, setSavingNote] = useState<string | null>(null);
 
   // Sync when reflection loads
   useEffect(() => {
@@ -107,6 +120,19 @@ export default function GoalTracker() {
     } else {
       toast.error('Could not save commitment');
     }
+  }
+
+  async function handleAddEmployeeGoal() {
+    if (!newGoalText.trim() || addingGoal) return;
+    setAddingGoal(true);
+    const result = await addEmployeeGoal(newGoalText.trim());
+    if (result) {
+      toast.success('Goal added');
+      setNewGoalText('');
+    } else {
+      toast.error('Could not add goal');
+    }
+    setAddingGoal(false);
   }
 
   async function handleCheckinSubmit(rating: number, reflectionText?: string, blockers?: string) {
@@ -221,6 +247,17 @@ export default function GoalTracker() {
         </div>
       </section>
 
+      {/* Resource for this goal */}
+      {coachingGoal && (() => {
+        const recentCompleted = sessions.filter(s => s.status === 'Completed').slice(0, 3);
+        const themes = {
+          leadership: recentCompleted.some(s => !!s.leadership_management_skills),
+          communication: recentCompleted.some(s => !!s.communication_skills),
+          wellbeing: recentCompleted.some(s => !!s.mental_well_being),
+        };
+        return <ResourceSuggestion sessionThemes={themes} label="Resource for this goal" />;
+      })()}
+
       {/* Employee Reflection */}
       {coachingGoal && (
         <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
@@ -250,6 +287,54 @@ export default function GoalTracker() {
           <p className="text-xs text-gray-400 mt-2">Your coach can see this reflection before your next session.</p>
         </section>
       )}
+
+      {/* Your Own Goals */}
+      <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 rounded-xl bg-cyan-500 flex items-center justify-center">
+            <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">Your Own Goals</span>
+        </div>
+
+        <p className="text-sm text-gray-500 mb-4">Is there something else you want to work on? Your coach will see these.</p>
+
+        {/* Existing employee goals */}
+        {employeeGoals.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {employeeGoals.map(g => (
+              <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl bg-cyan-50/50 border border-cyan-100">
+                <svg className="w-4 h-4 text-cyan-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                </svg>
+                <span className="text-sm text-boon-text">{g.title}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add new goal */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newGoalText}
+            onChange={(e) => setNewGoalText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddEmployeeGoal()}
+            placeholder="e.g., Improve my presentation skills"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 transition-all"
+            disabled={addingGoal}
+          />
+          <button
+            onClick={handleAddEmployeeGoal}
+            disabled={addingGoal || !newGoalText.trim()}
+            className="px-5 py-2.5 bg-cyan-500 text-white rounded-xl font-bold text-xs hover:bg-cyan-600 transition-all disabled:opacity-50"
+          >
+            {addingGoal ? '...' : 'Add'}
+          </button>
+        </div>
+      </section>
 
       {/* 2. Action Items (from coach) */}
       {pendingActionItems.length > 0 && (
@@ -296,6 +381,38 @@ export default function GoalTracker() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </button>
+                    )}
+                    {!isCompleted && (
+                      <div className="mt-1">
+                        {expandedNoteId === item.id ? (
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              type="text"
+                              value={noteTexts[item.id] ?? item.employee_note ?? ''}
+                              onChange={(e) => setNoteTexts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                              placeholder="Add a note..."
+                              className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-boon-blue"
+                              onBlur={async () => {
+                                const note = noteTexts[item.id];
+                                if (note !== undefined) {
+                                  setSavingNote(item.id);
+                                  await updateActionItemNote(item.id, note);
+                                  setSavingNote(null);
+                                }
+                                setExpandedNoteId(null);
+                              }}
+                              autoFocus
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpandedNoteId(item.id); }}
+                            className="text-[10px] text-gray-400 hover:text-gray-500 font-medium"
+                          >
+                            {item.employee_note ? `\u{1F4DD} ${item.employee_note}` : '+ Add note'}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </label>

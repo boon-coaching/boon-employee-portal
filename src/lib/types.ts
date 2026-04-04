@@ -223,6 +223,7 @@ export interface ActionItem {
   action_text: string;
   due_date: string | null;
   status: 'pending' | 'completed' | 'dismissed';
+  employee_note: string | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -490,6 +491,7 @@ export interface Goal {
   title: string;
   description: string | null;
   competency_area: string | null;
+  source: 'coach' | 'employee' | null;
   status: GoalStatus;
   self_progress: SelfProgress | null;
   created_at: string;
