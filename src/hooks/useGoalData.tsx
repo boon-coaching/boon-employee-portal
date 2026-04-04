@@ -13,6 +13,8 @@ import {
   fetchGoalCheckins,
   getCurrentWeekCommitmentStatus,
   getWeekStart,
+  fetchGoalReflection,
+  upsertGoalReflection,
 } from '../lib/fetchers/goalFetcher';
 
 export interface GoalData {
@@ -33,6 +35,12 @@ export interface GoalData {
     hasEndweekCheckin: boolean;
     commitment: WeeklyCommitment | null;
   };
+
+  // Employee reflection & self-progress
+  reflection: string | null;
+  selfProgress: string | null;
+  updateReflection: (text: string) => Promise<void>;
+  updateSelfProgress: (status: string) => Promise<void>;
 
   // Actions
   addCommitment: (commitmentText: string) => Promise<WeeklyCommitment | null>;
@@ -71,6 +79,10 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     commitment: null,
   });
 
+  // Reflection & self-progress
+  const [reflection, setReflection] = useState<string | null>(null);
+  const [selfProgress, setSelfProgress] = useState<string | null>(null);
+
   const loadCommitmentData = useCallback(async () => {
     if (!employee?.company_email) return;
 
@@ -78,13 +90,19 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     setError(null);
 
     try {
-      const [commitmentsData, weekStatus] = await Promise.all([
+      const [commitmentsData, weekStatus, reflectionData] = await Promise.all([
         fetchWeeklyCommitments(employee.company_email),
         getCurrentWeekCommitmentStatus(employee.company_email),
+        fetchGoalReflection(employee.company_email),
       ]);
 
       setCommitments(commitmentsData);
       setCurrentWeek(weekStatus);
+
+      if (reflectionData) {
+        setReflection(reflectionData.reflection);
+        setSelfProgress(reflectionData.selfProgress);
+      }
 
       if (weekStatus.commitment) {
         const checkinsData = await fetchGoalCheckins(
@@ -200,6 +218,30 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     }
   }, [employee?.company_email, employee?.company_id]);
 
+  const updateReflection = useCallback(async (text: string) => {
+    if (!employee?.company_email) return;
+    const goalText = coachingGoal?.goals || '';
+    const success = await upsertGoalReflection({
+      email: employee.company_email,
+      companyId: employee.company_id || '',
+      goalText,
+      reflection: text,
+    });
+    if (success) setReflection(text);
+  }, [employee?.company_email, employee?.company_id, coachingGoal?.goals]);
+
+  const updateSelfProgress = useCallback(async (status: string) => {
+    if (!employee?.company_email) return;
+    const goalText = coachingGoal?.goals || '';
+    const success = await upsertGoalReflection({
+      email: employee.company_email,
+      companyId: employee.company_id || '',
+      goalText,
+      selfProgress: status,
+    });
+    if (success) setSelfProgress(status);
+  }, [employee?.company_email, employee?.company_id, coachingGoal?.goals]);
+
   const reload = useCallback(async () => {
     await loadCommitmentData();
   }, [loadCommitmentData]);
@@ -213,6 +255,10 @@ export function GoalProvider({ children, sessions, actionItems }: GoalProviderPr
     commitments,
     checkins,
     currentWeek,
+    reflection,
+    selfProgress,
+    updateReflection,
+    updateSelfProgress,
     addCommitment,
     updateCommitment,
     submitCheckin,

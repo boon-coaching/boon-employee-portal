@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { usePortalData } from './ProtectedLayout';
+import { useResources } from '../hooks/useResources';
 
 interface Resource {
   id: string;
@@ -17,6 +19,17 @@ export function ResourceDetail() {
   const [error, setError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeHeight, setIframeHeight] = useState(800);
+
+  const data = usePortalData();
+  const email = data.employee?.company_email;
+  const { focusAreas, lowCompetencyNames } = useResources(email, data.competencyScores);
+
+  const matchingCompetency = useMemo(() => {
+    if (!resource?.competencies) return null;
+    const focusAreaNames = focusAreas.map(f => f.focus_area_name);
+    const allRelevant = [...new Set([...focusAreaNames, ...lowCompetencyNames])];
+    return resource.competencies.find(c => allRelevant.includes(c)) || null;
+  }, [resource, focusAreas, lowCompetencyNames]);
 
   useEffect(() => {
     if (!id) return;
@@ -113,6 +126,14 @@ export function ResourceDetail() {
           </div>
         )}
       </div>
+
+      {matchingCompetency && (
+        <div className="mb-4 px-4 py-3 bg-boon-lightBlue/30 border border-boon-blue/10 rounded-xl">
+          <p className="text-sm text-boon-blue font-medium">
+            Recommended because you're working on {matchingCompetency}
+          </p>
+        </div>
+      )}
 
       {/* Iframe */}
       {resource.body_html && (

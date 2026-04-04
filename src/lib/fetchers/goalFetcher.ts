@@ -230,6 +230,68 @@ export async function createGoalCheckin(checkin: {
 }
 
 // ============================================
+// GOAL REFLECTION & SELF-PROGRESS
+// ============================================
+
+export async function fetchGoalReflection(email: string): Promise<{
+  reflection: string | null;
+  selfProgress: string | null;
+} | null> {
+  const { data, error } = await supabase
+    .from('goals')
+    .select('description, self_progress')
+    .ilike('employee_email', email)
+    .eq('status', 'active')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error || !data) return null;
+  return { reflection: data.description, selfProgress: data.self_progress };
+}
+
+export async function upsertGoalReflection(params: {
+  email: string;
+  companyId: string;
+  goalText: string;
+  reflection?: string;
+  selfProgress?: string;
+}): Promise<boolean> {
+  // Check if a goal record exists for this employee
+  const { data: existing } = await supabase
+    .from('goals')
+    .select('id')
+    .ilike('employee_email', params.email)
+    .eq('status', 'active')
+    .limit(1)
+    .single();
+
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (params.reflection !== undefined) updates.description = params.reflection;
+  if (params.selfProgress !== undefined) updates.self_progress = params.selfProgress;
+
+  if (existing) {
+    const { error } = await supabase
+      .from('goals')
+      .update(updates)
+      .eq('id', existing.id);
+    return !error;
+  } else {
+    const { error } = await supabase
+      .from('goals')
+      .insert({
+        employee_email: params.email,
+        company_id: params.companyId,
+        title: params.goalText,
+        description: params.reflection || null,
+        self_progress: params.selfProgress || 'not_started',
+        status: 'active',
+      });
+    return !error;
+  }
+}
+
+// ============================================
 // HELPERS
 // ============================================
 

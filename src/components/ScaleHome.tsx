@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import type { Employee, Session, ActionItem, BaselineSurvey, WelcomeSurveyScale, Coach } from '../lib/types';
 import type { ScaleCheckpointStatus } from '../lib/types';
 import type { ProgramConfig } from '../lib/dataFetcher';
-import { updateActionItemStatus } from '../lib/dataFetcher';
+import { updateActionItemStatus, fetchCoachByName } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
-import CoachProfile from './CoachProfile';
 import { GoalHomeCard } from './goals/GoalHomeCard';
 import { PracticePrompt } from './PracticePrompt';
 
@@ -29,7 +29,7 @@ export default function ScaleHome({
   sessions,
   actionItems,
   baseline: _baseline,
-  welcomeSurveyScale,
+  welcomeSurveyScale: _welcomeSurveyScale,
   checkpointStatus,
   onActionUpdate,
   userEmail,
@@ -40,8 +40,10 @@ export default function ScaleHome({
 }: ScaleHomeProps) {
   // Unused props reserved for future use
   void _baseline;
+  void _welcomeSurveyScale;
 
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
+  const [coachProfile, setCoachProfile] = useState<Coach | null>(null);
 
   const completedSessions = sessions
     .filter(s => s.status === 'Completed')
@@ -71,6 +73,17 @@ export default function ScaleHome({
   // Get current focus from latest checkpoint
   const currentFocus = checkpointStatus.latestCheckpoint?.focus_area;
 
+  // Fetch coach profile for the compact card
+  useEffect(() => {
+    const name = completedSessions[0]?.coach_name || upcomingSession?.coach_name;
+    if (name && name !== 'Your Coach') {
+      fetchCoachByName(name).then(c => setCoachProfile(c));
+    }
+  }, [completedSessions, upcomingSession]);
+
+  const coachName = completedSessions[0]?.coach_name || upcomingSession?.coach_name || null;
+  const coachPhotoUrl = coachProfile?.photo_url || (coachName ? `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200` : null);
+
   // Toggle action item status
   async function handleToggleAction(itemId: string, currentStatus: string) {
     setUpdatingItem(itemId);
@@ -99,6 +112,32 @@ export default function ScaleHome({
 
       {/* Goal Accountability Card */}
       <GoalHomeCard />
+
+      {/* Coach Card - compact inline */}
+      {coachName && (
+        <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-4">
+            <img
+              src={coachPhotoUrl!}
+              alt={coachName}
+              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-boon-text text-sm">{coachName}</p>
+              {coachProfile?.headline && (
+                <p className="text-xs text-gray-500 truncate">{coachProfile.headline}</p>
+              )}
+              <p className="text-xs text-gray-400">{completedSessions.length} {completedSessions.length === 1 ? 'session' : 'sessions'} together</p>
+            </div>
+            <Link
+              to="/coach"
+              className="text-xs font-semibold text-boon-blue hover:text-boon-darkBlue transition-colors flex-shrink-0"
+            >
+              View profile
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Session Progress - PEPM clients with session caps */}
       {showSessionProgress && (
@@ -342,17 +381,7 @@ export default function ScaleHome({
       {/* 4. Practice Prompt - above Coach */}
       <PracticePrompt sessions={sessions} competencyScores={[]} />
 
-      {/* 5. Coach Card */}
-      {lastSession && (
-        <CoachProfile
-          sessions={sessions}
-          coachName={lastSession.coach_name}
-          programType="SCALE"
-          employeeId={profile?.id || null}
-          userEmail={userEmail}
-          welcomeSurveyScale={welcomeSurveyScale}
-        />
-      )}
+      {/* Full coach profile is now at /coach; compact card shown above */}
     </div>
   );
 }

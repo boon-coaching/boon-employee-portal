@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
 interface Resource {
@@ -39,11 +39,12 @@ interface UseResourcesReturn {
   resources: Resource[];
   tags: ResourceTag[];
   focusAreas: FocusArea[];
+  lowCompetencyNames: string[];
   loading: boolean;
   error: string | null;
 }
 
-export function useResources(email: string | undefined): UseResourcesReturn {
+export function useResources(email: string | undefined, competencyScores?: { competency_name: string; score: number }[]): UseResourcesReturn {
   const [resources, setResources] = useState<Resource[]>([]);
   const [tags, setTags] = useState<ResourceTag[]>([]);
   const [focusAreas, setFocusAreas] = useState<FocusArea[]>([]);
@@ -103,5 +104,13 @@ export function useResources(email: string | undefined): UseResourcesReturn {
     return () => { cancelled = true; };
   }, [email]);
 
-  return { resources, tags, focusAreas, loading, error };
+  const lowCompetencyNames = useMemo(() => {
+    if (!competencyScores || competencyScores.length === 0) return [];
+    return [...competencyScores]
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3)
+      .map(c => c.competency_name);
+  }, [competencyScores]);
+
+  return { resources, tags, focusAreas, lowCompetencyNames, loading, error };
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useGoalData } from '../../hooks/useGoalData';
@@ -28,11 +28,40 @@ export default function GoalTracker() {
     commitments,
     addCommitment,
     submitCheckin,
+    reflection,
+    selfProgress,
+    updateReflection,
+    updateSelfProgress,
   } = useGoalData();
 
   const [checkinModal, setCheckinModal] = useState<'midweek' | 'endweek' | null>(null);
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [reflectionText, setReflectionText] = useState(reflection || '');
+  const [reflectionSaved, setReflectionSaved] = useState(false);
+  const reflectionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync when reflection loads
+  useEffect(() => {
+    if (reflection !== null) setReflectionText(reflection);
+  }, [reflection]);
+
+  function handleReflectionChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const text = e.target.value;
+    setReflectionText(text);
+    setReflectionSaved(false);
+    if (reflectionTimer.current) clearTimeout(reflectionTimer.current);
+    reflectionTimer.current = setTimeout(async () => {
+      await updateReflection(text);
+      setReflectionSaved(true);
+      setTimeout(() => setReflectionSaved(false), 2000);
+    }, 1000);
+  }
+
+  async function handleSelfProgress(status: string) {
+    await updateSelfProgress(status);
+    toast.success(status === 'feeling_confident' ? 'Great progress!' : 'Updated');
+  }
 
   // Auto-open check-in from nudge deep link
   useEffect(() => {
@@ -145,7 +174,65 @@ export default function GoalTracker() {
             <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{coachingGoal.plan}</p>
           </div>
         )}
+
+        {/* Self-progress indicator */}
+        <div className="mt-5 pt-5 border-t border-blue-100/50">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">How do you feel about this goal?</p>
+          <div className="flex gap-2">
+            {[
+              { value: 'not_started', label: 'Not started yet', color: 'gray' },
+              { value: 'working_on_it', label: 'Working on it', color: 'amber' },
+              { value: 'feeling_confident', label: 'Feeling confident', color: 'emerald' },
+            ].map(opt => {
+              const isActive = selfProgress === opt.value;
+              const colorMap: Record<string, string> = {
+                gray: isActive ? 'bg-gray-200 text-gray-700 border-gray-300' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300',
+                amber: isActive ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-gray-400 border-gray-200 hover:border-amber-300',
+                emerald: isActive ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-gray-400 border-gray-200 hover:border-emerald-300',
+              };
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleSelfProgress(opt.value)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${colorMap[opt.color]}`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </section>
+
+      {/* Employee Reflection */}
+      {coachingGoal && (
+        <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center">
+              <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Your Reflection</span>
+            {reflectionSaved && (
+              <span className="ml-auto text-xs text-emerald-500 font-medium flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Saved
+              </span>
+            )}
+          </div>
+          <textarea
+            value={reflectionText}
+            onChange={handleReflectionChange}
+            placeholder="How are you thinking about this goal? What's working, what's hard?"
+            className="w-full p-4 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all min-h-[100px]"
+            rows={4}
+          />
+          <p className="text-xs text-gray-400 mt-2">Your coach can see this reflection before your next session.</p>
+        </section>
+      )}
 
       {/* 2. Action Items (from coach) */}
       {pendingActionItems.length > 0 && (

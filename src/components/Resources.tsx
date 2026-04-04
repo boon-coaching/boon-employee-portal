@@ -60,7 +60,7 @@ export default function Resources() {
   const navigate = useNavigate();
   const data = usePortalData();
   const email = data.employee?.company_email;
-  const { resources, tags, focusAreas, loading, error } = useResources(email);
+  const { resources, tags, focusAreas, lowCompetencyNames, loading, error } = useResources(email, data.competencyScores);
 
   const [activeTopics, setActiveTopics] = useState<string[]>([]);
   const [activeType, setActiveType] = useState<string | null>(null);
@@ -78,11 +78,12 @@ export default function Resources() {
   const focusAreaNames = useMemo(() => focusAreas.map(f => f.focus_area_name), [focusAreas]);
 
   const recommendedResources = useMemo(() => {
-    if (focusAreaNames.length === 0) return [];
+    const allRelevantAreas = [...new Set([...focusAreaNames, ...lowCompetencyNames])];
+    if (allRelevantAreas.length === 0) return [];
     return resources.filter(r =>
-      r.competencies?.some(c => focusAreaNames.includes(c))
+      r.competencies?.some(c => allRelevantAreas.includes(c))
     );
-  }, [resources, focusAreaNames]);
+  }, [resources, focusAreaNames, lowCompetencyNames]);
 
   // Filter logic
   const filteredResources = useMemo(() => {
@@ -168,7 +169,7 @@ export default function Resources() {
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Recommended for You</h2>
             <span
               className="text-gray-300 cursor-help"
-              title="Based on the focus areas you selected during your welcome survey"
+              title="Based on your coaching focus areas and competency scores"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -195,11 +196,14 @@ export default function Resources() {
                   )}
                   {r.competencies?.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
-                      {r.competencies.slice(0, 2).map(c => (
-                        <span key={c} className="text-[10px] font-bold text-boon-blue/70 uppercase tracking-widest">
-                          {c}
-                        </span>
-                      ))}
+                      {r.competencies.slice(0, 2).map(c => {
+                        const isGrowthArea = lowCompetencyNames.includes(c);
+                        return (
+                          <span key={c} className={`text-[10px] font-bold uppercase tracking-widest ${isGrowthArea ? 'text-amber-600' : 'text-boon-blue/70'}`}>
+                            {isGrowthArea ? `\u2191 ${c}` : c}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </>
