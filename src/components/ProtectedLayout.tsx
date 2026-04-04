@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { useEmployeeData, type EmployeeData } from '../hooks/useEmployeeData';
+import { GoalProvider } from '../hooks/useGoalData';
 import NoEmployeeFound from '../pages/NoEmployeeFound';
 import WelcomePage from '../pages/WelcomePage';
 import Layout from './Layout';
@@ -161,6 +162,7 @@ export function ProtectedLayout() {
     : null;
 
   return (
+    <GoalProvider>
     <Layout coachingState={data.coachingState}>
       <Outlet context={data} />
 
@@ -221,5 +223,6 @@ export function ProtectedLayout() {
         onProgramTypeOverride={data.setProgramTypeOverride}
       />
     </Layout>
+    </GoalProvider>
   );
 }

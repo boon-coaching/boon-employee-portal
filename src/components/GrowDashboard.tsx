@@ -8,6 +8,7 @@ const devLog = (...args: unknown[]) => {
 };
 import type { CoachingStateData } from '../lib/coachingState';
 import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
+import { GoalHomeCard } from './goals/GoalHomeCard';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus, fetchMatchSummary } from '../lib/dataFetcher';
 import ProgramProgressCard from './ProgramProgressCard';
@@ -283,6 +284,9 @@ export default function GrowDashboard({
           </p>
         </div>
       </header>
+
+      {/* Goal Accountability Card */}
+      <GoalHomeCard />
 
       {/* ═══════════════════════════════════════════════════════════════════
           BOOK YOUR NEXT SESSION - HERO CTA when no upcoming session

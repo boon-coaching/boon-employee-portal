@@ -5,6 +5,7 @@ import type { CoachingStateData } from '../lib/coachingState';
 import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName } from '../lib/dataFetcher';
+import { GoalHomeCard } from './goals/GoalHomeCard';
 
 interface ActiveGrowHomeProps {
   profile: Employee | null;
@@ -272,6 +273,9 @@ export default function ActiveGrowHome({
           </a>
         )}
       </header>
+
+      {/* Goal Accountability Card */}
+      <GoalHomeCard />
 
       {/* ═══════════════════════════════════════════════════════════════════
           CURRENT FOCUS - THE HEADLINE (moved to top)

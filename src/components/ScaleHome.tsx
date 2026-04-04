@@ -7,6 +7,7 @@ import { updateActionItemStatus } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
 import CoachProfile from './CoachProfile';
+import { GoalHomeCard } from './goals/GoalHomeCard';
 
 interface ScaleHomeProps {
   profile: Employee | null;
@@ -91,6 +92,9 @@ export default function ScaleHome({
           </p>
         </div>
       </header>
+
+      {/* Goal Accountability Card */}
+      <GoalHomeCard />
 
       {/* Session Progress - PEPM clients with session caps */}
       {showSessionProgress && (

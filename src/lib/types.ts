@@ -470,3 +470,74 @@ export interface GrowEndFormData {
   outcomes: string;
   open_to_testimonial: boolean;
 }
+
+// ============================================
+// GOALS & ACCOUNTABILITY SYSTEM
+// ============================================
+
+export type GoalStatus = 'active' | 'completed' | 'paused' | 'archived';
+export type CommitmentStatus = 'active' | 'completed' | 'partial' | 'missed';
+export type CheckinType = 'midweek' | 'endweek' | 'adhoc';
+
+export interface Goal {
+  id: string;
+  employee_email: string;
+  company_id: string;
+  title: string;
+  description: string | null;
+  competency_area: string | null;
+  status: GoalStatus;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface WeeklyCommitment {
+  id: string;
+  employee_email: string;
+  company_id: string;
+  goal_id: string;
+  commitment_text: string;
+  week_start: string;
+  status: CommitmentStatus;
+  reflection_text: string | null;
+  created_at: string;
+}
+
+export interface GoalCheckin {
+  id: string;
+  employee_email: string;
+  company_id: string;
+  commitment_id: string;
+  checkin_type: CheckinType;
+  progress_rating: number | null;
+  reflection_text: string | null;
+  blockers: string | null;
+  created_at: string;
+}
+
+export interface FocusAreaSelection {
+  id: string;
+  email: string;
+  focus_area_name: string;
+  focus_area_category: string;
+  selected: boolean;
+  is_primary: boolean;
+  company_id: string | null;
+}
+
+// Competency display labels (short versions for tags)
+export const COMPETENCY_TAG_LABELS: Record<string, string> = {
+  'Adaptability & Resilience': 'Adaptability',
+  'Building Relationships at Work': 'Relationships',
+  'Change Management': 'Change Mgmt',
+  'Delegation & Accountability': 'Delegation',
+  'Effective Communication': 'Communication',
+  'Effective Planning & Execution': 'Execution',
+  'Emotional Intelligence': 'EQ',
+  'Giving & Receiving Feedback': 'Feedback',
+  'Persuasion & Influence': 'Influence',
+  'Self-Confidence & Imposter Syndrome': 'Confidence',
+  'Strategic Thinking': 'Strategy',
+  'Time Management & Productivity': 'Time Mgmt',
+};

@@ -378,6 +378,7 @@ Deno.serve(async (req) => {
     daily_digests_sent: 0,
     weekly_digests_sent: 0,
     goal_checkins_sent: 0,
+    goal_commitment_checkins_sent: 0,
     session_preps_sent: 0,
     errors: 0,
   };
@@ -919,6 +920,145 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ============================================
+    // 5. GOAL COMMITMENT CHECK-INS (Wednesday midweek, Friday endweek)
+    // Reminds employees to check in on their weekly goal commitments
+    // ============================================
+    const isMidweekDay = dayOfWeek === 3; // Wednesday
+    const isEndweekDay = dayOfWeek === 5; // Friday
+    const checkinType = isMidweekDay ? 'midweek' : isEndweekDay ? 'endweek' : null;
+
+    if (checkinType) {
+      // Get current week's Monday
+      const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - mondayOffset);
+      const weekStartStr = monday.toISOString().split('T')[0];
+
+      // Find employees with active commitments this week
+      const { data: activeCommitments } = await supabase
+        .from('weekly_commitments')
+        .select('id, employee_email, commitment_text, goal_id')
+        .eq('week_start', weekStartStr)
+        .eq('status', 'active');
+
+      if (activeCommitments && activeCommitments.length > 0) {
+        console.log(`Found ${activeCommitments.length} active commitments for ${checkinType} check-in`);
+
+        for (const commitment of activeCommitments) {
+          try {
+            const email = commitment.employee_email;
+            if (!email) continue;
+
+            // Check if this check-in type already exists for this commitment
+            const { data: existingCheckin } = await supabase
+              .from('goal_checkins')
+              .select('id')
+              .eq('commitment_id', commitment.id)
+              .eq('checkin_type', checkinType)
+              .single();
+
+            if (existingCheckin) continue; // Already checked in
+
+            // Check if we already nudged for this commitment + type
+            const { data: existingNudge } = await supabase
+              .from('nudges')
+              .select('id')
+              .eq('employee_email', email.toLowerCase())
+              .eq('nudge_type', `goal_${checkinType}_checkin`)
+              .eq('reference_id', commitment.id)
+              .single();
+
+            if (existingNudge) continue;
+
+            // Get messaging connection
+            const { data: connData } = await supabase.rpc('get_employee_messaging_connection', {
+              lookup_email: email,
+            });
+
+            if (!connData || connData.length === 0) continue;
+            const conn: MessagingConnection = connData[0];
+
+            if (!isAppropriateTime(conn.preferred_time, conn.timezone)) continue;
+
+            // Get employee first name
+            const { data: empData } = await supabase
+              .from('employee_manager')
+              .select('first_name')
+              .ilike('company_email', email)
+              .single();
+
+            const firstName = empData?.first_name || 'there';
+            const portalUrl = Deno.env.get('PORTAL_URL') || 'https://portal.booncoaching.com';
+            const checkinUrl = `${portalUrl}/goals?checkin=${checkinType}`;
+
+            const isMidweek = checkinType === 'midweek';
+            const heading = isMidweek ? 'Midweek Check-in' : 'End of Week Reflection';
+            const prompt = isMidweek
+              ? `How's your commitment going this week?`
+              : `How did this week go?`;
+
+            const slackBlocks = [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Hey ${firstName}!* :dart:\n\n*${heading}*\n\nYour commitment this week: _"${commitment.commitment_text}"_\n\n${prompt}`,
+                },
+              },
+              {
+                type: 'actions',
+                elements: [
+                  {
+                    type: 'button',
+                    text: { type: 'plain_text', text: isMidweek ? "How's it going?" : 'Reflect on your week' },
+                    url: checkinUrl,
+                    style: 'primary',
+                  },
+                ],
+              },
+            ];
+
+            const teamsCard: Record<string, unknown> = {
+              type: 'AdaptiveCard',
+              $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+              version: '1.4',
+              body: [
+                { type: 'TextBlock', text: heading, weight: 'Bolder', size: 'Medium', color: 'Accent' },
+                { type: 'TextBlock', text: `Hey ${firstName}! ${prompt}`, wrap: true },
+                { type: 'TextBlock', text: `Your commitment: "${commitment.commitment_text}"`, wrap: true, isSubtle: true, spacing: 'Small' },
+              ],
+              actions: [
+                { type: 'Action.OpenUrl', title: isMidweek ? "How's it going?" : 'Reflect on your week', url: checkinUrl },
+              ],
+            };
+
+            const result = await sendNudge(conn, slackBlocks, teamsCard, `${heading}: ${prompt}`);
+
+            if (result.ok && result.messageId) {
+              await supabase.from('nudges').insert({
+                employee_email: email.toLowerCase(),
+                nudge_type: `goal_${checkinType}_checkin`,
+                reference_id: commitment.id,
+                reference_type: 'commitment',
+                message_id: result.messageId,
+                channel_id: result.channelId,
+                channel: conn.channel,
+              });
+
+              results.goal_commitment_checkins_sent++;
+              console.log(`Sent goal ${checkinType} check-in via ${conn.channel} to ${email}`);
+            } else {
+              results.errors++;
+            }
+          } catch (error) {
+            console.error('Error processing goal commitment check-in:', error);
+            results.errors++;
+          }
+        }
+      }
+    }
+
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
     console.log('='.repeat(40));
@@ -926,6 +1066,7 @@ Deno.serve(async (req) => {
     console.log(`Daily digests sent: ${results.daily_digests_sent}`);
     console.log(`Weekly digests sent: ${results.weekly_digests_sent}`);
     console.log(`Goal check-ins sent: ${results.goal_checkins_sent}`);
+    console.log(`Goal commitment check-ins sent: ${results.goal_commitment_checkins_sent}`);
     console.log(`Session preps sent: ${results.session_preps_sent}`);
     console.log(`Errors: ${results.errors}`);
     console.log(`Duration: ${duration}s`);
