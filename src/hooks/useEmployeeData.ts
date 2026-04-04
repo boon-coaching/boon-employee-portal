@@ -346,6 +346,7 @@ export function useEmployeeData(): EmployeeData {
     created_at: new Date().toISOString(),
     zoom_join_link: 'https://zoom.us/j/123456789',
     employee_pre_session_note: null,
+    employee_notes: null,
   };
 
   const mockCompletedSessions: Session[] = Array.from({ length: 6 }, (_, i) => ({
@@ -377,6 +378,7 @@ export function useEmployeeData(): EmployeeData {
     created_at: new Date().toISOString(),
     zoom_join_link: null,
     employee_pre_session_note: null,
+    employee_notes: null,
   }));
 
   const mockBaseline: BaselineSurvey = {

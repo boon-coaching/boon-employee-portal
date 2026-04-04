@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { Employee, Session, ActionItem, BaselineSurvey, Coach } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
 import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName } from '../lib/dataFetcher';
 import { GoalHomeCard } from './goals/GoalHomeCard';
+import { PracticePrompt } from './PracticePrompt';
 
 interface ActiveGrowHomeProps {
   profile: Employee | null;
@@ -25,7 +25,6 @@ export default function ActiveGrowHome({
   onActionUpdate: _onActionUpdate,
   userEmail,
 }: ActiveGrowHomeProps) {
-  const navigate = useNavigate();
   void _onActionUpdate; // Reserved for future action item updates
 
   // Sort sessions by date descending to get most recent first
@@ -467,6 +466,11 @@ export default function ActiveGrowHome({
               </div>
             </div>
 
+            {daysSinceLastSession > 21 && (
+              <p className="text-amber-600 text-sm font-medium mb-3">
+                It's been {daysSinceLastSession} days since your last session. Book your next one to keep your momentum going.
+              </p>
+            )}
             {profile?.booking_link && (
               <a
                 href={profile.booking_link}
@@ -709,27 +713,8 @@ export default function ActiveGrowHome({
       )}
 
 
-      {/* Explore Practice Space - only show contextual prompt if exact participant text exists */}
-      <section className="bg-gradient-to-br from-purple-50 to-boon-bg rounded-[2rem] p-8 border border-purple-100/50 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-4">
-          <svg className="w-7 h-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-bold text-boon-text mb-2">Practice Space</h3>
-        <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-          Prepare for challenging conversations with AI-powered scenarios.
-        </p>
-        <button
-          onClick={() => navigate('/practice')}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
-        >
-          Explore scenarios
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </section>
+      {/* Practice Prompt */}
+      <PracticePrompt sessions={sessions} competencyScores={[]} />
     </div>
   );
 }

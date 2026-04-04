@@ -50,6 +50,8 @@ export interface Session {
   zoom_join_link: string | null;
   // Pre-session note from employee
   employee_pre_session_note: string | null;
+  // Post-session personal takeaways from employee
+  employee_notes: string | null;
 }
 
 export interface SurveyResponse {

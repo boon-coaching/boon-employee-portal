@@ -4,7 +4,8 @@ import type { Session } from '../lib/types';
 // CoachingStateData now accessed via usePortalData()
 import { isAlumniState, isPreFirstSession, isUpcomingSession } from '../lib/coachingState';
 import { usePortalData } from './ProtectedLayout';
-import { submitSessionFeedback } from '../lib/dataFetcher';
+import { submitSessionFeedback, updateActionItemStatus } from '../lib/dataFetcher';
+import { supabase } from '../lib/supabase';
 
 function getStatusStyle(status: Session['status']): {
   icon: 'check' | 'clock' | 'x-circle' | 'x';
@@ -63,6 +64,8 @@ function StatusIcon({ type }: { type: 'check' | 'clock' | 'x-circle' | 'x' }) {
 export default function SessionsPage() {
   const data = usePortalData();
   const sessions = data.recentSessions;
+  const actionItems = data.actionItems;
+  const reloadActionItems = data.reloadActionItems;
   const coachingState = data.coachingState;
   const isCompleted = isAlumniState(coachingState.state);
   const isPreFirst = isPreFirstSession(coachingState.state);
@@ -76,6 +79,36 @@ export default function SessionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [sessionNotes, setSessionNotes] = useState<Record<string, string>>({});
+  const [updatingItem, setUpdatingItem] = useState<string | null>(null);
+
+  // Toggle action item status
+  async function handleToggleAction(itemId: string, currentStatus: string) {
+    setUpdatingItem(itemId);
+    const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+    const success = await updateActionItemStatus(itemId, newStatus);
+    if (success) {
+      reloadActionItems();
+    }
+    setUpdatingItem(null);
+  }
+
+  // Save employee notes for a session
+  async function saveSessionNotes(sessionId: string) {
+    const noteText = sessionNotes[sessionId];
+    if (noteText === undefined) return;
+
+    const { error } = await supabase
+      .from('session_tracking')
+      .update({ employee_notes: noteText })
+      .eq('id', sessionId);
+
+    if (error) {
+      toast.error('Could not save notes. Please try again.');
+    } else {
+      toast.success('Notes saved.');
+    }
+  }
 
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -400,7 +433,8 @@ export default function SessionsPage() {
                 <div className="space-y-4">
                   {group.sessions.map((session) => {
                     const isExpanded = expandedSession === session.id;
-                    const hasDetails = session.goals || session.plan;
+                    const sessionActionItems = actionItems.filter(a => String(a.session_id) === String(session.id));
+                    const hasDetails = session.goals || session.plan || sessionActionItems.length > 0 || session.status === 'Completed';
                     const themes = getSessionThemes(session);
 
                     return (
@@ -493,6 +527,34 @@ export default function SessionsPage() {
                               <div>
                                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Plan</h4>
                                 <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.plan}</p>
+                              </div>
+                            )}
+                            {/* Action Items from this session */}
+                            {sessionActionItems.length > 0 && (
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Action Items</p>
+                                <div className="space-y-1.5">
+                                  {sessionActionItems.map(item => (
+                                    <label key={item.id} className={`flex items-start gap-2 py-1 cursor-pointer ${updatingItem === item.id ? 'opacity-50' : ''} ${item.status === 'completed' ? 'text-gray-400' : 'text-gray-700'}`}>
+                                      <input type="checkbox" checked={item.status === 'completed'} onChange={() => handleToggleAction(item.id, item.status)} disabled={updatingItem === item.id} className="mt-0.5 w-4 h-4 rounded border-gray-300 text-boon-blue focus:ring-boon-blue" />
+                                      <span className={`text-sm ${item.status === 'completed' ? 'line-through' : ''}`}>{item.action_text}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {/* Employee Notes */}
+                            {session.status === 'Completed' && (
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Your Takeaways</p>
+                                <textarea
+                                  value={sessionNotes[session.id] ?? session.employee_notes ?? ''}
+                                  onChange={(e) => setSessionNotes(prev => ({ ...prev, [session.id]: e.target.value }))}
+                                  onBlur={() => saveSessionNotes(session.id)}
+                                  placeholder="What did you take away from this session?"
+                                  className="w-full p-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
+                                  rows={3}
+                                />
                               </div>
                             )}
                             {session.status === 'Completed' && (

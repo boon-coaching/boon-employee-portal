@@ -1680,9 +1680,11 @@ export default function ProgressPage() {
             </div>
             <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
               <p className="text-3xl font-black text-purple-600">
-                {competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling').length}
+                {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'}
               </p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Excelling</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked'}
+              </p>
             </div>
           </>
         )}
