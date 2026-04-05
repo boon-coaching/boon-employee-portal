@@ -7,14 +7,18 @@ interface JournalPromptCardProps {
 }
 
 const COMPETENCY_OPTIONS = [
-  'Communication',
-  'Leadership',
+  'Effective Communication',
+  'Delegation & Accountability',
   'Emotional Intelligence',
-  'Decision Making',
-  'Conflict Resolution',
-  'Delegation',
-  'Feedback',
   'Strategic Thinking',
+  'Adaptability & Resilience',
+  'Giving & Receiving Feedback',
+  'Building Relationships at Work',
+  'Change Management',
+  'Effective Planning & Execution',
+  'Persuasion & Influence',
+  'Self-Confidence & Imposter Syndrome',
+  'Time Management & Productivity',
 ];
 
 export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {

@@ -4,7 +4,7 @@ const devLog = (...args: unknown[]) => {
   if (import.meta.env.DEV) console.log(...args);
 };
 
-const JOURNAL_PROMPTS = [
+export const JOURNAL_PROMPTS = [
   "What leadership moment stood out this week?",
   "What conversation went well? What made it work?",
   "What's one thing you'd do differently if you could redo this week?",
