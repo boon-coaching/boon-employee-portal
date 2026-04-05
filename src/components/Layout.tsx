@@ -111,7 +111,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
       </aside>
 
       {/* Mobile Top Header */}
-      <header className="md:hidden flex items-center justify-between px-5 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30">
+      <header className="md:hidden flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 sticky top-0 z-30">
         <img
           src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Wordmark_Blue_16_aw7lvc.png"
           className="h-5 max-w-[100px] object-contain"
@@ -145,7 +145,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 flex justify-around items-center px-2 py-3 pb-[env(safe-area-inset-bottom,16px)] z-30">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center px-2 py-3 pb-[env(safe-area-inset-bottom,16px)] z-30">
         {navItems.map((item) => (
           <NavLink
             key={item.to}

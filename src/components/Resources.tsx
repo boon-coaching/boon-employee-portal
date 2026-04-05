@@ -210,17 +210,21 @@ export default function Resources() {
               );
               if (hasContent(r)) {
                 return (
-                  <div key={r.id} className={cardClass} onClick={() => navigate(`/resources/${r.id}`)}>
+                  <div key={r.id} className={cardClass} onClick={() => navigate(`/resources/${r.id}`)} role="button" tabIndex={0}>
                     {cardContent}
                   </div>
                 );
               }
-              return hasUrl(r) ? (
-                <a key={r.id} href={getResourceUrl(r)!} target="_blank" rel="noopener noreferrer" className={cardClass}>
-                  {cardContent}
-                </a>
-              ) : (
-                <div key={r.id} className={cardClass}>
+              if (hasUrl(r)) {
+                return (
+                  <a key={r.id} href={getResourceUrl(r)!} target="_blank" rel="noopener noreferrer" className={cardClass}>
+                    {cardContent}
+                  </a>
+                );
+              }
+              // Resources with no content or URL still navigate to detail page
+              return (
+                <div key={r.id} className={cardClass + ' cursor-pointer'} onClick={() => navigate(`/resources/${r.id}`)} role="button" tabIndex={0}>
                   {cardContent}
                 </div>
               );

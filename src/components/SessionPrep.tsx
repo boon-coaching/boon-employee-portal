@@ -136,9 +136,8 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   // If no upcoming session, show a different message
   if (!upcomingSession) {
     return (
-      <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-boon-blue/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10">
+      <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-visible">
+          <div className="relative z-10">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 rounded-2xl bg-boon-blue flex items-center justify-center flex-shrink-0 shadow-lg shadow-boon-blue/30">
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,10 +166,8 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   const sessionDateTime = upcomingSession ? formatSessionDateTime(upcomingSession.session_date) : null;
 
   return (
-    <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-hidden">
+    <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-visible">
       {/* Decorative element */}
-      <div className="absolute top-0 right-0 w-40 h-40 bg-boon-blue/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-100/30 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
 
       <div className="relative z-10">
         {/* Header with prominent session info */}
@@ -207,7 +204,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
 
         {/* Since Your Last Session */}
         {completedSessions.length > 0 && (
-          <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-gray-100 mb-6">
+          <div className="bg-white p-4 rounded-xl border border-gray-100 mb-6">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Since your last session</p>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
@@ -237,7 +234,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
         <div className="mb-8 space-y-4">
           {/* Current Goal - from most recent session with goals */}
           {sessionWithGoals?.goals && (
-            <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-gray-100">
+            <div className="bg-white p-4 rounded-xl border border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Goal</p>
               <p className="text-sm text-gray-700">{sessionWithGoals.goals}</p>
             </div>
@@ -245,7 +242,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
 
           {/* Action Items - from action_items table */}
           {recentPendingItems.length > 0 && (
-            <div className="bg-white/60 backdrop-blur-sm p-4 rounded-xl border border-gray-100">
+            <div className="bg-white p-4 rounded-xl border border-gray-100">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
                 Action Items from your last {recentSessionCount} session{recentSessionCount !== 1 ? 's' : ''}
               </p>

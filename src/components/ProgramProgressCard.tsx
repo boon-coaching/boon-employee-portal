@@ -65,7 +65,7 @@ export default function ProgramProgressCard({ programInfo, completedSessions }: 
         <div className="flex items-end justify-between">
           <div>
             <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-3xl text-boon-text">
-              Session <span className="font-bold text-boon-blue">{completedSessions}</span> of {totalSessions}
+              Session <span className="font-bold text-boon-blue">{completedSessions || 0}</span> of {totalSessions}
             </p>
           </div>
           <p className="text-sm font-bold text-boon-blue">{Math.round(progressPercent)}%</p>
