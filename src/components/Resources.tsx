@@ -118,7 +118,7 @@ export default function Resources() {
   const getResourceUrl = (r: { url: string | null; file_url: string | null }) => r.url || r.file_url || null;
   const hasUrl = (r: { url: string | null; file_url: string | null }) => !!(r.url || r.file_url);
   const hasContent = (r: { body_html: string | null }) => !!r.body_html;
-  const isClickable = (r: { url: string | null; file_url: string | null; body_html: string | null }) => hasContent(r) || hasUrl(r);
+  const isClickable = (_r: { url: string | null; file_url: string | null; body_html: string | null }) => true;
 
   if (loading) {
     return (
