@@ -10,116 +10,11 @@ import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingStat
 import { GoalHomeCard } from './goals/GoalHomeCard';
 import { PracticePrompt } from './PracticePrompt';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
-import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus, fetchMatchSummary } from '../lib/dataFetcher';
-import ProgramProgressCard from './ProgramProgressCard';
+import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus } from '../lib/dataFetcher';
 import CompetencyProgressCard from './CompetencyProgressCard';
 import SessionPrep from './SessionPrep';
 import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
-
-/**
- * Extract the specific coach's summary from the full match_summary text.
- * The match_summary typically contains multiple entries like:
- * "Coach 1: Jane Doe - Jane brings... Coach 2: John Smith - John's expertise..."
- * This function finds and returns only the summary for the specified coach.
- */
-function extractCoachSummary(matchSummary: string | null, coachName: string): string | null {
-  if (!matchSummary || !coachName) return null;
-
-  // Get the coach's first name and last name
-  const nameParts = coachName.trim().split(' ');
-  const firstName = nameParts[0];
-  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
-
-  // Try to find the coach's section in the match summary
-  // Pattern: "Coach N: [Name] - [description]"
-  const coachPattern = new RegExp(
-    `Coach\\s*\\d*:?\\s*${firstName}(?:\\s+\\w+)*\\s*[-–—]\\s*([^]*?)(?=Coach\\s*\\d|$)`,
-    'i'
-  );
-
-  const match = matchSummary.match(coachPattern);
-  if (match) {
-    // Return the full matched section including the coach's name intro
-    const fullMatch = match[0].trim();
-    // Clean up and return just the description part after the dash
-    const dashIndex = fullMatch.search(/[-–—]/);
-    if (dashIndex !== -1) {
-      return fullMatch.substring(dashIndex + 1).trim();
-    }
-    return fullMatch;
-  }
-
-  // Alternative: Try searching by last name if first name didn't match
-  if (lastName) {
-    const lastNamePattern = new RegExp(
-      `Coach\\s*\\d*:?\\s*\\w+\\s+${lastName}\\s*[-–—]\\s*([^]*?)(?=Coach\\s*\\d|$)`,
-      'i'
-    );
-    const lastNameMatch = matchSummary.match(lastNamePattern);
-    if (lastNameMatch) {
-      const fullMatch = lastNameMatch[0].trim();
-      const dashIndex = fullMatch.search(/[-–—]/);
-      if (dashIndex !== -1) {
-        return fullMatch.substring(dashIndex + 1).trim();
-      }
-      return fullMatch;
-    }
-  }
-
-  // Coach not found in match_summary
-  return null;
-}
-
-/**
- * Create a personalized coach description based on the employee's coaching goals.
- */
-function createPersonalizedDescription(coachFirstName: string, coachingGoals: string | null): string | null {
-  if (!coachingGoals) return null;
-
-  // Truncate goals if too long (keep first ~150 chars at sentence boundary)
-  let truncatedGoals = coachingGoals;
-  if (coachingGoals.length > 150) {
-    const truncated = coachingGoals.substring(0, 150);
-    const lastPeriod = truncated.lastIndexOf('.');
-    if (lastPeriod > 80) {
-      truncatedGoals = coachingGoals.substring(0, lastPeriod + 1);
-    } else {
-      const lastSpace = truncated.lastIndexOf(' ');
-      truncatedGoals = lastSpace > 0 ? coachingGoals.substring(0, lastSpace) + '...' : truncated + '...';
-    }
-  }
-
-  return `Based on your goal to ${truncatedGoals.toLowerCase().replace(/^i want to |^i'd like to |^i would like to /i, '').replace(/\.$/, '')}, ${coachFirstName} will partner with you to develop strategies and build the skills you need to succeed.`;
-}
-
-/**
- * Truncate text to approximately N characters, ending at a sentence boundary.
- */
-function truncateBio(text: string | null, maxLength: number = 280): string | null {
-  if (!text) return null;
-  if (text.length <= maxLength) return text;
-
-  // Try to find a sentence boundary within the max length
-  const truncated = text.substring(0, maxLength);
-  const lastPeriod = truncated.lastIndexOf('.');
-  const lastExclaim = truncated.lastIndexOf('!');
-  const lastQuestion = truncated.lastIndexOf('?');
-
-  const lastSentenceEnd = Math.max(lastPeriod, lastExclaim, lastQuestion);
-
-  if (lastSentenceEnd > maxLength * 0.4) {
-    return text.substring(0, lastSentenceEnd + 1);
-  }
-
-  // No good sentence boundary, truncate at word boundary
-  const lastSpace = truncated.lastIndexOf(' ');
-  if (lastSpace > 0) {
-    return text.substring(0, lastSpace) + '...';
-  }
-
-  return truncated + '...';
-}
 
 interface GrowDashboardProps {
   profile: Employee | null;
@@ -137,8 +32,6 @@ export default function GrowDashboard({
   profile,
   sessions,
   actionItems,
-  baseline,
-  welcomeSurveyScale,
   coachingState,
   onActionUpdate,
   userEmail,
@@ -167,8 +60,6 @@ export default function GrowDashboard({
   const [programInfo, setProgramInfo] = useState<ProgramInfo | null>(null);
   const [focusAreas, setFocusAreas] = useState<GrowFocusArea[]>([]);
   const [coachProfile, setCoachProfile] = useState<Coach | null>(null);
-  const [matchSummary, setMatchSummary] = useState<string | null>(null);
-  const [isLoadingCoachData, setIsLoadingCoachData] = useState(true);
 
   // Load GROW-specific data
   useEffect(() => {
@@ -176,7 +67,6 @@ export default function GrowDashboard({
       // Only require userEmail - profile.coaching_program may be null if derived from session
       if (!userEmail) return;
 
-      setIsLoadingCoachData(true);
       devLog('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.coaching_program });
 
       // Fetch program info and focus areas in parallel (program info is optional)
@@ -213,18 +103,9 @@ export default function GrowDashboard({
         fullCoachData: coach
       });
 
-      // Fetch match summary for dynamic coach description
-      let summary: string | null = null;
-      if (profile?.id) {
-        summary = await fetchMatchSummary(profile.id, userEmail);
-        devLog('[GrowDashboard] Match summary result:', summary);
-      }
-
       if (progInfo) setProgramInfo(progInfo);
       if (areas) setFocusAreas(areas);
       if (coach) setCoachProfile(coach as Coach);
-      if (summary) setMatchSummary(summary);
-      setIsLoadingCoachData(false);
     };
 
     loadGrowData();
@@ -272,95 +153,119 @@ export default function GrowDashboard({
 
   const hasUpcomingSession = !!upcomingSession;
 
+  const [prepExpanded, setPrepExpanded] = useState(false);
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 md:space-y-10 animate-fade-in">
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-2">
-        <div className="text-center sm:text-left">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
-            Hi {profile?.first_name || 'there'}
-          </h1>
-          <p className="text-gray-500 mt-2 text-lg font-medium">
-            Your {programType === 'EXEC' ? 'Executive Coaching' : programType || 'coaching'} journey
-          </p>
-        </div>
-      </header>
-
-      {/* Session Milestone Celebration */}
-      <MilestoneCelebration
-        completedSessionCount={completedSessions.length}
-        programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
-        totalExpected={12}
-        userEmail={userEmail}
-      />
-
-      {/* Goal Accountability Card */}
-      <GoalHomeCard />
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          BOOK YOUR NEXT SESSION - HERO CTA when no upcoming session
-          Shows first to drive engagement
-          ═══════════════════════════════════════════════════════════════════ */}
-      {!hasUpcomingSession && (
-        <section className="bg-gradient-to-br from-boon-blue/10 via-white to-boon-lightBlue/30 rounded-[2rem] p-8 border-2 border-boon-blue/30 shadow-lg">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-boon-blue flex items-center justify-center shadow-lg shadow-boon-blue/30">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-boon-text">Book Your Next Session</h2>
-              <p className="text-gray-500 text-sm">Continue your coaching journey with {coachFirstName}</p>
+    <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
+      {/* Header with inline progress */}
+      <header className="pt-2">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-boon-text tracking-tight">
+              Hi {profile?.first_name || 'there'}
+            </h1>
+          </div>
+          {/* Compact program progress inline */}
+          <div className="text-right flex-shrink-0">
+            <p className="text-sm font-bold text-boon-blue">Session {coachingState.completedSessionCount || 0} of {programInfo?.sessions_per_employee || 12}</p>
+            <div className="w-24 h-1.5 bg-gray-100 rounded-full mt-1">
+              <div className="h-full bg-boon-blue rounded-full transition-all" style={{ width: `${Math.min(((coachingState.completedSessionCount || 0) / (programInfo?.sessions_per_employee || 12)) * 100, 100)}%` }} />
             </div>
           </div>
-          {daysSinceLastSession > 21 && (
-            <p className="text-amber-600 text-sm font-medium mb-3">
-              It's been {daysSinceLastSession} days since your last session. Book your next one to keep your momentum going.
-            </p>
-          )}
-          {profile?.booking_link ? (
-            <a
-              href={profile.booking_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-8 py-4 text-base font-bold text-white bg-boon-blue rounded-xl hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/30 active:scale-95"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </div>
+        {/* Milestone inline */}
+        <MilestoneCelebration
+          completedSessionCount={completedSessions.length}
+          programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
+          totalExpected={12}
+          userEmail={userEmail}
+        />
+      </header>
+
+      {/* Weekly focus: commitment + check-in */}
+      <GoalHomeCard />
+
+      {/* Session: upcoming (collapsible prep) or booking CTA */}
+      {hasUpcomingSession ? (
+        <section className="bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+          <button
+            onClick={() => setPrepExpanded(!prepExpanded)}
+            className="w-full flex items-center justify-between p-5 text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-boon-text text-sm">Session with {coachFirstName}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {upcomingSession?.zoom_join_link && (() => {
+                const sessionTime = new Date(upcomingSession.session_date).getTime();
+                const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
+                return hoursUntil <= 24 && hoursUntil > -1 ? (
+                  <a
+                    href={upcomingSession.zoom_join_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
+                  >
+                    Join
+                  </a>
+                ) : null;
+              })()}
+              <svg className={`w-5 h-5 text-gray-400 transition-transform ${prepExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-              Book a Session
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </a>
-          ) : (
-            <p className="text-gray-600 bg-white/60 px-5 py-4 rounded-xl border border-boon-blue/10">
-              <span className="font-medium">Ready to continue?</span> Reach out to {coachFirstName} or your program administrator to schedule your next session.
-            </p>
+            </div>
+          </button>
+          {prepExpanded && (
+            <div className="px-5 pb-5 border-t border-gray-100">
+              <SessionPrep
+                sessions={sessions}
+                actionItems={actionItems}
+                coachName={coachName}
+                userEmail={userEmail}
+                onActionUpdate={onActionUpdate}
+              />
+            </div>
           )}
         </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          PROGRAM PROGRESS CARD - Full width (GROW-specific)
-          ═══════════════════════════════════════════════════════════════════ */}
-      <ProgramProgressCard
-        programInfo={programInfo}
-        completedSessions={coachingState.completedSessionCount}
-      />
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          SESSION PREP - Consolidated component when upcoming session (like SCALE)
-          ═══════════════════════════════════════════════════════════════════ */}
-      {hasUpcomingSession && (
-        <SessionPrep
-          sessions={sessions}
-          actionItems={actionItems}
-          coachName={coachName}
-          userEmail={userEmail}
-          onActionUpdate={onActionUpdate}
-        />
+      ) : (
+        <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-boon-text text-sm">No upcoming session</p>
+                {daysSinceLastSession > 21 && (
+                  <p className="text-xs text-amber-600">{daysSinceLastSession} days since last session</p>
+                )}
+              </div>
+            </div>
+            {profile?.booking_link && (
+              <a
+                href={profile.booking_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 bg-boon-blue text-white text-sm font-bold rounded-xl hover:bg-boon-darkBlue transition-all"
+              >
+                Book
+              </a>
+            )}
+          </div>
+        </section>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -453,137 +358,34 @@ export default function GrowDashboard({
         )
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          YOUR COACH CARD
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Coach</span>
-          </div>
-
-          {isLoadingCoachData ? (
-            /* Loading skeleton */
-            <div className="animate-pulse">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-20 rounded-xl bg-gray-200" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-5 bg-gray-200 rounded w-32" />
-                  <div className="h-3 bg-gray-200 rounded w-48" />
-                  <div className="h-4 bg-gray-200 rounded w-24" />
-                </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-full" />
-                <div className="h-4 bg-gray-200 rounded w-5/6" />
-                <div className="h-4 bg-gray-200 rounded w-4/6" />
-              </div>
-            </div>
+      {/* Between sessions: coach + journal + practice in one container */}
+      <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm divide-y divide-gray-100">
+        {/* Coach row */}
+        <div className="flex items-center gap-3 pb-4">
+          {getCoachPhotoUrl() ? (
+            <img src={getCoachPhotoUrl()!} alt={coachName} className="w-10 h-10 rounded-full object-cover" />
           ) : (
-            <>
-              <div className="flex items-center gap-4">
-                {getCoachPhotoUrl() ? (
-                  <img
-                    src={getCoachPhotoUrl()!}
-                    alt={coachName}
-                    className="w-16 h-20 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
-                  />
-                ) : (
-                  <div className="w-16 h-20 rounded-xl bg-boon-lightBlue ring-2 ring-boon-bg shadow-sm flex items-center justify-center">
-                    <span className="text-boon-blue text-lg font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-boon-text">{coachName}</h3>
-                  {coachProfile?.headline ? (
-                    <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">
-                      {coachProfile.headline}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-boon-blue font-bold uppercase tracking-widest mt-0.5">Leadership Coach</p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-1">
-                    {sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'} together
-                  </p>
-                </div>
-              </div>
-
-              {/* Dynamic coach description: match_summary > personalized from goals > truncated bio > generic */}
-              {(() => {
-                // Debug logging for coach description
-                const coachingGoals = baseline?.coaching_goals || welcomeSurveyScale?.coaching_goals || null;
-                devLog('[GrowDashboard] Coach description debug:', {
-                  matchSummary: matchSummary ? 'exists' : 'null',
-                  extractedSummary: extractCoachSummary(matchSummary, coachName),
-                  hasBaseline: !!baseline,
-                  hasWelcomeSurveyScale: !!welcomeSurveyScale,
-                  baselineGoals: baseline?.coaching_goals,
-                  scaleGoals: welcomeSurveyScale?.coaching_goals,
-                  coachingGoals,
-                  personalizedDesc: createPersonalizedDescription(coachFirstName, coachingGoals),
-                  coachBio: coachProfile?.bio ? 'exists' : 'null',
-                });
-                return null;
-              })()}
-              <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-                {truncateBio(extractCoachSummary(matchSummary, coachName), 280)
-                  || createPersonalizedDescription(coachFirstName, baseline?.coaching_goals || welcomeSurveyScale?.coaching_goals || null)
-                  || truncateBio(coachProfile?.bio || null, 280)
-                  || `${coachFirstName} specializes in leadership development and helping professionals unlock their potential through personalized coaching.`}
-              </p>
-            </>
-          )}
-        </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          THINGS YOU'RE WORKING ON - Action items (only show if no sessions completed AND no upcoming session)
-          Note: When there's an upcoming session, SessionPrep handles action items
-          ═══════════════════════════════════════════════════════════════════ */}
-      {!hasUpcomingSession && completedSessions.length === 0 && pendingActions.length > 0 && (
-        <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
+            <div className="w-10 h-10 rounded-full bg-boon-lightBlue flex items-center justify-center">
+              <span className="text-boon-blue text-xs font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
             </div>
-            <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Things You're Working On</h2>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-boon-text">{coachName}</p>
+            <p className="text-xs text-gray-400">{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</p>
           </div>
-          <div className="space-y-3">
-            {pendingActions.map((action) => {
-              const isUpdating = updatingActionId === action.id;
-              return (
-                <div
-                  key={action.id}
-                  className={`p-4 bg-white/60 rounded-xl border border-boon-amber/10 flex items-start gap-3 ${isUpdating ? 'opacity-50' : ''}`}
-                >
-                  <button
-                    onClick={() => handleCompleteAction(action.id)}
-                    disabled={isUpdating}
-                    className="mt-1 w-5 h-5 rounded-full border-2 border-gray-300 hover:border-boon-blue hover:bg-boon-blue/10 transition-all flex-shrink-0 flex items-center justify-center group"
-                    title="Mark as complete"
-                  >
-                    <svg className="w-2.5 h-2.5 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </button>
-                  <div className="flex-1">
-                    <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-700 leading-relaxed">{action.action_text}</p>
-                    <span className="text-xs text-gray-400 mt-2 block">
-                      From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+          <a href="/coach" className="text-xs font-semibold text-boon-blue hover:text-boon-darkBlue transition-colors">Profile</a>
+        </div>
 
-      {/* Journal Prompt */}
-      <JournalPromptCard compact />
+        {/* Journal row */}
+        <div className="py-4">
+          <JournalPromptCard compact />
+        </div>
 
-      {/* Practice Prompt */}
-      <PracticePrompt />
+        {/* Practice row */}
+        <div className="pt-4">
+          <PracticePrompt />
+        </div>
+      </section>
     </div>
   );
 }
