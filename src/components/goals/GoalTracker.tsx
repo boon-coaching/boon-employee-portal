@@ -320,11 +320,13 @@ export default function GoalTracker() {
           {goalHistory.length > 1 && (
             <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
               <div className="p-6 border-b border-slate-50">
-                <div className="flex items-center gap-2 text-blue-600">
-                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm font-bold uppercase tracking-widest">Goal Evolution</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-bold text-blue-600 uppercase tracking-widest">Goal Evolution</span>
                 </div>
               </div>
               <div className="p-6">
@@ -354,21 +356,52 @@ export default function GoalTracker() {
             </section>
           )}
 
-          {/* Milestone card */}
-          <section className="bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-2">Keep Going</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                You have {pendingActionItems.length} action item{pendingActionItems.length !== 1 ? 's' : ''} to work on this week. Check them off as you go.
-              </p>
-            </div>
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl" />
-          </section>
+          {/* Milestone / motivation card */}
+          {(() => {
+            const completedCount = sessions.filter(s => s.status === 'Completed').length;
+            const milestones = [3, 6, 9, 12];
+            const reached = milestones.filter(t => completedCount >= t);
+            const isMilestone = reached.length > 0;
+            const milestone = reached[reached.length - 1];
+            const milestoneMessages: Record<number, string> = {
+              3: "You've consistently shown up for 3 sessions. That's real commitment.",
+              6: "Halfway there! 6 sessions of focused growth.",
+              9: "9 sessions in. You're building lasting habits.",
+              12: "All 12 sessions complete. What a journey.",
+            };
+
+            return (
+              <section className="bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 relative overflow-hidden">
+                <div className="relative z-10">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
+                    {isMilestone ? (
+                      <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">
+                    {isMilestone ? 'Milestone Reached' : 'Keep Going'}
+                  </h3>
+                  <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                    {isMilestone
+                      ? milestoneMessages[milestone]
+                      : `You have ${pendingActionItems.length} action item${pendingActionItems.length !== 1 ? 's' : ''} to work on this week. Check them off as you go.`}
+                  </p>
+                  {isMilestone && (
+                    <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all">
+                      Claim Badge
+                    </button>
+                  )}
+                </div>
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-600/20 rounded-full blur-3xl" />
+              </section>
+            );
+          })()}
         </div>
       </div>
     </div>
