@@ -156,9 +156,9 @@ export default function GrowDashboard({
       </header>
 
       {/* Two-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* ── Left column: Where We Left Off ── */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-3 space-y-8">
           {hasUpcomingSession ? (
             <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
               <button
@@ -296,7 +296,7 @@ export default function GrowDashboard({
         </div>
 
         {/* ── Right column: Session, Coach, Reflection, Practice ── */}
-        <div className="space-y-8">
+        <div className="lg:col-span-2 space-y-8">
           {/* Next Session */}
           <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
             {hasUpcomingSession ? (
@@ -392,9 +392,7 @@ export default function GrowDashboard({
           <JournalPromptCard compact />
 
           {/* Recommended Practice */}
-          <section className="bg-slate-50 rounded-2xl shadow-xl shadow-slate-200/50 p-6">
-            <PracticePrompt />
-          </section>
+          <PracticePrompt />
         </div>
       </div>
     </div>
