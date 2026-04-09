@@ -1883,10 +1883,10 @@ export default function ProgressPage() {
                 <div className="p-8">
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis type="number" domain={[0, 5]} tick={{ fill: '#6b7280', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="name" tick={{ fill: '#374151', fontSize: 11 }} width={75} />
+                      <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                        <XAxis type="number" domain={[0, 5]} hide />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} width={120} axisLine={false} tickLine={false} />
                         <Tooltip
                           contentStyle={{
                             borderRadius: '12px',
