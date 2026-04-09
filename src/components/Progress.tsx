@@ -1511,12 +1511,6 @@ export default function ProgressPage() {
     };
   });
 
-  // Top improved competencies for callout banner
-  const topImprovements = competencyData
-    .filter(c => c.improvement !== null && c.improvement > 0)
-    .sort((a, b) => (b.improvement || 0) - (a.improvement || 0))
-    .slice(0, 2);
-
   // Calculate average improvement for competencies
   const competenciesWithImprovement = competencyData.filter(c => c.improvement !== null);
   const avgCompetencyImprovement = competenciesWithImprovement.length > 0
@@ -1640,57 +1634,95 @@ export default function ProgressPage() {
         {isCompleted ? (
           // Leadership Profile stats (de-emphasize numeric deltas)
           <>
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-2xl text-center text-white">
-              <p className="text-4xl font-black">
-                {competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling' || c.score_label?.toLowerCase() === 'mastering').length}
-              </p>
-              <p className="text-xs font-bold uppercase tracking-widest mt-1 opacity-80">
-                Strengths
-              </p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strengths</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling' || c.score_label?.toLowerCase() === 'mastering').length}
+                </p>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-              <p className="text-3xl font-black text-boon-text">{completedSessions.length}</p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions</p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-amber-50 p-3 rounded-2xl text-amber-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><circle cx="12" cy="12" r="6" strokeWidth={2} /><circle cx="12" cy="12" r="2" strokeWidth={2} /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessions</p>
+                <p className="text-2xl font-bold text-slate-900">{completedSessions.length}</p>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-              <p className="text-3xl font-black text-purple-600">{competencyScores.length}</p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Competencies</p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-blue-50 p-3 rounded-2xl text-blue-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Competencies</p>
+                <p className="text-2xl font-bold text-slate-900">{competencyScores.length}</p>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-              <p className="text-3xl font-black text-green-600">100%</p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Complete</p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Complete</p>
+                <p className="text-2xl font-bold text-slate-900">100%</p>
+              </div>
             </div>
           </>
         ) : (
           // Active program stats (show growth metrics)
           <>
-            <div className="bg-gradient-to-br from-boon-blue to-boon-darkBlue p-6 rounded-2xl text-center text-white">
-              <p className="text-4xl font-black">
-                {avgCompetencyImprovement !== null ? (
-                  <span>{avgCompetencyImprovement > 0 ? '+' : ''}{avgCompetencyImprovement}%</span>
-                ) : (
-                  <span>{competencyScores.length > 0 ? competencyScores.length : '—'}</span>
-                )}
-              </p>
-              <p className="text-xs font-bold uppercase tracking-widest mt-1 opacity-80">
-                {avgCompetencyImprovement !== null ? 'Avg Growth' : 'Scores Recorded'}
-              </p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-blue-50 p-3 rounded-2xl text-blue-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {avgCompetencyImprovement !== null ? 'Avg Growth' : 'Scores Recorded'}
+                </p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {avgCompetencyImprovement !== null ? (
+                    <span>{avgCompetencyImprovement > 0 ? '+' : ''}{avgCompetencyImprovement}%</span>
+                  ) : (
+                    <span>{competencyScores.length > 0 ? competencyScores.length : '—'}</span>
+                  )}
+                </p>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-              <p className="text-3xl font-black text-boon-text">{completedSessions.length}</p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions</p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-amber-50 p-3 rounded-2xl text-amber-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><circle cx="12" cy="12" r="6" strokeWidth={2} /><circle cx="12" cy="12" r="2" strokeWidth={2} /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessions</p>
+                <p className="text-2xl font-bold text-slate-900">{completedSessions.length}</p>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-              <p className="text-3xl font-black text-green-600">{completedActions.length}</p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Actions Done</p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions Done</p>
+                <p className="text-2xl font-bold text-slate-900">{completedActions.length}</p>
+              </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-              <p className="text-3xl font-black text-purple-600">
-                {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'}
-              </p>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked'}
-              </p>
+            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
+              <div className="bg-purple-50 p-3 rounded-2xl text-purple-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked'}
+                </p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'}
+                </p>
+              </div>
             </div>
           </>
         )}
@@ -1699,35 +1731,18 @@ export default function ProgressPage() {
       {/* Competencies Tab */}
       {activeTab === 'competencies' && isGrowOrExec && (
         <div className="space-y-8">
-          {/* Competency improvement callouts */}
-          {topImprovements.length > 0 && (
-            <div className="space-y-2">
-              {topImprovements.map(comp => (
-                <div key={comp.key} className="flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-100 rounded-xl">
-                  <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  <p className="text-sm text-emerald-700 font-medium">
-                    Your {comp.label} improved {comp.improvement}% since your baseline
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Competency Cards Grid */}
           <section>
-            <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {competencyData.map(comp => (
                 <div
                   key={comp.key}
-                  className="bg-white p-5 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-purple-200 transition-all"
+                  className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-bold text-boon-text text-sm leading-tight">{comp.label}</h3>
                     {comp.scoreLabel && (
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${getScoreLabelColor(comp.scoreLabel)}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getScoreLabelColor(comp.scoreLabel)}`}>
                         {comp.scoreLabel}
                       </span>
                     )}
@@ -1737,7 +1752,7 @@ export default function ProgressPage() {
                     {/* Baseline */}
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-400 uppercase tracking-wide">Baseline</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Baseline</span>
                         <span className="font-bold text-gray-500">{comp.baseline || '—'}/5</span>
                       </div>
                       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -1752,12 +1767,12 @@ export default function ProgressPage() {
                     {hasActualCurrentScores ? (
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-400 uppercase tracking-wide">Current</span>
-                          <span className="font-bold text-purple-600">{comp.current || '—'}/5</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current</span>
+                          <span className="text-slate-900 font-bold">{comp.current || '—'}/5</span>
                         </div>
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                            className={`h-full rounded-full transition-all duration-500 ${(comp.current || 0) < (comp.baseline || 0) ? 'bg-amber-500' : 'bg-blue-600'}`}
                             style={{ width: `${(comp.current || 0) * 20}%` }}
                           />
                         </div>
@@ -1773,8 +1788,15 @@ export default function ProgressPage() {
 
                     {/* Improvement indicator - only show if we have actual current scores */}
                     {hasActualCurrentScores && comp.improvement !== null && (
-                      <div className={`text-xs font-bold text-right ${comp.improvement >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {comp.improvement > 0 ? '↑' : comp.improvement < 0 ? '↓' : '→'} {Math.abs(comp.improvement)}%
+                      <div className={`flex items-center justify-end gap-1 text-xs font-bold ${comp.improvement > 0 ? 'text-emerald-500' : comp.improvement < 0 ? 'text-amber-500' : 'text-gray-400'}`}>
+                        {comp.improvement > 0 ? (
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
+                        ) : comp.improvement < 0 ? (
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                        ) : (
+                          <span>→</span>
+                        )}
+                        {Math.abs(comp.improvement)}%
                       </div>
                     )}
 
@@ -1796,90 +1818,94 @@ export default function ProgressPage() {
             </div>
           </section>
 
-          {/* Radar Chart */}
-          {(baseline || competencyScores.length > 0) && (
-            <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
-              <h2 className="text-lg font-extrabold text-boon-text mb-6 text-center">
-                Competency Profile
-              </h2>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
-                    <PolarGrid stroke="#e5e7eb" />
-                    <PolarAngleAxis
-                      dataKey="competency"
-                      tick={{ fill: '#374151', fontSize: 9, fontWeight: 600 }}
-                    />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 5]}
-                      tick={{ fill: '#9ca3af', fontSize: 10 }}
-                    />
-                    <Radar
-                      name="Baseline"
-                      dataKey="baseline"
-                      stroke="#9ca3af"
-                      fill="#9ca3af"
-                      fillOpacity={0.3}
-                      strokeWidth={2}
-                    />
-                    {/* Only show Current layer if we have actual assessment data */}
-                    {hasActualCurrentScores && (
-                      <Radar
-                        name="Current"
-                        dataKey="current"
-                        stroke="#8B5CF6"
-                        fill="#8B5CF6"
-                        fillOpacity={0.4}
-                        strokeWidth={2}
-                      />
-                    )}
-                    {hasActualCurrentScores && (
-                      <Legend
-                        wrapperStyle={{ paddingTop: 20 }}
-                        formatter={(value) => (
-                          <span className="text-sm font-semibold text-gray-600">{value}</span>
+          {/* Charts side-by-side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Radar Chart */}
+            {(baseline || competencyScores.length > 0) && (
+              <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="border-b border-slate-50 bg-slate-50/50 p-6">
+                  <h2 className="text-lg font-bold text-slate-900">Competency Profile</h2>
+                </div>
+                <div className="p-8">
+                  <div className="h-96">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                        <PolarGrid stroke="#e5e7eb" />
+                        <PolarAngleAxis
+                          dataKey="competency"
+                          tick={{ fill: '#374151', fontSize: 9, fontWeight: 600 }}
+                        />
+                        <PolarRadiusAxis
+                          angle={30}
+                          domain={[0, 5]}
+                          tick={{ fill: '#9ca3af', fontSize: 10 }}
+                        />
+                        <Radar
+                          name="Baseline"
+                          dataKey="baseline"
+                          stroke="#9ca3af"
+                          fill="#9ca3af"
+                          fillOpacity={0.3}
+                          strokeWidth={2}
+                        />
+                        {/* Only show Current layer if we have actual assessment data */}
+                        {hasActualCurrentScores && (
+                          <Radar
+                            name="Current"
+                            dataKey="current"
+                            stroke="#2563eb"
+                            fill="#2563eb"
+                            fillOpacity={0.4}
+                            strokeWidth={2}
+                          />
                         )}
-                      />
-                    )}
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-center text-sm text-gray-500 mt-4">
-                {hasActualCurrentScores
-                  ? 'The purple area shows your current competency levels compared to your baseline (gray).'
-                  : 'Your baseline competency profile. Current levels will appear after your midpoint assessment.'}
-              </p>
-            </section>
-          )}
+                        {hasActualCurrentScores && (
+                          <Legend
+                            wrapperStyle={{ paddingTop: 20 }}
+                            formatter={(value) => (
+                              <span className="text-sm font-semibold text-gray-600">{value}</span>
+                            )}
+                          />
+                        )}
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </section>
+            )}
 
-          {/* Bar Chart */}
-          {competencyScores.length > 0 && (
-            <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
-              <h2 className="text-lg font-extrabold text-boon-text mb-6">Competency Rankings</h2>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis type="number" domain={[0, 5]} tick={{ fill: '#6b7280', fontSize: 11 }} />
-                    <YAxis type="category" dataKey="name" tick={{ fill: '#374151', fontSize: 11 }} width={75} />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: 'none',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                      }}
-                    />
-                    <Bar dataKey="score" radius={[0, 4, 4, 0]}>
-                      {barChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={getBarColor(entry.score)} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
-          )}
+            {/* Bar Chart */}
+            {competencyScores.length > 0 && (
+              <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="border-b border-slate-50 bg-slate-50/50 p-6">
+                  <h2 className="text-lg font-bold text-slate-900">Competency Rankings</h2>
+                </div>
+                <div className="p-8">
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis type="number" domain={[0, 5]} tick={{ fill: '#6b7280', fontSize: 11 }} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#374151', fontSize: 11 }} width={75} />
+                        <Tooltip
+                          contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                          }}
+                        />
+                        <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                          {barChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={getBarColor(entry.score)} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
 
           {/* No Data State */}
           {!baseline && competencyScores.length === 0 && (
@@ -1954,56 +1980,6 @@ export default function ProgressPage() {
         </div>
       )}
 
-      {/* Session History - Show for GROW/Exec with completed sessions */}
-      {isGrowOrExec && completedSessions.length > 0 && !isCompleted && (
-        <section className="bg-white p-8 rounded-[2rem] border border-gray-100">
-          <h2 className="text-lg font-extrabold text-boon-text mb-6">Session History</h2>
-          <div className="space-y-4">
-            {completedSessions.slice().reverse().map((session, idx) => {
-              const sessionNum = idx + 1;
-              const sessionDate = new Date(session.session_date);
-              return (
-                <div key={session.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-boon-text">Session {sessionNum}</p>
-                    <p className="text-sm text-gray-500">
-                      {sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      {session.coach_name && ` with ${session.coach_name.split(' ')[0]}`}
-                    </p>
-                  </div>
-                  {session.plan && (
-                    <div className="hidden sm:block max-w-[200px]">
-                      <p className="text-xs text-gray-400 italic truncate" title={session.plan}>
-                        {session.plan}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {/* Upcoming session indicator */}
-            {sessions.find(isUpcomingSession) && (
-              <div className="flex items-center gap-4 p-4 bg-boon-lightBlue/20 rounded-xl border-2 border-dashed border-boon-blue/30">
-                <div className="w-10 h-10 bg-boon-blue ring-4 ring-boon-blue/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <div className="w-2 h-2 bg-white rounded-full" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-boon-text">Session {completedSessions.length + 1}</p>
-                  <p className="text-sm text-boon-blue">
-                    {new Date(sessions.find(isUpcomingSession)!.session_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    <span className="text-gray-400 ml-1">(upcoming)</span>
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
 
       {/* Your Wins - Show for GROW/Exec */}
       {isGrowOrExec && !isCompleted && (
