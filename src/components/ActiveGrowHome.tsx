@@ -4,7 +4,6 @@ import type { CoachingStateData } from '../lib/coachingState';
 import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName } from '../lib/dataFetcher';
-import { WeeklyCommitmentSection } from './goals/WeeklyCommitmentSection';
 import { PracticePrompt } from './PracticePrompt';
 import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
@@ -629,9 +628,6 @@ export default function ActiveGrowHome({
               </div>
             ))}
           </div>
-
-          {/* Weekly commitment + check-in */}
-          <WeeklyCommitmentSection />
         </section>
       )}
 

@@ -6,7 +6,6 @@ import type { ProgramConfig } from '../lib/dataFetcher';
 import { updateActionItemStatus, fetchCoachByName } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
-import { WeeklyCommitmentSection } from './goals/WeeklyCommitmentSection';
 import { PracticePrompt } from './PracticePrompt';
 import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
@@ -390,9 +389,6 @@ export default function ScaleHome({
                 </div>
               </div>
             ) : null}
-
-            {/* Weekly commitment + check-in */}
-            <WeeklyCommitmentSection />
           </section>
         ) : null
       )}

@@ -7,7 +7,6 @@ const devLog = (...args: unknown[]) => {
 };
 import type { CoachingStateData } from '../lib/coachingState';
 import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
-import { WeeklyCommitmentSection } from './goals/WeeklyCommitmentSection';
 import { PracticePrompt } from './PracticePrompt';
 import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus } from '../lib/dataFetcher';
@@ -353,9 +352,6 @@ export default function GrowDashboard({
                 Your goals and action items from coaching sessions will appear here.
               </p>
             )}
-
-            {/* Weekly commitment + check-in */}
-            <WeeklyCommitmentSection />
           </section>
         )
       )}
