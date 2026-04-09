@@ -41,13 +41,11 @@ export default function GrowDashboard({
   const completedSessions = sessions
     .filter(s => s.status === 'Completed')
     .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
-  // Get the NEAREST upcoming session (sort by date ascending, take first)
   const upcomingSession = sessions
     .filter(isUpcomingSession)
     .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
   const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
 
-  // Calculate days since last session for urgency messaging
   const daysSinceLastSession = lastSession
     ? Math.floor((Date.now() - new Date(lastSession.session_date).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
@@ -55,52 +53,30 @@ export default function GrowDashboard({
   const coachName = lastSession?.coach_name || upcomingSession?.coach_name || 'Your Coach';
   const coachFirstName = coachName.split(' ')[0];
 
-  // GROW-specific state
   const [programInfo, setProgramInfo] = useState<ProgramInfo | null>(null);
   const [focusAreas, setFocusAreas] = useState<GrowFocusArea[]>([]);
   const [coachProfile, setCoachProfile] = useState<Coach | null>(null);
 
-  // Load GROW-specific data
   useEffect(() => {
     const loadGrowData = async () => {
-      // Only require userEmail - profile.coaching_program may be null if derived from session
       if (!userEmail) return;
 
       devLog('[GrowDashboard] Loading data for:', { userEmail, coachName, coachId: profile?.coach_id, program: profile?.coaching_program });
 
-      // Fetch program info and focus areas in parallel (program info is optional)
       const [progInfo, areas] = await Promise.all([
         profile?.coaching_program ? fetchProgramInfo(profile.coaching_program) : Promise.resolve(null),
         fetchGrowFocusAreas(userEmail),
       ]);
 
-      // Try to fetch coach by ID first (more reliable), then fall back to name
       let coach: Coach | null = null;
       if (profile?.coach_id) {
         coach = await fetchCoachById(profile.coach_id);
-        devLog('[GrowDashboard] Coach fetch by ID result:', {
-          coachId: profile.coach_id,
-          coachFound: !!coach,
-          coachPhotoUrl: coach?.photo_url
-        });
+        devLog('[GrowDashboard] Coach fetch by ID result:', { coachId: profile.coach_id, coachFound: !!coach });
       }
-
-      // Fall back to name lookup if ID lookup didn't work
       if (!coach && coachName !== 'Your Coach') {
         coach = await fetchCoachByName(coachName);
-        devLog('[GrowDashboard] Coach fetch by name result:', {
-          coachName,
-          coachFound: !!coach,
-          coachPhotoUrl: coach?.photo_url
-        });
+        devLog('[GrowDashboard] Coach fetch by name result:', { coachName, coachFound: !!coach });
       }
-
-      devLog('[GrowDashboard] Final coach result:', {
-        coachName,
-        coachFound: !!coach,
-        coachPhotoUrl: coach?.photo_url,
-        fullCoachData: coach
-      });
 
       if (progInfo) setProgramInfo(progInfo);
       if (areas) setFocusAreas(areas);
@@ -110,7 +86,6 @@ export default function GrowDashboard({
     loadGrowData();
   }, [profile?.coaching_program, profile?.coach_id, userEmail, coachName]);
 
-  // Count sessions with this specific coach (includes late cancel, no-show)
   const sessionsWithCoach = sessions.filter(s =>
     COUNTED_SESSION_STATUSES.includes(s.status) && s.coach_name === coachName
   );
@@ -118,9 +93,7 @@ export default function GrowDashboard({
 
   const getCoachPhotoUrl = () => coachProfile?.photo_url || null;
 
-  // Action items for "Things You're Working On"
   const pendingActions = actionItems.filter(a => a.status === 'pending');
-  // Show recently completed items (last 7 days) with strikethrough
   const recentlyCompletedActions = actionItems.filter(a => {
     if (a.status !== 'completed') return false;
     if (!a.completed_at) return false;
@@ -129,7 +102,6 @@ export default function GrowDashboard({
     return daysSinceCompletion <= 7;
   });
 
-  // Debug: Log action items
   devLog('[GrowDashboard] Action items:', {
     totalReceived: actionItems.length,
     pendingCount: pendingActions.length,
@@ -137,7 +109,6 @@ export default function GrowDashboard({
     completedSessionsCount: completedSessions.length
   });
 
-  // Handle completing an action item
   async function handleCompleteAction(itemId: string) {
     setUpdatingActionId(itemId);
     const success = await updateActionItemStatus(itemId, 'completed');
@@ -151,28 +122,31 @@ export default function GrowDashboard({
   }
 
   const hasUpcomingSession = !!upcomingSession;
-
   const [prepExpanded, setPrepExpanded] = useState(false);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
-      {/* Header with inline progress */}
+    <div className="max-w-6xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
+      {/* Header */}
       <header className="pt-2">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-boon-text tracking-tight">
+            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">
               Hi {profile?.first_name || 'there'}
             </h1>
+            <p className="text-slate-500 mt-1">Ready for your next growth milestone?</p>
           </div>
-          {/* Compact program progress inline */}
           <div className="text-right flex-shrink-0">
-            <p className="text-sm font-bold text-boon-blue">Session {coachingState.completedSessionCount || 0} of {programInfo?.sessions_per_employee || 12}</p>
-            <div className="w-24 h-1.5 bg-gray-100 rounded-full mt-1">
-              <div className="h-full bg-boon-blue rounded-full transition-all" style={{ width: `${Math.min(((coachingState.completedSessionCount || 0) / (programInfo?.sessions_per_employee || 12)) * 100, 100)}%` }} />
+            <span className="inline-block bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
+              Session {coachingState.completedSessionCount || 0} of {programInfo?.sessions_per_employee || 12}
+            </span>
+            <div className="w-48 h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all"
+                style={{ width: `${Math.min(((coachingState.completedSessionCount || 0) / (programInfo?.sessions_per_employee || 12)) * 100, 100)}%` }}
+              />
             </div>
           </div>
         </div>
-        {/* Milestone inline */}
         <MilestoneCelebration
           completedSessionCount={completedSessions.length}
           programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
@@ -181,209 +155,248 @@ export default function GrowDashboard({
         />
       </header>
 
-      {/* GoalHomeCard removed: action items were duplicated in Where We Left Off */}
-
-      {/* Session: upcoming (collapsible prep) or booking CTA */}
-      {hasUpcomingSession ? (
-        <section className="bg-white rounded-[2rem] border border-gray-100 shadow-sm">
-          <button
-            onClick={() => setPrepExpanded(!prepExpanded)}
-            className="w-full flex items-center justify-between p-5 text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-bold text-boon-text text-sm">Session with {coachFirstName}</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {upcomingSession?.zoom_join_link && (() => {
-                const sessionTime = new Date(upcomingSession.session_date).getTime();
-                const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
-                return hoursUntil <= 24 && hoursUntil > -1 ? (
-                  <a
-                    href={upcomingSession.zoom_join_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
-                  >
-                    Join
-                  </a>
-                ) : null;
-              })()}
-              <svg className={`w-5 h-5 text-gray-400 transition-transform ${prepExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </button>
-          {prepExpanded && (
-            <div className="px-5 pb-5 border-t border-gray-100">
-              <SessionPrep
-                sessions={sessions}
-                actionItems={actionItems}
-                coachName={coachName}
-                userEmail={userEmail}
-                onActionUpdate={onActionUpdate}
-              />
-            </div>
-          )}
-        </section>
-      ) : (
-        <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-bold text-boon-text text-sm">No upcoming session</p>
-                {daysSinceLastSession > 21 && (
-                  <p className="text-xs text-amber-600">{daysSinceLastSession} days since last session</p>
-                )}
-              </div>
-            </div>
-            {profile?.booking_link && (
-              <a
-                href={profile.booking_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 bg-boon-blue text-white text-sm font-bold rounded-xl hover:bg-boon-darkBlue transition-all"
+      {/* Two-column grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* ── Left column: Where We Left Off ── */}
+        <div className="lg:col-span-2 space-y-8">
+          {hasUpcomingSession ? (
+            <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
+              <button
+                onClick={() => setPrepExpanded(!prepExpanded)}
+                className="w-full flex items-center justify-between p-6 text-left"
               >
-                Book
-              </a>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          FOCUS AREAS / WHERE WE LEFT OFF - Depends on session completion
-          Only show when no upcoming session (SessionPrep handles this otherwise)
-          ═══════════════════════════════════════════════════════════════════ */}
-      {!hasUpcomingSession && (
-        completedSessions.length === 0 ? (
-          // Pre-first session: Show baseline focus areas
-          <CompetencyProgressCard focusAreas={focusAreas} />
-        ) : (
-          // Post-first session: Show where we left off (goals + action items)
-          <section className="bg-gradient-to-br from-boon-amberLight/50 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where We Left Off</h2>
-            </div>
-
-            {/* Current Goal from last session */}
-            {lastSession?.goals && (
-              <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Goal</p>
-                <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-lg text-boon-text leading-relaxed">
-                  {lastSession.goals}
-                </p>
-              </div>
-            )}
-
-            {/* Action Items */}
-            {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
-              <div className="space-y-3">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Action Items</p>
-                {/* Pending Items */}
-                {pendingActions.map((action) => {
-                  const isUpdating = updatingActionId === action.id;
-                  return (
-                    <div
-                      key={action.id}
-                      className={`p-4 bg-white/60 rounded-xl border border-boon-amber/10 flex items-start gap-3 ${isUpdating ? 'opacity-50' : ''}`}
-                    >
-                      <button
-                        onClick={() => handleCompleteAction(action.id)}
-                        disabled={isUpdating}
-                        className="mt-1 w-5 h-5 rounded-full border-2 border-gray-300 hover:border-boon-blue hover:bg-boon-blue/10 transition-all flex-shrink-0 flex items-center justify-center group"
-                        title="Mark as complete"
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Session with {coachFirstName}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {upcomingSession?.zoom_join_link && (() => {
+                    const sessionTime = new Date(upcomingSession.session_date).getTime();
+                    const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
+                    return hoursUntil <= 24 && hoursUntil > -1 ? (
+                      <a
+                        href={upcomingSession.zoom_join_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
                       >
-                        <svg className="w-2.5 h-2.5 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                      <div className="flex-1">
-                        <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-700 leading-relaxed">{action.action_text}</p>
-                        <span className="text-xs text-gray-400 mt-2 block">
-                          From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
+                        Join
+                      </a>
+                    ) : null;
+                  })()}
+                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${prepExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+              {prepExpanded && (
+                <div className="px-6 pb-6 border-t border-slate-100">
+                  <SessionPrep
+                    sessions={sessions}
+                    actionItems={actionItems}
+                    coachName={coachName}
+                    userEmail={userEmail}
+                    onActionUpdate={onActionUpdate}
+                  />
+                </div>
+              )}
+            </section>
+          ) : completedSessions.length === 0 ? (
+            <CompetencyProgressCard focusAreas={focusAreas} />
+          ) : null}
+
+          {/* Where We Left Off — goal + action items */}
+          {completedSessions.length > 0 && (
+            <section className="bg-[#FFF9F0] rounded-2xl shadow-xl shadow-slate-200/50 p-8">
+              <div className="flex items-center gap-2 text-amber-600 mb-6">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Where we left off</span>
+              </div>
+
+              {lastSession?.goals && (
+                <div className="mb-6">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Goal</span>
+                  <h2 className="text-2xl font-bold text-slate-900 mt-2 leading-tight">
+                    {lastSession.goals}
+                  </h2>
+                </div>
+              )}
+
+              {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Action Items</span>
+                  <div className="space-y-3 mt-4">
+                    {pendingActions.map((action) => {
+                      const isUpdating = updatingActionId === action.id;
+                      return (
+                        <div
+                          key={action.id}
+                          className={`flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all ${isUpdating ? 'opacity-50' : ''}`}
+                        >
+                          <button
+                            onClick={() => handleCompleteAction(action.id)}
+                            disabled={isUpdating}
+                            className="mt-1 w-5 h-5 rounded-full border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex-shrink-0 flex items-center justify-center group"
+                            title="Mark as complete"
+                          >
+                            <svg className="w-2.5 h-2.5 text-transparent group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <div className="flex-1">
+                            <p className="text-sm text-slate-700 leading-relaxed">{action.action_text}</p>
+                            <span className="text-[10px] text-slate-400 mt-2 block">
+                              From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {recentlyCompletedActions.map((action) => (
+                      <div
+                        key={action.id}
+                        className="flex items-start gap-4 p-4 bg-green-50/50 rounded-xl border border-green-200/30"
+                      >
+                        <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-slate-400 leading-relaxed line-through">{action.action_text}</p>
+                          <span className="text-[10px] text-green-600 mt-2 block">
+                            Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-                {/* Recently Completed Items - with strikethrough */}
-                {recentlyCompletedActions.map((action) => (
-                  <div
-                    key={action.id}
-                    className="p-4 bg-green-50/50 rounded-xl border border-green-200/30 flex items-start gap-3"
-                  >
-                    <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    ))}
+                  </div>
+                </div>
+              ) : !lastSession?.goals && (
+                <p className="text-slate-500 text-sm italic">
+                  Your goals and action items from coaching sessions will appear here.
+                </p>
+              )}
+            </section>
+          )}
+        </div>
+
+        {/* ── Right column: Session, Coach, Reflection, Practice ── */}
+        <div className="space-y-8">
+          {/* Next Session */}
+          <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
+            {hasUpcomingSession ? (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-400 leading-relaxed line-through">{action.action_text}</p>
-                      <span className="text-xs text-green-600 mt-2 block">
-                        Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
-                      </span>
-                    </div>
+                    <span className="font-semibold text-slate-900">Next Session</span>
                   </div>
-                ))}
-              </div>
-            ) : !lastSession?.goals && (
-              <p className="text-gray-500 text-sm italic">
-                Your goals and action items from coaching sessions will appear here.
-              </p>
+                  {upcomingSession?.zoom_join_link && (() => {
+                    const sessionTime = new Date(upcomingSession.session_date).getTime();
+                    const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
+                    return hoursUntil <= 24 && hoursUntil > -1 ? (
+                      <a
+                        href={upcomingSession.zoom_join_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
+                      >
+                        Join
+                      </a>
+                    ) : null;
+                  })()}
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <p className="text-sm font-medium text-slate-700">
+                    {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} with {coachFirstName}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span className="font-semibold text-slate-900">Next Session</span>
+                  </div>
+                  {profile?.booking_link && (
+                    <a
+                      href={profile.booking_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
+                    >
+                      Book
+                    </a>
+                  )}
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl text-center">
+                  <p className="text-sm text-slate-500 font-medium">No upcoming session</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {daysSinceLastSession > 21
+                      ? `${daysSinceLastSession} days since last session`
+                      : `Schedule your next 1:1 with ${coachFirstName}`}
+                  </p>
+                </div>
+              </>
             )}
           </section>
-        )
-      )}
 
-      {/* Between sessions: coach + journal + practice in one container */}
-      <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm divide-y divide-gray-100">
-        {/* Coach row */}
-        <div className="flex items-center gap-3 pb-4">
-          {getCoachPhotoUrl() ? (
-            <img src={getCoachPhotoUrl()!} alt={coachName} className="w-10 h-10 rounded-full object-cover" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-boon-lightBlue flex items-center justify-center">
-              <span className="text-boon-blue text-xs font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+          {/* Coach */}
+          <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {getCoachPhotoUrl() ? (
+                  <img src={getCoachPhotoUrl()!} alt={coachName} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center border-2 border-white shadow-sm">
+                    <span className="text-blue-600 text-sm font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                  </div>
+                )}
+                <div>
+                  <h4 className="font-bold text-slate-900">{coachName}</h4>
+                  <p className="text-xs text-slate-500">{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</p>
+                </div>
+              </div>
+              <a href="/coach" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">Profile</a>
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-boon-text">{coachName}</p>
-            <p className="text-xs text-gray-400">{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</p>
-          </div>
-          <a href="/coach" className="text-xs font-semibold text-boon-blue hover:text-boon-darkBlue transition-colors">Profile</a>
-        </div>
+          </section>
 
-        {/* Journal row */}
-        <div className="py-4">
+          {/* Weekly Reflection */}
           <JournalPromptCard compact />
-        </div>
 
-        {/* Practice row */}
-        <div className="pt-4">
-          <PracticePrompt />
+          {/* Recommended Practice */}
+          <section className="bg-slate-50 rounded-2xl shadow-xl shadow-slate-200/50 p-6">
+            <PracticePrompt />
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
