@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useGoalData } from '../../hooks/useGoalData';
 import { usePortalData } from '../ProtectedLayout';
 import { updateActionItemStatus } from '../../lib/dataFetcher';
 import { updateActionItemNote } from '../../lib/fetchers/goalFetcher';
-import { CommitmentInput } from './CommitmentInput';
-import { CheckinModal } from './CheckinModal';
 import { ResourceSuggestion } from '../ResourceSuggestion';
 import { SCENARIOS } from '../../data/scenarios';
 
@@ -21,13 +19,7 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function formatWeekLabel(weekStart: string): string {
-  const date = new Date(weekStart + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 export default function GoalTracker() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { reloadActionItems, sessions } = usePortalData();
   const {
@@ -35,28 +27,16 @@ export default function GoalTracker() {
     coachingGoal,
     goalHistory,
     pendingActionItems,
-    employeeGoals,
-    addEmployeeGoal,
-    currentWeek,
-    commitments,
-    addCommitment,
-    submitCheckin,
     reflection,
     selfProgress,
     updateReflection,
     updateSelfProgress,
   } = useGoalData();
 
-  const [checkinModal, setCheckinModal] = useState<'midweek' | 'endweek' | null>(null);
   const [updatingItem, setUpdatingItem] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
   const [reflectionText, setReflectionText] = useState(reflection || '');
   const [reflectionSaved, setReflectionSaved] = useState(false);
   const reflectionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Employee goals state
-  const [newGoalText, setNewGoalText] = useState('');
-  const [addingGoal, setAddingGoal] = useState(false);
 
   // Action item notes state
   const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
@@ -92,17 +72,6 @@ export default function GoalTracker() {
     toast.success(status === 'feeling_confident' ? 'Great progress!' : 'Updated');
   }
 
-  // Auto-open check-in from nudge deep link
-  useEffect(() => {
-    const checkinParam = searchParams.get('checkin');
-    if (checkinParam === 'midweek' || checkinParam === 'endweek') {
-      if (currentWeek.hasCommitment) {
-        setCheckinModal(checkinParam);
-        setSearchParams({}, { replace: true });
-      }
-    }
-  }, [searchParams, currentWeek.hasCommitment, setSearchParams]);
-
   async function handleToggleAction(itemId: string, currentStatus: string) {
     setUpdatingItem(itemId);
     const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
@@ -111,39 +80,6 @@ export default function GoalTracker() {
       reloadActionItems();
     }
     setUpdatingItem(null);
-  }
-
-  async function handleSetCommitment(text: string) {
-    const result = await addCommitment(text);
-    if (result) {
-      toast.success('Commitment set for this week');
-    } else {
-      toast.error('Could not save commitment');
-    }
-  }
-
-  async function handleAddEmployeeGoal() {
-    if (!newGoalText.trim() || addingGoal) return;
-    setAddingGoal(true);
-    const result = await addEmployeeGoal(newGoalText.trim());
-    if (result) {
-      toast.success('Goal added');
-      setNewGoalText('');
-    } else {
-      toast.error('Could not add goal');
-    }
-    setAddingGoal(false);
-  }
-
-  async function handleCheckinSubmit(rating: number, reflectionText?: string, blockers?: string) {
-    if (!currentWeek.commitment || !checkinModal) return;
-    const result = await submitCheckin(currentWeek.commitment.id, checkinModal, rating, reflectionText, blockers);
-    if (result) {
-      toast.success(checkinModal === 'midweek' ? 'Midweek check-in saved' : 'End of week reflection saved');
-      setCheckinModal(null);
-    } else {
-      toast.error('Could not save check-in');
-    }
   }
 
   if (loading) {
@@ -180,15 +116,12 @@ export default function GoalTracker() {
     );
   }
 
-  const rawDay = new Date().getDay();
-  const today = rawDay === 0 ? 7 : rawDay; // Treat Sunday as 7 (end of week)
-  const isMidweekOrLater = today >= 3;
-  const isEndweekOrLater = today >= 5;
-  const { hasCommitment, hasMidweekCheckin, hasEndweekCheckin, commitment } = currentWeek;
-  const midweekDue = hasCommitment && isMidweekOrLater && !hasMidweekCheckin;
-  const endweekDue = hasCommitment && isEndweekOrLater && !hasEndweekCheckin;
-
-  const recentCommitments = commitments.filter(c => c.id !== commitment?.id).slice(0, 6);
+  const recentCompleted = sessions.filter(s => s.status === 'Completed').slice(0, 3);
+  const sessionThemes = {
+    leadership: recentCompleted.some(s => !!s.leadership_management_skills),
+    communication: recentCompleted.some(s => !!s.communication_skills),
+    wellbeing: recentCompleted.some(s => !!s.mental_well_being),
+  };
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 md:space-y-10 animate-fade-in">
@@ -197,7 +130,7 @@ export default function GoalTracker() {
         <p className="text-gray-500 mt-2 text-base font-medium">Stay on track between sessions</p>
       </header>
 
-      {/* 1. Coaching Goal (from coach) */}
+      {/* Section 1: Your Goal — goal + plan + progress + action items + resource */}
       <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-[2rem] p-6 md:p-8 border border-blue-100 shadow-sm">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 rounded-xl bg-boon-blue flex items-center justify-center">
@@ -245,269 +178,119 @@ export default function GoalTracker() {
             })}
           </div>
         </div>
+
+        {/* Action Items */}
+        {pendingActionItems.length > 0 && (
+          <div className="mt-5 pt-5 border-t border-blue-100/50">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Action Items</p>
+            <div className="space-y-2">
+              {pendingActionItems.map(item => {
+                const isCompleted = item.status === 'completed';
+                const isUpdating = updatingItem === item.id;
+                const matchingScenario = findMatchingScenario(item.action_text);
+
+                return (
+                  <label
+                    key={item.id}
+                    className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                      isCompleted ? 'bg-green-50/50 text-gray-400' : 'bg-white/60 hover:bg-white text-gray-700'
+                    } ${isUpdating ? 'opacity-50' : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isCompleted}
+                      disabled={isUpdating}
+                      onChange={() => handleToggleAction(item.id, item.status)}
+                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-boon-blue focus:ring-boon-blue"
+                    />
+                    <div className="flex-1">
+                      <span className={`text-sm leading-relaxed ${isCompleted ? 'line-through' : ''}`}>
+                        {item.action_text}
+                      </span>
+                      {matchingScenario && !isCompleted && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/practice'); }}
+                          className="mt-1 text-xs font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                        >
+                          Practice this
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      )}
+                      {!isCompleted && (
+                        <div className="mt-1">
+                          {expandedNoteId === item.id ? (
+                            <div className="flex gap-2 mt-1">
+                              <input
+                                type="text"
+                                value={noteTexts[item.id] ?? item.employee_note ?? ''}
+                                onChange={(e) => setNoteTexts(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                placeholder="Add a note..."
+                                className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-boon-blue"
+                                onBlur={async () => {
+                                  const note = noteTexts[item.id];
+                                  if (note !== undefined) {
+                                    setSavingNote(item.id);
+                                    await updateActionItemNote(item.id, note);
+                                    setSavingNote(null);
+                                  }
+                                  setExpandedNoteId(null);
+                                }}
+                                autoFocus
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpandedNoteId(item.id); }}
+                              className="text-[10px] text-gray-400 hover:text-gray-500 font-medium"
+                            >
+                              {item.employee_note ? `\u{1F4DD} ${item.employee_note}` : '+ Add note'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Resource suggestion — inline at bottom */}
+        <ResourceSuggestion sessionThemes={sessionThemes} label="Resource for this goal" />
       </section>
 
-      {/* Resource for this goal */}
-      {coachingGoal && (() => {
-        const recentCompleted = sessions.filter(s => s.status === 'Completed').slice(0, 3);
-        const themes = {
-          leadership: recentCompleted.some(s => !!s.leadership_management_skills),
-          communication: recentCompleted.some(s => !!s.communication_skills),
-          wellbeing: recentCompleted.some(s => !!s.mental_well_being),
-        };
-        return <ResourceSuggestion sessionThemes={themes} label="Resource for this goal" />;
-      })()}
-
-      {/* Employee Reflection */}
-      {coachingGoal && (
-        <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center">
-              <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Your Reflection</span>
-            {reflectionSaved && (
-              <span className="ml-auto text-xs text-emerald-500 font-medium flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Saved
-              </span>
-            )}
-          </div>
-          <textarea
-            value={reflectionText}
-            onChange={handleReflectionChange}
-            placeholder="How are you thinking about this goal? What's working, what's hard?"
-            className="w-full p-4 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all min-h-[100px]"
-            rows={4}
-          />
-          <p className="text-xs text-gray-400 mt-2">Your coach can see this reflection before your next session.</p>
-        </section>
-      )}
-
-      {/* Your Own Goals */}
+      {/* Section 2: Your Reflection */}
       <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-xl bg-cyan-500 flex items-center justify-center">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center">
             <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </div>
-          <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">Your Own Goals</span>
+          <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Your Reflection</span>
+          {reflectionSaved && (
+            <span className="ml-auto text-xs text-emerald-500 font-medium flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Saved
+            </span>
+          )}
         </div>
-
-        <p className="text-sm text-gray-500 mb-4">Is there something else you want to work on? Your coach will see these.</p>
-
-        {/* Existing employee goals */}
-        {employeeGoals.length > 0 && (
-          <div className="space-y-2 mb-4">
-            {employeeGoals.map(g => (
-              <div key={g.id} className="flex items-center gap-3 p-3 rounded-xl bg-cyan-50/50 border border-cyan-100">
-                <svg className="w-4 h-4 text-cyan-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
-                </svg>
-                <span className="text-sm text-boon-text">{g.title}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Add new goal */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newGoalText}
-            onChange={(e) => setNewGoalText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddEmployeeGoal()}
-            placeholder="e.g., Improve my presentation skills"
-            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-400 transition-all"
-            disabled={addingGoal}
-          />
-          <button
-            onClick={handleAddEmployeeGoal}
-            disabled={addingGoal || !newGoalText.trim()}
-            className="px-5 py-2.5 bg-cyan-500 text-white rounded-xl font-bold text-xs hover:bg-cyan-600 transition-all disabled:opacity-50"
-          >
-            {addingGoal ? '...' : 'Add'}
-          </button>
-        </div>
+        <textarea
+          value={reflectionText}
+          onChange={handleReflectionChange}
+          placeholder="How are you thinking about this goal? What's working, what's hard?"
+          className="w-full p-4 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all min-h-[100px]"
+          rows={4}
+        />
+        <p className="text-xs text-gray-400 mt-2">Your coach can see this reflection before your next session.</p>
       </section>
 
-      {/* 2. Action Items (from coach) */}
-      {pendingActionItems.length > 0 && (
-        <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center">
-              <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">Action Items from Your Coach</span>
-          </div>
-          <div className="space-y-2">
-            {pendingActionItems.map(item => {
-              const isCompleted = item.status === 'completed';
-              const isUpdating = updatingItem === item.id;
-              const matchingScenario = findMatchingScenario(item.action_text);
-
-              return (
-                <label
-                  key={item.id}
-                  className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                    isCompleted ? 'bg-green-50/50 text-gray-400' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-                  } ${isUpdating ? 'opacity-50' : ''}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isCompleted}
-                    disabled={isUpdating}
-                    onChange={() => handleToggleAction(item.id, item.status)}
-                    className="mt-0.5 w-4 h-4 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
-                  />
-                  <div className="flex-1">
-                    <span className={`text-sm leading-relaxed ${isCompleted ? 'line-through' : ''}`}>
-                      {item.action_text}
-                    </span>
-                    {matchingScenario && !isCompleted && (
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate('/practice'); }}
-                        className="mt-1 text-xs font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1"
-                      >
-                        Practice this
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    )}
-                    {!isCompleted && (
-                      <div className="mt-1">
-                        {expandedNoteId === item.id ? (
-                          <div className="flex gap-2 mt-1">
-                            <input
-                              type="text"
-                              value={noteTexts[item.id] ?? item.employee_note ?? ''}
-                              onChange={(e) => setNoteTexts(prev => ({ ...prev, [item.id]: e.target.value }))}
-                              placeholder="Add a note..."
-                              className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:border-boon-blue"
-                              onBlur={async () => {
-                                const note = noteTexts[item.id];
-                                if (note !== undefined) {
-                                  setSavingNote(item.id);
-                                  await updateActionItemNote(item.id, note);
-                                  setSavingNote(null);
-                                }
-                                setExpandedNoteId(null);
-                              }}
-                              autoFocus
-                            />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpandedNoteId(item.id); }}
-                            className="text-[10px] text-gray-400 hover:text-gray-500 font-medium"
-                          >
-                            {item.employee_note ? `\u{1F4DD} ${item.employee_note}` : '+ Add note'}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </label>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* 3. This Week's Commitment */}
-      <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center">
-            <svg className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">This Week</span>
-        </div>
-
-        {!hasCommitment && (
-          <div>
-            <p className="text-boon-text text-sm mb-4">
-              Based on your coaching goal, what will you focus on this week?
-            </p>
-            <CommitmentInput onSubmit={handleSetCommitment} />
-          </div>
-        )}
-
-        {hasCommitment && commitment && (
-          <div>
-            <p className="text-boon-text font-medium mb-4">{commitment.commitment_text}</p>
-
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${hasMidweekCheckin ? 'bg-emerald-400' : 'border-2 border-gray-300'}`} />
-                <span className="text-xs text-gray-500">Midweek</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${hasEndweekCheckin ? 'bg-emerald-400' : 'border-2 border-gray-300'}`} />
-                <span className="text-xs text-gray-500">End of week</span>
-              </div>
-            </div>
-
-            {(midweekDue || endweekDue) && (
-              <button
-                onClick={() => setCheckinModal(endweekDue ? 'endweek' : 'midweek')}
-                className="w-full px-5 py-3 bg-emerald-500 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition-all"
-              >
-                {endweekDue ? 'How did this week go?' : "How's it going?"}
-              </button>
-            )}
-
-            {!midweekDue && !endweekDue && (
-              <div className="flex items-center gap-2 text-emerald-600">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm font-semibold">You're on track this week</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {recentCommitments.length > 0 && (
-          <div className="mt-5 pt-5 border-t border-gray-100">
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center gap-1.5 text-xs text-gray-400 font-medium hover:text-gray-500 transition-colors"
-            >
-              <svg className={`w-3 h-3 transition-transform ${showHistory ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
-              Past weeks ({recentCommitments.length})
-            </button>
-            {showHistory && (
-              <div className="mt-3 space-y-2">
-                {recentCommitments.map(c => (
-                  <div key={c.id} className="flex items-start gap-3 text-xs text-gray-400 py-1">
-                    <span className="font-medium text-gray-300 w-16 flex-shrink-0">{formatWeekLabel(c.week_start)}</span>
-                    <span className="leading-relaxed flex-1">{c.commitment_text}</span>
-                    <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      c.status === 'completed' ? 'bg-emerald-50 text-emerald-500'
-                        : c.status === 'partial' ? 'bg-amber-50 text-amber-500'
-                        : 'bg-gray-50 text-gray-400'
-                    }`}>{c.status}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* 4. Goal History */}
+      {/* Section 3: Goal History */}
       {goalHistory.length > 1 && (
         <section className="bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3 mb-5">
@@ -527,15 +310,6 @@ export default function GoalTracker() {
             ))}
           </div>
         </section>
-      )}
-
-      {checkinModal && commitment && (
-        <CheckinModal
-          commitmentText={commitment.commitment_text}
-          checkinType={checkinModal}
-          onSubmit={handleCheckinSubmit}
-          onClose={() => setCheckinModal(null)}
-        />
       )}
     </div>
   );
