@@ -1880,21 +1880,22 @@ export default function ProgressPage() {
                 <div className="border-b border-slate-50 bg-slate-50/50 p-6">
                   <h2 className="text-lg font-bold text-slate-900">Competency Rankings</h2>
                 </div>
-                <div className="p-8">
-                  <div className="h-80">
+                <div className="p-6">
+                  <div style={{ height: Math.max(barChartData.length * 40, 300) }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                         <XAxis type="number" domain={[0, 5]} hide />
-                        <YAxis type="category" dataKey="name" tick={{ fill: '#64748b', fontSize: 11 }} width={120} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} width={110} axisLine={false} tickLine={false} />
                         <Tooltip
+                          cursor={{ fill: '#f8fafc' }}
                           contentStyle={{
                             borderRadius: '12px',
                             border: 'none',
                             boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                           }}
                         />
-                        <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                        <Bar dataKey="score" radius={[0, 6, 6, 0]} barSize={20}>
                           {barChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={getBarColor(entry.score)} />
                           ))}
