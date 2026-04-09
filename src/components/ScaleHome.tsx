@@ -6,7 +6,7 @@ import type { ProgramConfig } from '../lib/dataFetcher';
 import { updateActionItemStatus, fetchCoachByName } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
 import SessionPrep from './SessionPrep';
-import { GoalHomeCard } from './goals/GoalHomeCard';
+import { WeeklyCommitmentSection } from './goals/WeeklyCommitmentSection';
 import { PracticePrompt } from './PracticePrompt';
 import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
@@ -119,8 +119,7 @@ export default function ScaleHome({
         userEmail={userEmail}
       />
 
-      {/* Goal Accountability Card */}
-      <GoalHomeCard />
+      {/* GoalHomeCard removed: action items were duplicated */}
 
       {/* Coach Card - compact inline */}
       {coachName && (
@@ -391,6 +390,9 @@ export default function ScaleHome({
                 </div>
               </div>
             ) : null}
+
+            {/* Weekly commitment + check-in */}
+            <WeeklyCommitmentSection />
           </section>
         ) : null
       )}

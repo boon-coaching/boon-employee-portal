@@ -4,7 +4,7 @@ import type { CoachingStateData } from '../lib/coachingState';
 import { isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName } from '../lib/dataFetcher';
-import { GoalHomeCard } from './goals/GoalHomeCard';
+import { WeeklyCommitmentSection } from './goals/WeeklyCommitmentSection';
 import { PracticePrompt } from './PracticePrompt';
 import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
@@ -283,8 +283,7 @@ export default function ActiveGrowHome({
         userEmail={userEmail}
       />
 
-      {/* Goal Accountability Card */}
-      <GoalHomeCard />
+      {/* GoalHomeCard removed: action items were duplicated */}
 
       {/* ═══════════════════════════════════════════════════════════════════
           CURRENT FOCUS - THE HEADLINE (moved to top)
@@ -630,6 +629,9 @@ export default function ActiveGrowHome({
               </div>
             ))}
           </div>
+
+          {/* Weekly commitment + check-in */}
+          <WeeklyCommitmentSection />
         </section>
       )}
 
