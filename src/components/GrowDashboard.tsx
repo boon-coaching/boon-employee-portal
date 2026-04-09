@@ -147,12 +147,14 @@ export default function GrowDashboard({
             </div>
           </div>
         </div>
-        <MilestoneCelebration
-          completedSessionCount={completedSessions.length}
-          programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
-          totalExpected={12}
-          userEmail={userEmail}
-        />
+        <div className="mt-6">
+          <MilestoneCelebration
+            completedSessionCount={completedSessions.length}
+            programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
+            totalExpected={12}
+            userEmail={userEmail}
+          />
+        </div>
       </header>
 
       {/* Two-column grid */}
