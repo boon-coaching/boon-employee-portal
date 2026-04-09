@@ -84,6 +84,7 @@ export default function CoachPage() {
   const userEmail = portalData.employee?.company_email || null;
   const [coach, setCoach] = useState<Coach | null>(null);
   const [matchSummary, setMatchSummary] = useState<string | null>(null);
+  const [bioExpanded, setBioExpanded] = useState(false);
 
   const historyWithCoach = sessions.filter(s => s.coach_name === coachName);
   const completedWithCoach = historyWithCoach.filter(s => s.status === 'Completed');
@@ -219,8 +220,16 @@ export default function CoachPage() {
           <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
             <h3 className="text-xl font-extrabold text-boon-text mb-5">About {coachFirstName}</h3>
             <p className="text-gray-600 leading-relaxed">
-              {coachBio}
+              {bioExpanded ? coachBio : truncateBio(coachBio, 280)}
             </p>
+            {coachBio.length > 280 && (
+              <button
+                onClick={() => setBioExpanded(!bioExpanded)}
+                className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                {bioExpanded ? 'Show less' : 'Read more'}
+              </button>
+            )}
             <div className="mt-6 flex flex-wrap gap-2">
               {specialties.map(skill => (
                 <span
