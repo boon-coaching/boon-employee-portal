@@ -162,16 +162,17 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-8">
-          Don't have access? Contact your HR team to enroll in coaching.
-        </p>
         <button
           type="button"
-          onClick={() => { setShowPassword(!showPassword); setError(null); }}
-          className="block mx-auto mt-4 text-xs text-gray-300 hover:text-gray-400"
+          onClick={() => { setShowPassword(!showPassword); setError(null); setPassword(''); }}
+          className="block mx-auto mt-6 text-sm font-semibold text-boon-blue hover:text-boon-darkBlue hover:underline"
         >
-          {showPassword ? 'Use magic link instead' : 'Sign in with password'}
+          {showPassword ? 'Use magic link instead' : 'Sign in with password instead'}
         </button>
+
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Don't have access? Contact your HR team to enroll in coaching.
+        </p>
       </div>
     </div>
   );
