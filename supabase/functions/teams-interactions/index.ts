@@ -34,9 +34,9 @@ Deno.serve(async (req) => {
 
       if (botWasAdded) {
         try {
-          const clientId = Deno.env.get('TEAMS_BOT_CLIENT_ID')!;
-          const clientSecret = Deno.env.get('TEAMS_BOT_CLIENT_SECRET')!;
-          const tenantId = Deno.env.get('TEAMS_TENANT_ID')!;
+          const clientId = Deno.env.get('TEAMS_CLIENT_ID')!;
+          const clientSecret = Deno.env.get('TEAMS_CLIENT_SECRET')!;
+          const tenantId = Deno.env.get('TEAMS_APP_TENANT_ID')!;
 
           const tokenResult = await getBotAccessToken(clientId, clientSecret, tenantId);
           if (tokenResult) {
@@ -50,6 +50,37 @@ Deno.serve(async (req) => {
         } catch (err) {
           console.error('Failed to send welcome message:', err);
         }
+      }
+
+      return new Response(JSON.stringify({ status: 'ok' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Plain text message from the user (no Adaptive Card submission).
+    // Required by Teams Store policy #1140.4.3.3: bot must respond to
+    // commands like Hi, Hello, Help with valid responses.
+    if (activity.type === 'message' && activity.text && !activity.value) {
+      try {
+        const clientId = Deno.env.get('TEAMS_CLIENT_ID')!;
+        const clientSecret = Deno.env.get('TEAMS_CLIENT_SECRET')!;
+        const tenantId = Deno.env.get('TEAMS_APP_TENANT_ID')!;
+        const serviceUrl = activity.serviceUrl;
+        const conversationId = activity.conversation?.id;
+
+        if (serviceUrl && conversationId) {
+          const tokenResult = await getBotAccessToken(clientId, clientSecret, tenantId);
+          if (tokenResult) {
+            const text = String(activity.text).trim().toLowerCase().replace(/[^a-z0-9\s]/g, '');
+            const greetings = ['hi', 'hello', 'hey', 'help', 'menu', 'start', 'get started'];
+            const isGreeting = greetings.some((g) => text === g || text.startsWith(g + ' ') || text.endsWith(' ' + g));
+            const card = isGreeting ? buildWelcomeCard() : buildFallbackCard();
+            await sendTeamsMessage(tokenResult.token, serviceUrl, conversationId, card);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to respond to text message:', err);
       }
 
       return new Response(JSON.stringify({ status: 'ok' }), {
@@ -227,6 +258,54 @@ function buildWelcomeCard(): Record<string, unknown> {
         type: 'Action.OpenUrl',
         title: 'Open Boon Portal',
         url: 'https://portal.boon-health.com',
+      },
+      {
+        type: 'Action.OpenUrl',
+        title: 'Get Help',
+        url: 'https://www.boon-health.com/teams-support',
+      },
+      {
+        type: 'Action.OpenUrl',
+        title: 'Contact Us',
+        url: 'https://www.boon-health.com/contact',
+      },
+    ],
+  };
+}
+
+/**
+ * Fallback card shown when the user types something we don't recognize.
+ * Points them toward the supported commands.
+ */
+function buildFallbackCard(): Record<string, unknown> {
+  return {
+    type: 'AdaptiveCard',
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4',
+    body: [
+      {
+        type: 'TextBlock',
+        text: "I'm a notification companion for your Boon coaching program.",
+        wrap: true,
+        weight: 'Bolder',
+      },
+      {
+        type: 'TextBlock',
+        text: "Type **help** to see what I can do, or use the buttons below to jump to the portal.",
+        wrap: true,
+        spacing: 'Small',
+      },
+    ],
+    actions: [
+      {
+        type: 'Action.OpenUrl',
+        title: 'Open Boon Portal',
+        url: 'https://portal.boon-health.com',
+      },
+      {
+        type: 'Action.OpenUrl',
+        title: 'Get Help',
+        url: 'https://www.boon-health.com/teams-support',
       },
     ],
   };
