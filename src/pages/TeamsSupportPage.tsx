@@ -123,8 +123,8 @@ export default function TeamsSupportPage() {
             </p>
             <p className="text-gray-700">
               If you have an active Boon coaching program, nudges will start appearing in Teams based on your coaching schedule and action items. You can also access your full coaching portal at{' '}
-              <a href="https://portal.boon-health.com" className="text-boon-blue font-medium hover:underline">
-                portal.boon-health.com
+              <a href="https://my.boon-health.com" className="text-boon-blue font-medium hover:underline">
+                my.boon-health.com
               </a>.
             </p>
           </div>

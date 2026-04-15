@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Boon Coaching - Teams App Certification Notes v1.0.4</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 40px; color: #111; line-height: 1.5; }
+  h1 { font-size: 24px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin-top: 28px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+  h3 { font-size: 14px; margin-top: 20px; margin-bottom: 4px; }
+  code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+  pre { background: #f4f4f4; padding: 12px; border-radius: 5px; font-size: 13px; overflow-x: auto; }
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+  .meta { color: #666; font-size: 13px; }
+  .callout { background: #fff8e1; border-left: 4px solid #fbc02d; padding: 10px 14px; margin: 14px 0; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<h1>Boon Coaching — Teams App Certification Notes</h1>
+<p class="meta">
+  <strong>App:</strong> Boon Coaching (Microsoft Teams Bot)<br>
+  <strong>Manifest version:</strong> 1.0.4<br>
+  <strong>Product ID:</strong> ac42d19b-cd91-4d1b-8314-0b8a75b47e04<br>
+  <strong>Bot ID:</strong> 4a2f6756-70f8-4802-ba89-eefe3a0aa790<br>
+  <strong>Developer:</strong> Boon Coaching<br>
+  <strong>Contact:</strong> hello@boon-health.com
+</p>
+
+<h2>What This App Does</h2>
+<p>
+  The Boon Coaching Teams app is an <strong>interactive bot</strong> (<code>isNotificationOnly: false</code>) that delivers coaching nudges, action item reminders, goal check-ins, and session prep notifications to employees enrolled in a Boon coaching program. Users interact with Adaptive Cards directly in Teams personal chat and can also type messages to the bot.
+</p>
+
+<h2>Test Account Credentials</h2>
+<div class="callout">
+  <strong>Email:</strong> <code>alex.simmons@boon-health.com</code><br>
+  <strong>Password:</strong> <code>BoonTeams2026Review!</code>
+</div>
+<p>
+  This account has an active Demo SCALE coaching program with a past Completed session and two upcoming Scheduled sessions so you can validate the full portal experience end-to-end.
+</p>
+
+<h2>Login Instructions</h2>
+<ol>
+  <li>Go to <strong>https://my.boon-health.com</strong> (or click the "Open Boon Portal" button in the Teams bot welcome card).</li>
+  <li>On the sign-in screen, below the blue "Continue" button, click the blue link <strong>"Sign in with password instead"</strong>.</li>
+  <li>Enter the email and password above.</li>
+  <li>You will land on a populated dashboard showing your coach, upcoming session, and program details.</li>
+</ol>
+<p class="meta">
+  Note: The portal's primary authentication method for real employees is magic link via email. The "Sign in with password instead" option is a visible, documented secondary path available to all users (including reviewers). No inbox access is required to test.
+</p>
+
+<h2>Bot Testing Instructions</h2>
+<ol>
+  <li>Install the Boon Coaching app from the uploaded manifest package.</li>
+  <li>Add the bot to a personal chat in Microsoft Teams.</li>
+  <li><strong>Proactive welcome:</strong> On install, the bot sends a Welcome Adaptive Card containing:
+    <ul>
+      <li>Welcome message describing the app</li>
+      <li>Feature list: Action Reminders, Goal Check-ins, Session Prep</li>
+      <li>Three buttons: <strong>Open Boon Portal</strong>, <strong>Get Help</strong>, <strong>Contact Us</strong></li>
+    </ul>
+  </li>
+  <li><strong>Supported text commands</strong> (type in chat):
+    <ul>
+      <li><code>hi</code> / <code>hello</code> / <code>hey</code> / <code>help</code> / <code>menu</code> / <code>start</code> → bot responds with the Welcome Adaptive Card</li>
+      <li>Any other text → bot responds with a fallback card pointing the user back to <code>help</code></li>
+    </ul>
+  </li>
+  <li><strong>Button interactions:</strong> Tapping any Action.Submit button on an Adaptive Card returns an updated confirmation card.</li>
+</ol>
+
+<h2>Bot Classification</h2>
+<p>
+  This bot is <strong>interactive</strong>, not notification-only. <code>isNotificationOnly</code> is set to <code>false</code> in the manifest. All declared functionality (welcome card on install, text command responses, Adaptive Card button handlers) is implemented and validated by testing instructions above.
+</p>
+
+<h2>Valid Domains — Ownership Confirmation</h2>
+<p>
+  The manifest declares two valid domains, both under Boon Coaching's control:
+</p>
+<ul>
+  <li><code>nbwwqreqmxakevkwzmij.supabase.co</code> — this is the Boon Coaching Supabase project that hosts our backend database and edge functions (including the bot endpoint below). It is provisioned under our organization's Supabase account.</li>
+  <li><code>boon-health.com</code> — our primary corporate domain.</li>
+</ul>
+
+<h2>Bot Endpoint</h2>
+<p>
+  <code>https://nbwwqreqmxakevkwzmij.supabase.co/functions/v1/teams-interactions</code>
+</p>
+
+<h2>Support & Resources</h2>
+<ul>
+  <li><strong>Email:</strong> hello@boon-health.com</li>
+  <li><strong>Website:</strong> https://www.boon-health.com</li>
+  <li><strong>Teams App Support / Get Started:</strong> https://www.boon-health.com/teams-support</li>
+  <li><strong>Contact:</strong> https://www.boon-health.com/contact</li>
+  <li><strong>Sign up:</strong> https://www.boon-health.com</li>
+  <li><strong>Privacy:</strong> https://www.boon-health.com/privacy</li>
+  <li><strong>Terms:</strong> https://www.boon-health.com/terms</li>
+</ul>
+
+</body>
+</html>

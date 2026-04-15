@@ -257,7 +257,7 @@ function buildWelcomeCard(): Record<string, unknown> {
       {
         type: 'Action.OpenUrl',
         title: 'Open Boon Portal',
-        url: 'https://portal.boon-health.com',
+        url: 'https://my.boon-health.com',
       },
       {
         type: 'Action.OpenUrl',
@@ -300,7 +300,7 @@ function buildFallbackCard(): Record<string, unknown> {
       {
         type: 'Action.OpenUrl',
         title: 'Open Boon Portal',
-        url: 'https://portal.boon-health.com',
+        url: 'https://my.boon-health.com',
       },
       {
         type: 'Action.OpenUrl',

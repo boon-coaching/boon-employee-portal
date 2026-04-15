@@ -3,7 +3,7 @@
 ## Test Credentials (for Additional certification info)
 - **Email**: alex.simmons@boon-health.com
 - **Password**: BoonTeams2026Review
-- **Instructions**: Go to https://portal.boon-health.com, click "Sign in with password" at bottom of login page, enter credentials. The bot sends a welcome Adaptive Card when added to personal chat in Teams.
+- **Instructions**: Go to https://my.boon-health.com, click "Sign in with password" at bottom of login page, enter credentials. The bot sends a welcome Adaptive Card when added to personal chat in Teams.
 
 ## Partner Center Updates
 
