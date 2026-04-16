@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Boon Coaching - Teams App Certification Notes v1.0.4</title>
+<title>Boon Coaching - Teams App Certification Notes v1.0.5</title>
 <style>
   body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 40px; color: #111; line-height: 1.5; }
   h1 { font-size: 24px; margin-bottom: 4px; }
@@ -21,12 +21,22 @@
 <h1>Boon Coaching — Teams App Certification Notes</h1>
 <p class="meta">
   <strong>App:</strong> Boon Coaching (Microsoft Teams Bot)<br>
-  <strong>Manifest version:</strong> 1.0.4<br>
+  <strong>Manifest version:</strong> 1.0.5<br>
   <strong>Product ID:</strong> ac42d19b-cd91-4d1b-8314-0b8a75b47e04<br>
   <strong>Bot ID:</strong> 4a2f6756-70f8-4802-ba89-eefe3a0aa790<br>
   <strong>Developer:</strong> Boon Coaching<br>
-  <strong>Contact:</strong> hello@boon-health.com
+  <strong>Contact:</strong> hello@boon-health.com<br>
+  <strong>Re:</strong> Ticket #5330350 — addresses validator-reported issues
 </p>
+
+<h2>Resubmission Summary — How Each Reported Issue Was Addressed</h2>
+<ul>
+  <li><strong>Issue: validator could not test end-to-end / no clear steps</strong> — This document now provides a fully numbered end-to-end test flow (see "End-to-End Test Flow" below). Two paths are documented: Path A uses your Microsoft-provided test tenant with the app pre-installed by us; Path B uses our test account in any tenant where you can sideload the app.</li>
+  <li><strong>Issue: only Slack option was visible in the portal, no Teams option</strong> — Fixed in portal v1.x.x. The Settings page at <code>https://my.boon-health.com/settings</code> now shows a "Connect Microsoft Teams" button alongside "Connect Slack". One-channel-at-a-time is enforced server-side.</li>
+  <li><strong>Issue: new users have no contact / help / sign-up links in first-run</strong> — The bot's Welcome Adaptive Card (sent proactively on install) contains three buttons: Open Boon Portal, Get Help, Contact Us. The long description and Settings UI also expose Sign Up, Get Started, Help, and Contact links.</li>
+  <li><strong>Issue: bot lacked welcome / Hi / Hello / Help responses</strong> — The bot now sends a proactive Adaptive Card welcome on <code>conversationUpdate</code>, and responds to <code>hi</code>, <code>hello</code>, <code>hey</code>, <code>help</code>, <code>menu</code>, <code>start</code>, <code>get started</code> with the same Welcome card. Any other text returns a fallback card pointing back to <code>help</code>. No dead ends.</li>
+  <li><strong>Issue: long description didn't meet guidelines</strong> — Updated to include features, target audience, account dependency, sign-up/help/contact links, and limitations. See manifest v1.0.5.</li>
+</ul>
 
 <h2>What This App Does</h2>
 <p>
@@ -35,42 +45,52 @@
 
 <h2>Test Account Credentials</h2>
 <div class="callout">
-  <strong>Email:</strong> <code>alex.simmons@boon-health.com</code><br>
-  <strong>Password:</strong> <code>BoonTeams2026Review!</code>
+  <strong>Boon portal account (required for both paths):</strong><br>
+  Email: <code>alex.simmons@boon-health.com</code><br>
+  Password: <code>BoonTeams2026Review!</code>
 </div>
 <p>
   This account has an active Demo SCALE coaching program with a past Completed session and two upcoming Scheduled sessions so you can validate the full portal experience end-to-end.
 </p>
 
-<h2>Login Instructions</h2>
-<ol>
-  <li>Go to <strong>https://my.boon-health.com</strong> (or click the "Open Boon Portal" button in the Teams bot welcome card).</li>
-  <li>On the sign-in screen, below the blue "Continue" button, click the blue link <strong>"Sign in with password instead"</strong>.</li>
-  <li>Enter the email and password above.</li>
-  <li>You will land on a populated dashboard showing your coach, upcoming session, and program details.</li>
-</ol>
-<p class="meta">
-  Note: The portal's primary authentication method for real employees is magic link via email. The "Sign in with password instead" option is a visible, documented secondary path available to all users (including reviewers). No inbox access is required to test.
+<h2>End-to-End Test Flow</h2>
+<p>
+  Follow <strong>Path A</strong> (recommended). Path B is only needed if you cannot sideload the app.
 </p>
 
-<h2>Bot Testing Instructions</h2>
+<h3>Path A — Using your Microsoft test tenant (recommended)</h3>
+<p class="meta">
+  We have side-loaded the Boon Coaching app into the test tenant you provided
+  (<code>M365x34009223.onmicrosoft.com</code>) so the validator user already has the bot available.
+</p>
 <ol>
-  <li>Install the Boon Coaching app from the uploaded manifest package.</li>
-  <li>Add the bot to a personal chat in Microsoft Teams.</li>
-  <li><strong>Proactive welcome:</strong> On install, the bot sends a Welcome Adaptive Card containing:
-    <ul>
-      <li>Welcome message describing the app</li>
-      <li>Feature list: Action Reminders, Goal Check-ins, Session Prep</li>
-      <li>Three buttons: <strong>Open Boon Portal</strong>, <strong>Get Help</strong>, <strong>Contact Us</strong></li>
-    </ul>
-  </li>
-  <li><strong>Supported text commands</strong> (type in chat):
-    <ul>
-      <li><code>hi</code> / <code>hello</code> / <code>hey</code> / <code>help</code> / <code>menu</code> / <code>start</code> → bot responds with the Welcome Adaptive Card</li>
-      <li>Any other text → bot responds with a fallback card pointing the user back to <code>help</code></li>
-    </ul>
-  </li>
-  <li><strong>Button interactions:</strong> Tapping any Action.Submit button on an Adaptive Card returns an updated confirmation card.</li>
+  <li>Sign in to Microsoft Teams as <code>adelev@M365x34009223.onmicrosoft.com</code>.</li>
+  <li>Open the Boon Coaching app from the Teams Apps tab and add it to a personal chat.</li>
+  <li><strong>Expected:</strong> the bot proactively sends a Welcome Adaptive Card with three buttons (Open Boon Portal, Get Help, Contact Us).</li>
+  <li>In a separate browser tab, go to <strong>https://my.boon-health.com</strong>.</li>
+  <li>Below the blue "Continue" button, click <strong>"Sign in with password instead"</strong>.</li>
+  <li>Sign in with the Boon portal credentials shown above.</li>
+  <li>Click <strong>Settings</strong> in the left nav. You will see two buttons: <strong>Connect Slack</strong> and <strong>Connect Microsoft Teams</strong>.</li>
+  <li>Click <strong>Connect Microsoft Teams</strong>. You will be redirected to Microsoft sign-in. Sign in as <code>adelev@M365x34009223.onmicrosoft.com</code>.</li>
+  <li><strong>Expected:</strong> redirect back to portal Settings showing badge "Connected via Microsoft Teams". The Teams bot conversation is now linked to the Boon account.</li>
+  <li>Return to the Teams chat with the Boon Coaching bot. Type <code>hi</code>, then <code>help</code>, then any other text. <strong>Expected:</strong> Welcome card for greetings/help, fallback card otherwise.</li>
+  <li>Wait a few minutes (or click "Send test nudge" via the portal Settings page if available). The bot will send an Adaptive Card with action buttons. Tap any button. <strong>Expected:</strong> a confirmation Adaptive Card replaces the original.</li>
+</ol>
+
+<h3>Path B — Sideload into a different tenant</h3>
+<ol>
+  <li>Download <code>teams-app.zip</code> attached to this submission (or rebuild from the same manifest in the package).</li>
+  <li>In Teams Admin Center for any tenant where sideloading is enabled, upload the package as a custom app.</li>
+  <li>From Teams, install the Boon Coaching app to a personal chat for any test user in that tenant.</li>
+  <li>Continue from step 3 of Path A above.</li>
+</ol>
+
+<h2>Bot Behavior — What to Expect</h2>
+<ol>
+  <li><strong>Proactive welcome on install</strong> (Adaptive Card): heading, feature list, three buttons (Open Boon Portal, Get Help, Contact Us).</li>
+  <li><strong>Text commands</strong>: <code>hi</code>, <code>hello</code>, <code>hey</code>, <code>help</code>, <code>menu</code>, <code>start</code>, <code>get started</code> all return the Welcome card. No dead ends — every input gets a card response with a forward action.</li>
+  <li><strong>Fallback</strong>: any unrecognized text returns a card with copy explaining the bot's role and a link back to the portal plus a Get Help link.</li>
+  <li><strong>Action.Submit buttons</strong>: tapping any button on a nudge card returns an updated confirmation card and records the response in the user's coaching record.</li>
 </ol>
 
 <h2>Bot Classification</h2>

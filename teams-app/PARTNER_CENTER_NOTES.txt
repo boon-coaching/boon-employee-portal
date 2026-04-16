@@ -1,0 +1,146 @@
+================================================================
+PARTNER CENTER — NOTES FOR CERTIFICATION (paste-ready)
+================================================================
+Boon Coaching — Microsoft Teams Bot
+Resubmission for Ticket #5330350
+Manifest version 1.0.5
+
+Use this as the body of the "Notes for certification" field in
+Partner Center > Product overview > Review and publish > Additional
+certification info > Notes for certification.
+
+Test credentials are also provided in the box below; do NOT email
+them per validator request.
+
+================================================================
+RESUBMISSION SUMMARY — HOW EACH ISSUE WAS ADDRESSED
+================================================================
+
+1. End-to-end test path missing: this notes block now provides a
+   numbered Path A and Path B walkthrough. Path A uses the
+   M365x34009223 test tenant you provided, with the app already
+   side-loaded by us so the bot is available to adelev@... before
+   testing begins.
+
+2. "Only Slack option in portal, no Teams option": fixed. Settings
+   page at https://my.boon-health.com/settings now shows both
+   "Connect Slack" and "Connect Microsoft Teams" buttons.
+   One-channel-at-a-time enforced server-side.
+
+3. Screenshot captions: captions are provided via the alt text on
+   each screenshot in the Partner Center listing.
+
+4. New-user contact / help / sign-up access: provided in three
+   places — (a) Welcome Adaptive Card on bot install includes
+   Open Boon Portal, Get Help, and Contact Us buttons; (b) long
+   description includes Sign Up, Get Started, Help, Contact Us
+   links; (c) portal Settings page links to Help and Contact.
+
+5. Long description rewritten to include features, target audience,
+   account dependency, sign-up/help/contact links, and limitations.
+
+6. Welcome bot message: bot now sends a proactive Adaptive Card
+   on conversationUpdate when added to a personal chat. Card
+   includes feature overview and three action buttons.
+
+7. Hi / Hello / Help / fallback responses: bot responds to hi,
+   hello, hey, help, menu, start, get started with the Welcome
+   Adaptive Card. Any other text returns a fallback card with
+   forward actions. No dead ends.
+
+Items noted as recommendations in the prior validation (mobile
+screenshots, promotional video, Publisher Attestation) are
+acknowledged; they were flagged as enhancements rather than
+blockers and are being tracked on our roadmap.
+
+================================================================
+TEST CREDENTIALS — BOON PORTAL
+================================================================
+
+Email:    alex.simmons@boon-health.com
+Password: BoonTeams2026Review!
+
+Sign-in path: at https://my.boon-health.com, click the blue link
+"Sign in with password instead" below the Continue button.
+
+This account has an active Demo SCALE coaching program with one
+past Completed session and two upcoming Scheduled sessions, so
+the populated state is visible end-to-end.
+
+================================================================
+PATH A — RECOMMENDED — USING YOUR M365x34009223 TEST TENANT
+================================================================
+The Boon Coaching app has been side-loaded into your test tenant
+(M365x34009223.onmicrosoft.com). The bot is available to
+adelev@M365x34009223.onmicrosoft.com without any additional setup.
+
+Step-by-step:
+
+1.  Sign in to Microsoft Teams as
+    adelev@M365x34009223.onmicrosoft.com.
+
+2.  Open Apps > Built for your org > Boon Coaching, and add it
+    to a personal chat.
+
+3.  EXPECTED: the bot sends a proactive Welcome Adaptive Card
+    with three buttons: Open Boon Portal, Get Help, Contact Us.
+
+4.  In a separate browser tab, go to https://my.boon-health.com.
+
+5.  Click "Sign in with password instead" below the blue Continue
+    button.
+
+6.  Sign in using the Boon portal credentials at the top of this
+    notes block.
+
+7.  Click Settings in the left nav. You will see two connect
+    buttons: Connect Slack and Connect Microsoft Teams.
+
+8.  Click Connect Microsoft Teams. Sign in to Microsoft as
+    adelev@M365x34009223.onmicrosoft.com.
+
+9.  EXPECTED: redirect back to portal Settings showing the badge
+    "Connected via Microsoft Teams". The bot conversation is now
+    linked to the Boon coaching account.
+
+10. Return to the Teams bot chat. Type the following one at a time:
+       hi
+       help
+       random text that is not a command
+    EXPECTED: Welcome card for hi and help, fallback card for the
+    third input. All responses include forward actions.
+
+11. To validate Adaptive Card button interactions, tap any button
+    on a nudge card. EXPECTED: the card is replaced with a
+    confirmation Adaptive Card.
+
+================================================================
+PATH B — IF YOU CANNOT USE THE PROVIDED TENANT
+================================================================
+1.  Download teams-app.zip (attached to this submission).
+2.  In Teams Admin Center for any tenant where sideloading is
+    enabled, upload the package as a custom app.
+3.  Install Boon Coaching to a personal chat for any test user.
+4.  Continue from step 3 of Path A above.
+
+================================================================
+APP CLASSIFICATION & TECHNICAL DETAILS
+================================================================
+- Bot is interactive (isNotificationOnly = false).
+- Manifest declares scopes: ["personal"].
+- Valid domains: nbwwqreqmxakevkwzmij.supabase.co (our Supabase
+  project hosting the bot endpoint), boon-health.com (our
+  corporate domain).
+- Bot endpoint:
+  https://nbwwqreqmxakevkwzmij.supabase.co/functions/v1/teams-interactions
+- Bot ID: 4a2f6756-70f8-4802-ba89-eefe3a0aa790
+- Product ID: ac42d19b-cd91-4d1b-8314-0b8a75b47e04
+
+================================================================
+SUPPORT
+================================================================
+Email:   hello@boon-health.com
+Help:    https://www.boon-health.com/teams-support
+Contact: https://www.boon-health.com/contact
+Privacy: https://www.boon-health.com/privacy
+Terms:   https://www.boon-health.com/terms

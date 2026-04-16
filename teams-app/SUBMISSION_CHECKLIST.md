@@ -1,14 +1,28 @@
 # Teams App Store Submission Checklist
+## Resubmission for Ticket #5330350 — manifest v1.0.5
 
-## Test Credentials (for Additional certification info)
-- **Email**: alex.simmons@boon-health.com
-- **Password**: BoonTeams2026Review
-- **Instructions**: Go to https://my.boon-health.com, click "Sign in with password" at bottom of login page, enter credentials. The bot sends a welcome Adaptive Card when added to personal chat in Teams.
+## Pre-submission setup (do this BEFORE updating Partner Center)
+
+### 1. Side-load the app into Microsoft's test tenant (Path A)
+- Sign in to Teams Admin Center as `admin@M365x34009223.onmicrosoft.com` (creds in the validator's email).
+- Upload `teams-app.zip` (manifest v1.0.5) as a custom app for the org.
+- Confirm `adelev@M365x34009223.onmicrosoft.com` can see "Boon Coaching" under Apps > Built for your org.
+- This is what unblocks the validator's "couldn't test end-to-end" complaint.
+
+### 2. Verify the Boon portal test account
+- Confirm `alex.simmons@boon-health.com` / `BoonTeams2026Review!` still works at https://my.boon-health.com.
+- Confirm Settings page shows BOTH "Connect Slack" and "Connect Microsoft Teams" buttons after the portal deploy ships.
 
 ## Partner Center Updates
 
+### Notes for certification
+Open `PARTNER_CENTER_NOTES.txt` in this directory and paste the entire body into the "Notes for certification" field under Product overview > Review and publish > Additional certification info.
+
+### Test credentials (Partner Center, NOT email)
+Per validator request, do NOT email creds. Submit them via Partner Center in the notes block (already included in `PARTNER_CENTER_NOTES.txt`).
+
 ### Packages
-Upload `teams-app.zip` from this directory (manifest v1.0.3)
+Upload `teams-app.zip` from this directory (manifest v1.0.5)
 
 ### Properties
 Developer name: **Boon Coaching**
