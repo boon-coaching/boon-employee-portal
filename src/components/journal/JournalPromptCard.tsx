@@ -130,7 +130,7 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
         className={
           compact
             ? 'w-full bg-white/10 border border-white/20 rounded-xl p-3 text-sm text-white placeholder-white/50 resize-none focus:outline-none focus:ring-2 focus:ring-white/30'
-            : 'w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-200'
+            : 'w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue'
         }
       />
 
@@ -143,7 +143,7 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
             <select
               value={competencyArea}
               onChange={(e) => setCompetencyArea(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
             >
               <option value="">None</option>
               {COMPETENCY_OPTIONS.map((opt) => (
@@ -159,7 +159,7 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
               type="checkbox"
               checked={shareWithCoach}
               onChange={(e) => setShareWithCoach(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-200"
+              className="w-4 h-4 rounded border-gray-300 text-boon-blue accent-boon-blue focus:ring-boon-blue/20"
             />
             <span className="text-sm text-gray-600">Share with my coach</span>
           </label>
