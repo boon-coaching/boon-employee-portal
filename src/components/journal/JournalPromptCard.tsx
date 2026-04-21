@@ -103,7 +103,8 @@ export function JournalPromptCard({ compact = false }: JournalPromptCardProps) {
         <button
           onClick={handleSave}
           disabled={!body.trim() || saving}
-          className="mt-4 inline-flex items-center justify-center bg-boon-coral text-white font-semibold text-sm rounded-pill px-5 py-2.5 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          className="mt-4 inline-flex items-center justify-center bg-boon-coral text-white font-semibold text-sm rounded-pill px-5 py-2.5 hover:opacity-90 disabled:cursor-not-allowed transition-opacity"
+          style={{ opacity: saving ? 0.6 : 1 }}
         >
           {saving ? 'Saving...' : 'Save reflection'}
         </button>

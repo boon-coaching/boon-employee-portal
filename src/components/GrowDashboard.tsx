@@ -9,7 +9,6 @@ import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus } from '../lib/dataFetcher';
 import CompetencyProgressCard from './CompetencyProgressCard';
 import SessionPrep from './SessionPrep';
-import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
 
 const devLog = (...args: unknown[]) => {
@@ -60,7 +59,6 @@ export default function GrowDashboard({
   coachingState,
   onActionUpdate,
   userEmail,
-  programType,
 }: GrowDashboardProps) {
   const [updatingActionId, setUpdatingActionId] = useState<string | null>(null);
 
@@ -204,38 +202,49 @@ export default function GrowDashboard({
   const actionsDone = recentlyCompletedActions.length;
   const actionsTotal = pendingActions.length + recentlyCompletedActions.length;
 
+  // Momentum chip wording derived from completed count. This replaces the
+  // dedicated MilestoneCelebration banner — same signal, one row instead of
+  // an extra 80px card.
+  const momentumLabel = (() => {
+    if (completedCount === 0) return 'JUST STARTING';
+    if (completedCount < 3) return 'EARLY STEPS';
+    if (completedCount < Math.ceil(totalExpected / 2)) return 'BUILDING MOMENTUM';
+    if (completedCount < totalExpected - 2) return 'MID-STRETCH';
+    return 'HOME STRETCH';
+  })();
+
+  const [showAllActions, setShowAllActions] = useState(false);
+  const MAX_ACTIONS = 3;
+  const visiblePending = showAllActions ? pendingActions : pendingActions.slice(0, MAX_ACTIONS);
+  const visibleCompleted = showAllActions ? recentlyCompletedActions : [];
+  const hiddenActionCount = (pendingActions.length - visiblePending.length) + recentlyCompletedActions.length;
+
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
-      {/* ─────────────── Editorial hero ─────────────── */}
-      <header className="pb-10 mb-10 border-b border-boon-charcoal/10">
-        <div className="flex items-center gap-3 mb-7">
+      {/* ─────────────── Compact editorial hero ─────────────── */}
+      <header className="pb-6 mb-6 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="w-6 h-px bg-boon-blue" aria-hidden />
           <Eyebrow color="blue">Your progress</Eyebrow>
           <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
+          <Eyebrow color="coral">· {momentumLabel}</Eyebrow>
         </div>
-        <Headline as="h1" size="xl">
-          {heroStatement}
-          <Headline.Kicker block color="blue">{heroKicker}</Headline.Kicker>
-        </Headline>
-        <div className="mt-8 flex items-center gap-4">
-          <div className="flex-1 max-w-sm h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
-            <div
-              className="h-full bg-boon-blue rounded-pill transition-all"
-              style={{ width: `${progressPct}%` }}
-            />
+        <div className="flex items-end justify-between gap-8 flex-wrap">
+          <Headline as="h1" size="lg">
+            {heroStatement}{' '}
+            <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
+          </Headline>
+          <div className="flex items-center gap-3 pb-2 shrink-0">
+            <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+              <div
+                className="h-full bg-boon-blue rounded-pill transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <Eyebrow color="muted">{Math.round(progressPct)}%</Eyebrow>
           </div>
-          <Eyebrow color="muted">{Math.round(progressPct)}% complete</Eyebrow>
         </div>
       </header>
-
-      <div className="mb-10">
-        <MilestoneCelebration
-          completedSessionCount={completedSessions.length}
-          programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
-          totalExpected={totalExpected}
-          userEmail={userEmail}
-        />
-      </div>
 
       {/* ─────────────── Row 1: Next Session (navy) + Reflection (coral) ─────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6 mb-8">
@@ -357,14 +366,14 @@ export default function GrowDashboard({
             <div>
               <Eyebrow color="muted" className="mb-3">Action items</Eyebrow>
               <div className="flex flex-col gap-2.5">
-                {pendingActions.map((action) => {
+                {visiblePending.map((action) => {
                   const isUpdating = updatingActionId === action.id;
                   return (
                     <button
                       key={action.id}
                       onClick={() => handleCompleteAction(action.id)}
                       disabled={isUpdating}
-                      className={`flex items-start gap-3.5 p-4 rounded-btn bg-white border border-boon-charcoal/[0.08] hover:border-boon-blue/40 hover:shadow-sm transition-all text-left group ${isUpdating ? 'opacity-50' : ''}`}
+                      className={`flex items-start gap-3.5 p-3.5 rounded-btn bg-white border border-boon-charcoal/[0.08] hover:border-boon-blue/40 hover:shadow-sm transition-all text-left group ${isUpdating ? 'opacity-50' : ''}`}
                       title="Mark as complete"
                     >
                       <span className="w-5 h-5 rounded-md border-[1.5px] border-boon-charcoal/30 group-hover:border-boon-blue group-hover:bg-boon-blue/5 transition-all flex-shrink-0 mt-0.5 flex items-center justify-center">
@@ -372,34 +381,40 @@ export default function GrowDashboard({
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-boon-charcoal leading-relaxed">{action.action_text}</p>
-                        <p className="mt-1.5 text-[11px] text-boon-charcoal/50">
-                          From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                      </div>
+                      <p className="flex-1 text-sm text-boon-charcoal leading-relaxed">{action.action_text}</p>
                     </button>
                   );
                 })}
-                {recentlyCompletedActions.map((action) => (
+                {visibleCompleted.map((action) => (
                   <div
                     key={action.id}
-                    className="flex items-start gap-3.5 p-4 rounded-btn bg-white/50 border border-boon-charcoal/[0.06]"
+                    className="flex items-start gap-3.5 p-3.5 rounded-btn bg-white/50 border border-boon-charcoal/[0.06]"
                   >
                     <span className="w-5 h-5 rounded-md bg-boon-blue flex-shrink-0 mt-0.5 flex items-center justify-center">
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-boon-charcoal/50 leading-relaxed line-through">{action.action_text}</p>
-                      <p className="mt-1.5 text-[11px] text-boon-charcoal/50">
-                        Done {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
-                      </p>
-                    </div>
+                    <p className="flex-1 text-sm text-boon-charcoal/50 leading-relaxed line-through">{action.action_text}</p>
                   </div>
                 ))}
               </div>
+              {hiddenActionCount > 0 && (
+                <button
+                  onClick={() => setShowAllActions(true)}
+                  className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors"
+                >
+                  + {hiddenActionCount} more
+                </button>
+              )}
+              {showAllActions && (pendingActions.length > MAX_ACTIONS || recentlyCompletedActions.length > 0) && (
+                <button
+                  onClick={() => setShowAllActions(false)}
+                  className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-charcoal/55 hover:text-boon-charcoal transition-colors"
+                >
+                  Show less
+                </button>
+              )}
             </div>
           ) : !lastSession?.goals && (
             <p className="text-sm italic text-boon-charcoal/60">
@@ -409,36 +424,14 @@ export default function GrowDashboard({
         </Card>
       )}
 
-      {/* ─────────────── Row 3: Competency growth (full width, when available) ─────────────── */}
+      {/* ─────────────── Row 3: Competency (optional) + Practice nudge ─────────────── */}
       {focusAreas.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-6">
           <CompetencyProgressCard focusAreas={focusAreas} />
         </div>
       )}
 
-      {/* ─────────────── Row 4: Coach + Practice (side by side) ─────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card padding="md">
-          <Eyebrow color="muted" className="mb-4">Your coach</Eyebrow>
-          <div className="flex items-center gap-4">
-            <Avatar name={coachName} src={coachPhotoUrl} size="xl" />
-            <div className="flex-1 min-w-0">
-              <h4 className="font-display font-bold text-boon-navy text-[20px] leading-tight tracking-[-0.015em]">{coachName}</h4>
-              <p className="text-xs text-boon-charcoal/55 mt-1">
-                {coachProfile?.headline || 'Your coach'}
-              </p>
-              <p className="text-xs text-boon-charcoal/55 mt-0.5">
-                {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together
-              </p>
-            </div>
-            <Button as="a" href="/coach" variant="ghost" size="sm">
-              Profile →
-            </Button>
-          </div>
-        </Card>
-
-        <PracticePrompt />
-      </div>
+      <PracticePrompt />
     </div>
   );
 }
