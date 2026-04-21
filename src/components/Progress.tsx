@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Headline } from '../lib/design-system';
+import { Headline, Badge } from '../lib/design-system';
 import type { SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CoachingWin } from '../lib/types';
 
 const devLog = (...args: unknown[]) => {
@@ -66,15 +66,6 @@ function mapCompetencyName(name: string): string {
   return name.toLowerCase().replace(/ /g, '_').replace(/&/g, 'and');
 }
 
-// Get score label color
-function getScoreLabelColor(label: string): string {
-  switch (label?.toLowerCase()) {
-    case 'excelling': return 'text-boon-success bg-green-100';
-    case 'growing': return 'text-boon-blue bg-boon-blue/10';
-    case 'applying': return 'text-boon-warning bg-boon-warning/12';
-    default: return 'text-boon-charcoal/75 bg-boon-offWhite';
-  }
-}
 
 // Get bar color based on score
 function getBarColor(score: number): string {
@@ -1684,87 +1675,103 @@ export default function ProgressPage() {
           {/* Competency Cards Grid */}
           <section>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {competencyData.map(comp => (
-                <div
-                  key={comp.key}
-                  className="bg-white p-6 rounded-card shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-boon-navy text-sm leading-tight">{comp.label}</h3>
-                    {comp.scoreLabel && (
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill ${getScoreLabelColor(comp.scoreLabel)}`}>
-                        {comp.scoreLabel}
-                      </span>
-                    )}
-                  </div>
+              {competencyData.map(comp => {
+                const score = comp.current || 0;
+                const scoreLbl = comp.scoreLabel?.toLowerCase();
+                const badgeVariant: 'success' | 'info' | 'warning' | 'neutral' =
+                  scoreLbl === 'excelling' || scoreLbl === 'mastering' ? 'success'
+                  : scoreLbl === 'growing' ? 'info'
+                  : scoreLbl === 'applying' ? 'warning'
+                  : 'neutral';
+                const accentClass =
+                  badgeVariant === 'success' ? 'bg-boon-success'
+                  : badgeVariant === 'warning' ? 'bg-boon-warning'
+                  : badgeVariant === 'info' ? 'bg-boon-blue'
+                  : 'bg-boon-charcoal/20';
+                const barFillClass =
+                  score >= 4 ? 'bg-boon-success'
+                  : score >= 3 ? 'bg-boon-blue'
+                  : 'bg-boon-warning';
+                const baselinePct = (comp.baseline || 0) * 20;
+                const showPractice = (scoreLbl === 'applying' || comp.current <= 3) && comp.current > 0 && !isCompleted && onNavigate;
 
-                  <div className="space-y-3">
-                    {/* Baseline */}
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Baseline</span>
-                        <span className="font-bold text-boon-charcoal/55">{comp.baseline || '—'}/5</span>
-                      </div>
-                      <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
-                        <div
-                          className="h-full bg-boon-charcoal/20 rounded-pill transition-all duration-500"
-                          style={{ width: `${(comp.baseline || 0) * 20}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Current - only show if we have actual assessment data */}
-                    {hasActualCurrentScores ? (
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Current</span>
-                          <span className="text-boon-navy font-bold">{comp.current || '—'}/5</span>
-                        </div>
-                        <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
-                          <div
-                            className={`h-full rounded-pill transition-all duration-500 ${(comp.current || 0) < (comp.baseline || 0) ? 'bg-boon-warning' : 'bg-boon-blue'}`}
-                            style={{ width: `${(comp.current || 0) * 20}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      /* Show "After Midpoint" placeholder when no current data */
-                      isGrowOrExec && !isCompleted && (
-                        <p className="text-xs text-boon-charcoal/55 italic">
-                          Updated after midpoint assessment
-                        </p>
-                      )
-                    )}
-
-                    {/* Improvement indicator - only show if we have actual current scores */}
-                    {hasActualCurrentScores && comp.improvement !== null && (
-                      <div className={`flex items-center justify-end gap-1 text-xs font-bold ${comp.improvement > 0 ? 'text-boon-success' : comp.improvement < 0 ? 'text-boon-warning' : 'text-boon-charcoal/55'}`}>
-                        {comp.improvement > 0 ? (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
-                        ) : comp.improvement < 0 ? (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
-                        ) : (
-                          <span>→</span>
+                return (
+                  <div
+                    key={comp.key}
+                    className="relative bg-white rounded-card border border-boon-charcoal/[0.08] overflow-hidden"
+                  >
+                    <span aria-hidden className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentClass}`} />
+                    <div className="p-5 pl-6">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <h3 className="font-display font-bold text-boon-navy text-[15px] leading-tight tracking-[-0.01em]">
+                          {comp.label}
+                        </h3>
+                        {comp.scoreLabel && (
+                          <Badge variant={badgeVariant}>{comp.scoreLabel}</Badge>
                         )}
-                        {Math.abs(comp.improvement)}%
                       </div>
-                    )}
 
-                    {/* Practice Bridge - show for lower scoring competencies */}
-                    {(comp.scoreLabel?.toLowerCase() === 'applying' || comp.current <= 3) && comp.current > 0 && !isCompleted && onNavigate && (
-                      <button
-                        onClick={() => onNavigate('practice')}
-                        className="mt-3 w-full py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-btn hover:bg-boon-lightBlue transition-all flex items-center justify-center gap-1"
-                      >
-                        Practice this
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    )}
+                      {hasActualCurrentScores ? (
+                        <>
+                          <div className="flex items-baseline gap-2 mb-2">
+                            <span className="font-display font-bold text-boon-navy text-[26px] leading-none tracking-[-0.02em]">
+                              {comp.current || '—'}
+                            </span>
+                            <span className="text-xs text-boon-charcoal/55">/ 5</span>
+                            {comp.baseline !== null && comp.baseline !== comp.current && (
+                              <span className="ml-2 text-[11px] font-semibold text-boon-charcoal/55">
+                                from {comp.baseline}
+                              </span>
+                            )}
+                            {comp.improvement !== null && comp.improvement !== 0 && (
+                              <span className={`ml-auto inline-flex items-center gap-0.5 text-xs font-bold ${
+                                comp.improvement > 0 ? 'text-boon-success' : 'text-boon-warning'
+                              }`}>
+                                {comp.improvement > 0 ? '↑' : '↓'} {Math.abs(comp.improvement)}%
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="relative h-1.5 bg-boon-offWhite rounded-pill overflow-hidden">
+                            <div
+                              className={`h-full ${barFillClass} rounded-pill transition-all duration-500`}
+                              style={{ width: `${score * 20}%` }}
+                            />
+                            {comp.baseline !== null && comp.baseline > 0 && comp.baseline !== comp.current && (
+                              <span
+                                aria-hidden
+                                className="absolute top-0 bottom-0 w-px bg-boon-charcoal/40"
+                                style={{ left: `${baselinePct}%` }}
+                              />
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        isGrowOrExec && !isCompleted && (
+                          <>
+                            <div className="flex items-baseline gap-2 mb-2">
+                              <span className="font-display font-bold text-boon-charcoal/40 text-[26px] leading-none tracking-[-0.02em]">
+                                {comp.baseline || '—'}
+                              </span>
+                              <span className="text-xs text-boon-charcoal/45">/ 5 baseline</span>
+                            </div>
+                            <p className="text-[11px] text-boon-charcoal/50 italic">Updated after midpoint</p>
+                          </>
+                        )
+                      )}
+
+                      {showPractice && (
+                        <button
+                          onClick={() => onNavigate('practice')}
+                          className="mt-4 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors"
+                        >
+                          Practice this →
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 
