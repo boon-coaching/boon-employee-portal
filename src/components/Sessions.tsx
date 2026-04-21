@@ -309,8 +309,8 @@ export default function SessionsPage() {
             </span>
           </div>
           <Headline as="h1" size="lg">
-            {isCompleted ? 'The archive.' : 'Your sessions.'}{' '}
-            <Headline.Kicker color="blue">
+            {isCompleted ? 'The archive.' : 'Your sessions.'}
+            <Headline.Kicker block color="blue">
               {isCompleted ? 'What you built.' : 'Yours to keep.'}
             </Headline.Kicker>
           </Headline>
@@ -415,7 +415,7 @@ export default function SessionsPage() {
             </div>
           </div>
 
-          <div className="space-y-10">
+          <div className="space-y-8">
             {groupedSessions.length > 0 ? groupedSessions.map((group) => (
               <div key={group.key}>
                 <div className="flex items-center gap-3 mb-4 px-1">
