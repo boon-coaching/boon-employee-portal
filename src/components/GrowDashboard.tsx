@@ -237,7 +237,7 @@ export default function GrowDashboard({
                   </div>
                   <div>
                     <p className="font-bold text-slate-900 text-sm">Session with {coachFirstName}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-boon-charcoal/55">
                       {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </p>
                   </div>
@@ -388,7 +388,7 @@ export default function GrowDashboard({
                         href={upcomingSession.zoom_join_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3.5 py-1.5 bg-boon-success text-white text-[11px] font-bold uppercase tracking-[0.08em] rounded-pill hover:opacity-90 transition-opacity"
+                        className="px-3.5 py-1.5 bg-boon-success text-white text-[11px] font-extrabold uppercase tracking-[0.08em] rounded-pill hover:opacity-90 transition-opacity"
                       >
                         Join
                       </a>
@@ -418,7 +418,7 @@ export default function GrowDashboard({
                       href={profile.booking_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-3.5 py-1.5 bg-boon-blue text-white text-[11px] font-bold uppercase tracking-[0.08em] rounded-pill hover:bg-boon-darkBlue transition-colors"
+                      className="px-3.5 py-1.5 bg-boon-blue text-white text-[11px] font-extrabold uppercase tracking-[0.08em] rounded-pill hover:bg-boon-darkBlue transition-colors"
                     >
                       Book
                     </a>
@@ -455,7 +455,7 @@ export default function GrowDashboard({
               </div>
               <a
                 href="/coach"
-                className="text-[11px] font-bold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors px-3 py-1.5 rounded-pill border border-boon-blue/20 hover:border-boon-blue/40"
+                className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors px-3 py-1.5 rounded-pill border border-boon-blue/20 hover:border-boon-blue/40"
               >
                 Profile
               </a>

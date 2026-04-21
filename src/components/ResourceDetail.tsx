@@ -119,7 +119,7 @@ export function ResourceDetail() {
         {resource.competencies?.length > 0 && (
           <div className="flex gap-1.5">
             {resource.competencies.map(c => (
-              <span key={c} className="px-2.5 py-1 bg-boon-lightBlue text-[11px] font-bold text-boon-blue uppercase tracking-wider rounded-lg">
+              <span key={c} className="px-2.5 py-1 bg-boon-lightBlue text-[11px] font-extrabold text-boon-blue uppercase tracking-wider rounded-lg">
                 {c}
               </span>
             ))}

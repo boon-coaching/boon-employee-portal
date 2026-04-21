@@ -136,22 +136,22 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   // If no upcoming session, show a different message
   if (!upcomingSession) {
     return (
-      <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-visible">
+      <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-card p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-visible">
           <div className="relative z-10">
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-boon-blue flex items-center justify-center flex-shrink-0 shadow-lg shadow-boon-blue/30">
+            <div className="w-12 h-12 rounded-card bg-boon-blue flex items-center justify-center flex-shrink-0 shadow-lg shadow-boon-blue/30">
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-boon-text">No upcoming session</h2>
-              <p className="text-sm text-gray-500">Book a session to continue your coaching journey</p>
+              <h2 className="text-xl font-extrabold text-boon-navy">No upcoming session</h2>
+              <p className="text-sm text-boon-charcoal/55">Book a session to continue your coaching journey</p>
             </div>
           </div>
           <a
             href="mailto:hello@boon-health.com?subject=Book%20a%20Coaching%20Session"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-btn hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20"
           >
             Book a session
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -166,21 +166,21 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
   const sessionDateTime = upcomingSession ? formatSessionDateTime(upcomingSession.session_date) : null;
 
   return (
-    <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-visible">
+    <section className="relative bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-card p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg overflow-visible">
       {/* Decorative element */}
 
       <div className="relative z-10">
         {/* Header with prominent session info */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-boon-blue flex items-center justify-center flex-shrink-0 shadow-lg shadow-boon-blue/30">
+            <div className="w-14 h-14 rounded-card bg-boon-blue flex items-center justify-center flex-shrink-0 shadow-lg shadow-boon-blue/30">
               <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-boon-text">Session with {coachFirstName}</h2>
-              <p className="text-sm text-gray-600 mt-0.5 font-medium">
+              <h2 className="text-xl font-extrabold text-boon-navy">Session with {coachFirstName}</h2>
+              <p className="text-sm text-boon-charcoal/75 mt-0.5 font-medium">
                 {sessionDateTime?.dayName}, {sessionDateTime?.monthDay} at {sessionDateTime?.time}
               </p>
             </div>
@@ -192,7 +192,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
               href={upcomingSession.zoom_join_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-600/30 animate-pulse hover:animate-none"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-boon-success text-white font-bold rounded-btn hover:bg-boon-success/90 transition-all shadow-lg shadow-green-600/30 animate-pulse hover:animate-none"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -204,46 +204,46 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
 
         {/* Since Your Last Session */}
         {completedSessions.length > 0 && (
-          <div className="bg-white p-4 rounded-xl border border-gray-100 mb-6">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Since your last session</p>
+          <div className="bg-white p-4 rounded-btn border border-boon-charcoal/[0.08] mb-6">
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-3">Since your last session</p>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-lg font-black text-boon-text">{entriesSinceLastSession}</p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide">Reflections</p>
+                <p className="text-lg font-black text-boon-navy">{entriesSinceLastSession}</p>
+                <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-wide">Reflections</p>
               </div>
               <div>
-                <p className="text-lg font-black text-boon-text">
+                <p className="text-lg font-black text-boon-navy">
                   {currentWeek.hasCommitment ? (currentWeek.hasMidweekCheckin || currentWeek.hasEndweekCheckin ? '✓' : '—') : '—'}
                 </p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide">Check-ins</p>
+                <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-wide">Check-ins</p>
               </div>
               <div>
-                <p className="text-lg font-black text-boon-text">
+                <p className="text-lg font-black text-boon-navy">
                   {selfProgress === 'feeling_confident' ? '💪' : selfProgress === 'working_on_it' ? '🔄' : '—'}
                 </p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide">Goal Status</p>
+                <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-wide">Goal Status</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Prepare for your session label */}
-        <p className="text-xs font-bold text-boon-blue uppercase tracking-widest mb-4">Prepare for your session</p>
+        <p className="text-xs font-bold text-boon-blue uppercase tracking-[0.18em] mb-4">Prepare for your session</p>
 
         {/* Context Section */}
         <div className="mb-8 space-y-4">
           {/* Current Goal - from most recent session with goals */}
           {sessionWithGoals?.goals && (
-            <div className="bg-white p-4 rounded-xl border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Current Goal</p>
-              <p className="text-sm text-gray-700">{sessionWithGoals.goals}</p>
+            <div className="bg-white p-4 rounded-btn border border-boon-charcoal/[0.08]">
+              <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-2">Current Goal</p>
+              <p className="text-sm text-boon-charcoal/75">{sessionWithGoals.goals}</p>
             </div>
           )}
 
           {/* Action Items - from action_items table */}
           {recentPendingItems.length > 0 && (
-            <div className="bg-white p-4 rounded-xl border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+            <div className="bg-white p-4 rounded-btn border border-boon-charcoal/[0.08]">
+              <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-3">
                 Action Items from your last {recentSessionCount} session{recentSessionCount !== 1 ? 's' : ''}
               </p>
               <div className="space-y-2">
@@ -254,10 +254,10 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
                   return (
                     <label
                       key={item.id}
-                      className={`flex items-start gap-3 p-2 rounded-lg cursor-pointer transition-all ${
+                      className={`flex items-start gap-3 p-2 rounded-btn cursor-pointer transition-all ${
                         isCompleted
-                          ? 'bg-green-50/50 text-gray-400'
-                          : 'hover:bg-white text-gray-700'
+                          ? 'bg-boon-success/10/50 text-boon-charcoal/55'
+                          : 'hover:bg-white text-boon-charcoal/75'
                       } ${isUpdating ? 'opacity-50' : ''}`}
                     >
                       <input
@@ -283,15 +283,15 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
           {/* Goal-specific prompt (only if they have a coaching goal) */}
           {sessionWithGoals?.goals && (
             <div>
-              <label className="block text-sm font-bold text-boon-text mb-2">
+              <label className="block text-sm font-bold text-boon-navy mb-2">
                 How's your goal going?
               </label>
-              <p className="text-xs text-gray-400 mb-2 italic">"{sessionWithGoals.goals.slice(0, 100)}{sessionWithGoals.goals.length > 100 ? '...' : ''}"</p>
+              <p className="text-xs text-boon-charcoal/55 mb-2 italic">"{sessionWithGoals.goals.slice(0, 100)}{sessionWithGoals.goals.length > 100 ? '...' : ''}"</p>
               <textarea
                 value={goalReflection}
                 onChange={(e) => setGoalReflection(e.target.value)}
                 placeholder="What progress have you made? What's been challenging?"
-                className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+                className="w-full p-4 rounded-btn border-2 border-boon-charcoal/[0.08] focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
                 rows={3}
               />
             </div>
@@ -300,14 +300,14 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
           {/* Action items prompt (only if they have pending items) */}
           {recentPendingItems.length > 0 && (
             <div>
-              <label className="block text-sm font-bold text-boon-text mb-2">
+              <label className="block text-sm font-bold text-boon-navy mb-2">
                 Which action items do you want to discuss?
               </label>
               <textarea
                 value={actionReflection}
                 onChange={(e) => setActionReflection(e.target.value)}
                 placeholder="Any progress, blockers, or questions about your action items?"
-                className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[60px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+                className="w-full p-4 rounded-btn border-2 border-boon-charcoal/[0.08] focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[60px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
                 rows={2}
               />
             </div>
@@ -315,21 +315,21 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
 
           {/* Open-ended */}
           <div>
-            <label className="block text-sm font-bold text-boon-text mb-2">
+            <label className="block text-sm font-bold text-boon-navy mb-2">
               Anything else on your mind?
             </label>
             <textarea
               value={openEnded}
               onChange={(e) => setOpenEnded(e.target.value)}
               placeholder="Big or small, what do you want to make sure you talk about?"
-              className="w-full p-4 rounded-xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+              className="w-full p-4 rounded-btn border-2 border-boon-charcoal/[0.08] focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
               rows={3}
             />
           </div>
 
           {/* Save + coach visibility note */}
           <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-400 flex items-center gap-1.5">
+            <p className="text-xs text-boon-charcoal/55 flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -338,7 +338,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
             </p>
             <div className="flex items-center gap-3">
               {lastSaved && !isSaving && (
-                <span className="text-xs text-green-600 flex items-center gap-1">
+                <span className="text-xs text-boon-success flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -348,7 +348,7 @@ export default function SessionPrep({ sessions, actionItems, coachName, userEmai
               <button
                 onClick={saveAllNotes}
                 disabled={isSaving || (!goalReflection.trim() && !actionReflection.trim() && !openEnded.trim())}
-                className="px-4 py-2 bg-boon-blue text-white text-sm font-semibold rounded-xl hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-boon-blue text-white text-sm font-semibold rounded-btn hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSaving ? 'Saving...' : 'Save'}
               </button>

@@ -35,7 +35,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
   return (
     <div className="flex flex-col min-h-screen bg-boon-bg pb-[calc(72px+env(safe-area-inset-bottom,16px))] md:pb-0 md:pl-64">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-gray-200 z-30">
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-boon-charcoal/[0.08] z-30">
         <div className="p-6 flex flex-col h-full">
           <img
             src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Wordmark_Blue_16_aw7lvc.png"
@@ -50,10 +50,10 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `relative w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                  `relative w-full flex items-center px-4 py-3 text-sm font-medium rounded-btn transition-colors ${
                     isActive
-                      ? 'bg-boon-blue text-white shadow-lg shadow-boon-blue/20'
-                      : 'text-boon-text hover:bg-boon-lightBlue/30 hover:text-boon-blue'
+                      ? 'bg-boon-blue text-white shadow-sm'
+                      : 'text-boon-charcoal/75 hover:bg-boon-blue/10 hover:text-boon-blue'
                   }`
                 }
               >
@@ -62,31 +62,31 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
                 </svg>
                 {item.label}
                 {badges?.[item.to] && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-boon-error rounded-pill" />
                 )}
               </NavLink>
             ))}
           </nav>
 
           {/* User info and settings */}
-          <div className="pt-4 border-t border-gray-100">
+          <div className="pt-4 border-t border-boon-charcoal/[0.08]">
             <div className="flex items-center gap-3 px-2 py-3">
-              <div className="w-10 h-10 rounded-full bg-boon-lightBlue flex items-center justify-center">
+              <div className="w-10 h-10 rounded-pill bg-boon-blue/10 flex items-center justify-center">
                 <span className="text-boon-blue text-sm font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-boon-text truncate">
+                <p className="text-sm font-semibold text-boon-navy truncate">
                   {employee?.first_name} {employee?.last_name}
                 </p>
-                <p className="text-xs text-gray-400 truncate">{employee?.job_title || 'Employee'}</p>
+                <p className="text-xs text-boon-charcoal/55 truncate">{employee?.job_title || 'Employee'}</p>
               </div>
               <NavLink
                 to="/settings"
                 className={({ isActive }) =>
-                  `p-2 rounded-lg transition-colors ${
+                  `p-2 rounded-btn transition-colors ${
                     isActive
                       ? 'bg-boon-blue text-white'
-                      : 'text-gray-400 hover:text-boon-blue hover:bg-boon-lightBlue/30'
+                      : 'text-boon-charcoal/55 hover:text-boon-blue hover:bg-boon-blue/10'
                   }`
                 }
                 title="Settings"
@@ -99,7 +99,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
             </div>
             <button
               onClick={signOut}
-              className="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-red-500 transition-colors"
+              className="w-full flex items-center px-4 py-2 text-sm text-boon-charcoal/55 hover:text-boon-error transition-colors"
             >
               <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -111,7 +111,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
       </aside>
 
       {/* Mobile Top Header */}
-      <header className="md:hidden flex items-center justify-between px-5 py-4 bg-white border-b border-gray-100 sticky top-0 z-30">
+      <header className="md:hidden flex items-center justify-between px-5 py-4 bg-white border-b border-boon-charcoal/[0.08] sticky top-0 z-30">
         <img
           src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Wordmark_Blue_16_aw7lvc.png"
           className="h-5 max-w-[100px] object-contain"
@@ -121,10 +121,10 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `p-2 rounded-lg transition-colors ${
+              `p-2 rounded-btn transition-colors ${
                 isActive
                   ? 'bg-boon-blue text-white'
-                  : 'text-gray-400 hover:text-boon-blue'
+                  : 'text-boon-charcoal/55 hover:text-boon-blue'
               }`
             }
           >
@@ -133,7 +133,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </NavLink>
-          <div className="w-8 h-8 rounded-full bg-boon-lightBlue flex items-center justify-center">
+          <div className="w-8 h-8 rounded-pill bg-boon-blue/10 flex items-center justify-center">
             <span className="text-boon-blue text-xs font-bold">{initials}</span>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center px-2 py-3 pb-[env(safe-area-inset-bottom,16px)] z-30">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-boon-charcoal/[0.08] flex justify-around items-center px-2 py-3 pb-[env(safe-area-inset-bottom,16px)] z-30">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -153,21 +153,21 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
             end={item.end}
             className={({ isActive }) =>
               `flex flex-col items-center gap-1.5 min-w-0 transition-all active:scale-90 ${
-                isActive ? 'text-boon-blue' : 'text-gray-400'
+                isActive ? 'text-boon-blue' : 'text-boon-charcoal/55'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <div className={`relative p-2 rounded-xl transition-colors ${isActive ? 'bg-boon-blue/10' : ''}`}>
+                <div className={`relative p-2 rounded-btn transition-colors ${isActive ? 'bg-boon-blue/10' : ''}`}>
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                   </svg>
                   {badges?.[item.to] && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-boon-error rounded-pill" />
                   )}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.18em]">{item.label}</span>
               </>
             )}
           </NavLink>

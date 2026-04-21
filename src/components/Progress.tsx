@@ -68,10 +68,10 @@ function mapCompetencyName(name: string): string {
 // Get score label color
 function getScoreLabelColor(label: string): string {
   switch (label?.toLowerCase()) {
-    case 'excelling': return 'text-green-600 bg-green-100';
-    case 'growing': return 'text-blue-600 bg-blue-100';
-    case 'applying': return 'text-amber-600 bg-amber-100';
-    default: return 'text-gray-600 bg-gray-100';
+    case 'excelling': return 'text-boon-success bg-green-100';
+    case 'growing': return 'text-boon-blue bg-boon-blue/10';
+    case 'applying': return 'text-boon-warning bg-boon-warning/12';
+    default: return 'text-boon-charcoal/75 bg-boon-offWhite';
   }
 }
 
@@ -265,13 +265,13 @@ export default function ProgressPage() {
         <div className="space-y-6 animate-fade-in">
           {/* Header */}
           <header className="text-center">
-            <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Your Coaching Journey</h1>
-            <p className="text-gray-500 mt-2 font-medium">Here's what you're working toward</p>
+            <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">Your Coaching Journey</h1>
+            <p className="text-boon-charcoal/55 mt-2 font-medium">Here's what you're working toward</p>
           </header>
 
           {/* What You Want to Work On - Dark card */}
-          <section className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-8 text-white">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">What You Want to Work On</p>
+          <section className="bg-gradient-to-br from-boon-navyDeep to-boon-navy rounded-card p-8 text-white">
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-4">What You Want to Work On</p>
             <div className="mb-4">
               <span className="text-2xl">🎯</span>
             </div>
@@ -280,66 +280,66 @@ export default function ProgressPage() {
                 <p className="text-xl font-bold leading-relaxed mb-4">
                   "{coachingGoal}"
                 </p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-boon-charcoal/55 text-sm">
                   You'll refine this with your coach in your first session
                 </p>
               </>
             ) : (
-              <p className="text-gray-400">
+              <p className="text-boon-charcoal/55">
                 You'll define your goals in your first session with {coachFirstName}
               </p>
             )}
           </section>
 
           {/* Your Journey - Timeline */}
-          <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
-            <h2 className="text-lg font-extrabold text-boon-text mb-6">Your Journey</h2>
+          <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
+            <h2 className="text-lg font-extrabold text-boon-navy mb-6">Your Journey</h2>
 
             <div className="space-y-0">
               {/* Welcome Survey - Completed */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-pill bg-boon-success flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <div className="w-0.5 h-12 bg-green-500"></div>
+                  <div className="w-0.5 h-12 bg-boon-success"></div>
                 </div>
                 <div className="pb-8">
-                  <h3 className="font-bold text-boon-text">Welcome Survey</h3>
-                  <p className="text-sm text-gray-500">Shared your goals and baseline</p>
+                  <h3 className="font-bold text-boon-navy">Welcome Survey</h3>
+                  <p className="text-sm text-boon-charcoal/55">Shared your goals and baseline</p>
                 </div>
               </div>
 
               {/* Matched with Coach - Completed */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-pill bg-boon-success flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <div className="w-0.5 h-12 bg-green-500"></div>
+                  <div className="w-0.5 h-12 bg-boon-success"></div>
                 </div>
                 <div className="pb-8">
-                  <h3 className="font-bold text-boon-text">Matched with Your Coach</h3>
-                  <p className="text-sm text-gray-500">{coachFullName}</p>
+                  <h3 className="font-bold text-boon-navy">Matched with Your Coach</h3>
+                  <p className="text-sm text-boon-charcoal/55">{coachFullName}</p>
                 </div>
               </div>
 
               {/* First Session - Current */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-boon-blue flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-white"></div>
+                  <div className="w-8 h-8 rounded-pill bg-boon-blue flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-pill bg-white"></div>
                   </div>
-                  <div className="w-0.5 h-12 bg-gray-200"></div>
+                  <div className="w-0.5 h-12 bg-boon-offWhite"></div>
                 </div>
                 <div className="pb-8">
                   <h3 className="font-bold text-boon-blue">First Session</h3>
-                  <p className="text-sm text-gray-500">Dive deeper into your goals and build your plan</p>
-                  <span className="inline-block mt-2 px-3 py-1 bg-boon-lightBlue text-boon-blue text-xs font-bold rounded-full">
+                  <p className="text-sm text-boon-charcoal/55">Dive deeper into your goals and build your plan</p>
+                  <span className="inline-block mt-2 px-3 py-1 bg-boon-lightBlue text-boon-blue text-xs font-bold rounded-pill">
                     You're here
                   </span>
                 </div>
@@ -348,27 +348,27 @@ export default function ProgressPage() {
               {/* Ongoing Coaching - Future */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                  <div className="w-8 h-8 rounded-pill bg-boon-offWhite flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-pill bg-boon-charcoal/55"></div>
                   </div>
-                  <div className="w-0.5 h-12 bg-gray-200"></div>
+                  <div className="w-0.5 h-12 bg-boon-offWhite"></div>
                 </div>
                 <div className="pb-8">
-                  <h3 className="font-bold text-gray-400">Ongoing Coaching</h3>
-                  <p className="text-sm text-gray-400">Regular sessions + check-ins on your progress</p>
+                  <h3 className="font-bold text-boon-charcoal/55">Ongoing Coaching</h3>
+                  <p className="text-sm text-boon-charcoal/55">Regular sessions + check-ins on your progress</p>
                 </div>
               </div>
 
               {/* Wins & Breakthroughs - Future */}
               <div className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                  <div className="w-8 h-8 rounded-pill bg-boon-offWhite flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-pill bg-boon-charcoal/55"></div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-400">Wins & Breakthroughs</h3>
-                  <p className="text-sm text-gray-400">Celebrate what you've accomplished</p>
+                  <h3 className="font-bold text-boon-charcoal/55">Wins & Breakthroughs</h3>
+                  <p className="text-sm text-boon-charcoal/55">Celebrate what you've accomplished</p>
                 </div>
               </div>
             </div>
@@ -376,20 +376,20 @@ export default function ProgressPage() {
 
           {/* Your Wins */}
           {coachingWins.length > 0 ? (
-            <section className="rounded-[2rem] p-8 border border-orange-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <section className="rounded-card p-8 border border-orange-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🏆</span>
-                  <h2 className="text-lg font-extrabold text-boon-text">Your Wins</h2>
+                  <h2 className="text-lg font-extrabold text-boon-navy">Your Wins</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200">
+                  <span className="text-sm font-medium text-boon-charcoal/75 bg-white px-3 py-1.5 rounded-pill border border-boon-charcoal/[0.08]">
                     {coachingWins.length} breakthrough{coachingWins.length !== 1 ? 's' : ''}
                   </span>
                   {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
-                      className="text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 px-4 py-1.5 rounded-full transition-colors"
+                      className="text-sm font-bold text-white bg-boon-coral hover:bg-boon-coralLight px-4 py-1.5 rounded-pill transition-colors"
                     >
                       + Add a win
                     </button>
@@ -398,25 +398,25 @@ export default function ProgressPage() {
               </div>
               <div className="space-y-4">
                 {coachingWins.map((win) => (
-                  <div key={win.id} className="bg-amber-50 rounded-xl p-5 border-l-4 border-orange-400 group relative">
+                  <div key={win.id} className="bg-boon-warning/12 rounded-btn p-5 border-l-4 border-orange-400 group relative">
                     {editingWinId === win.id ? (
                       <div className="space-y-3">
                         <textarea
                           value={editWinText}
                           onChange={(e) => setEditWinText(e.target.value)}
-                          className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
                           rows={3}
                         />
                         <div className="flex gap-2">
                           <button
                             onClick={handleSaveEdit}
-                            className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-lg hover:bg-orange-500"
+                            className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-btn hover:bg-orange-500"
                           >
                             Save
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="px-3 py-1.5 bg-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-300"
+                            className="px-3 py-1.5 bg-boon-offWhite text-boon-charcoal/75 text-xs font-bold rounded-btn hover:bg-boon-charcoal/20"
                           >
                             Cancel
                           </button>
@@ -424,10 +424,10 @@ export default function ProgressPage() {
                       </div>
                     ) : (
                       <>
-                        <p className="text-gray-800 italic text-lg leading-relaxed pr-16">"{win.win_text}"</p>
-                        <div className="flex items-center gap-3 mt-3 text-sm text-gray-500">
+                        <p className="text-boon-navy italic text-lg leading-relaxed pr-16">"{win.win_text}"</p>
+                        <div className="flex items-center gap-3 mt-3 text-sm text-boon-charcoal/55">
                           {win.session_number && (
-                            <span className="bg-white px-3 py-1 rounded-full border border-gray-200">
+                            <span className="bg-white px-3 py-1 rounded-pill border border-boon-charcoal/[0.08]">
                               Session {win.session_number}
                             </span>
                           )}
@@ -445,7 +445,7 @@ export default function ProgressPage() {
                             {(
                               <button
                                 onClick={() => handleStartEdit(win)}
-                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                                className="p-1.5 text-boon-charcoal/55 hover:text-boon-charcoal/75 hover:bg-white rounded"
                                 title="Edit"
                               >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -457,7 +457,7 @@ export default function ProgressPage() {
                               <button
                                 onClick={() => handleDeleteWin(win.id)}
                                 disabled={deletingWinId === win.id}
-                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded disabled:opacity-50"
+                                className="p-1.5 text-boon-charcoal/55 hover:text-boon-error hover:bg-white rounded disabled:opacity-50"
                                 title="Delete"
                               >
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -474,22 +474,22 @@ export default function ProgressPage() {
               </div>
             </section>
           ) : (
-            <section className="rounded-[2rem] p-8 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <section className="rounded-card p-8 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-12 h-12 rounded-btn bg-boon-warning/12 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-6 h-6 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-lg font-extrabold text-boon-text mb-2">What counts as a win?</h2>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                  <h2 className="text-lg font-extrabold text-boon-navy mb-2">What counts as a win?</h2>
+                  <p className="text-sm text-boon-charcoal/75 leading-relaxed mb-4">
                     A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
                   </p>
                   {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
-                      className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
+                      className="text-sm font-bold text-boon-warning hover:text-amber-800 transition-colors"
                     >
                       + Add your first win
                     </button>
@@ -502,25 +502,25 @@ export default function ProgressPage() {
           {/* Add Win Modal */}
           {showAddWinModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+              <div className="bg-white rounded-card p-6 w-full max-w-md shadow-xl">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-2xl">🏆</span>
-                  <h3 className="text-lg font-extrabold text-boon-text">Add a Win</h3>
+                  <h3 className="text-lg font-extrabold text-boon-navy">Add a Win</h3>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-boon-charcoal/55 mb-4">
                   What breakthrough or accomplishment would you like to celebrate?
                 </p>
                 <textarea
                   value={newWinText}
                   onChange={(e) => setNewWinText(e.target.value)}
                   placeholder="e.g., Had a difficult conversation that went well, got positive feedback, set a boundary..."
-                  className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  className="w-full p-4 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
                   rows={4}
                   maxLength={500}
                   autoFocus
                 />
                 <div className="flex justify-between items-center mt-2 mb-4">
-                  <span className="text-xs text-gray-400">{newWinText.length}/500</span>
+                  <span className="text-xs text-boon-charcoal/55">{newWinText.length}/500</span>
                 </div>
                 <div className="flex gap-3">
                   <button
@@ -528,14 +528,14 @@ export default function ProgressPage() {
                       setShowAddWinModal(false);
                       setNewWinText('');
                     }}
-                    className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                    className="flex-1 px-4 py-2.5 text-sm font-medium text-boon-charcoal/75 bg-boon-offWhite hover:bg-boon-offWhite rounded-btn transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleAddWin}
                     disabled={!newWinText.trim() || isSubmittingWin}
-                    className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl transition-colors"
+                    className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-boon-coral hover:bg-boon-coralLight disabled:bg-boon-charcoal/20 disabled:cursor-not-allowed rounded-btn transition-colors"
                   >
                     {isSubmittingWin ? 'Saving...' : 'Save Win'}
                   </button>
@@ -545,24 +545,24 @@ export default function ProgressPage() {
           )}
 
           {/* Your Starting Point - Metric cards */}
-          <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
+          <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-extrabold text-boon-text">Your Starting Point</h2>
-              <span className="text-xs text-gray-400">From welcome survey</span>
+              <h2 className="text-lg font-extrabold text-boon-navy">Your Starting Point</h2>
+              <span className="text-xs text-boon-charcoal/55">From welcome survey</span>
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-6">
               {wellbeingMetrics.map(metric => {
                 const vsBenchmark = calculateVsBenchmark(metric.value, metric.benchmark);
                 return (
-                  <div key={metric.key} className="text-center p-4 bg-gray-50 rounded-2xl">
-                    <div className="text-3xl font-black text-boon-text">
+                  <div key={metric.key} className="text-center p-4 bg-boon-offWhite rounded-card">
+                    <div className="text-3xl font-black text-boon-navy">
                       {metric.value ?? '—'}
-                      <span className="text-base font-normal text-gray-400">/10</span>
+                      <span className="text-base font-normal text-boon-charcoal/55">/10</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{metric.label}</p>
+                    <p className="text-xs text-boon-charcoal/55 mt-1">{metric.label}</p>
                     {vsBenchmark !== null && (
-                      <p className={`text-xs font-bold mt-1 ${vsBenchmark >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      <p className={`text-xs font-bold mt-1 ${vsBenchmark >= 0 ? 'text-boon-success' : 'text-boon-error'}`}>
                         {vsBenchmark >= 0 ? '+' : ''}{vsBenchmark}% vs avg
                       </p>
                     )}
@@ -571,20 +571,20 @@ export default function ProgressPage() {
               })}
             </div>
 
-            <p className="text-center text-sm text-gray-400 border-t border-gray-100 pt-4">
+            <p className="text-center text-sm text-boon-charcoal/55 border-t border-boon-charcoal/[0.08] pt-4">
               We'll check in on these periodically to see how things evolve
             </p>
           </section>
 
           {/* You're all set - CTA */}
           {upcomingSession && (
-            <section className="bg-boon-blue rounded-[2rem] p-8 text-center text-white">
+            <section className="bg-boon-blue rounded-card p-8 text-center text-white">
               <h2 className="text-xl font-extrabold mb-2">You're all set</h2>
               <p className="text-blue-100 mb-6">
                 Your first session is scheduled — the real work begins soon
               </p>
               {sessionDate && (
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/20 rounded-xl">
+                <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/20 rounded-btn">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -616,21 +616,21 @@ export default function ProgressPage() {
     return (
       <div className="space-y-8 animate-fade-in">
         <header className="text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">My Progress</h1>
-          <p className="text-gray-500 mt-2 font-medium">Track your leadership growth over time.</p>
+          <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">My Progress</h1>
+          <p className="text-boon-charcoal/55 mt-2 font-medium">Track your leadership growth over time.</p>
         </header>
 
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-purple-50 to-boon-lightBlue/20 rounded-[2.5rem] p-10 md:p-14 border border-purple-100 text-center">
-          <div className="w-20 h-20 mx-auto mb-8 bg-purple-100 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <section className="bg-boon-offWhite rounded-card p-10 md:p-14 border border-boon-charcoal/[0.08] text-center">
+          <div className="w-20 h-20 mx-auto mb-8 bg-boon-purple/10 rounded-pill flex items-center justify-center">
+            <svg className="w-10 h-10 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-extrabold text-boon-text mb-4">
+          <h2 className="text-2xl font-extrabold text-boon-navy mb-4">
             Your Leadership Profile
           </h2>
-          <p className="text-gray-600 text-lg max-w-lg mx-auto leading-relaxed">
+          <p className="text-boon-charcoal/75 text-lg max-w-lg mx-auto leading-relaxed">
             {hasBaselineCompetencies
               ? `Here's where you're starting. As you work with ${coachFirstName}, you'll see your growth across these competencies.`
               : `Your leadership profile will emerge as you work with ${coachFirstName}.`
@@ -642,27 +642,27 @@ export default function ProgressPage() {
         {hasBaselineCompetencies && (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-extrabold text-boon-text">Your Starting Point</h2>
-              <span className="text-xs text-gray-400">From your welcome survey</span>
+              <h2 className="text-lg font-extrabold text-boon-navy">Your Starting Point</h2>
+              <span className="text-xs text-boon-charcoal/55">From your welcome survey</span>
             </div>
-            <p className="text-xs text-gray-500 mb-4">
+            <p className="text-xs text-boon-charcoal/55 mb-4">
               Scores reflect where you are today — from Learning (1) to Mastering (5). Most people start at 2-3.
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {baselineCompetencyData.filter(c => c.baseline > 0).map(comp => (
                 <div
                   key={comp.key}
-                  className="bg-white p-5 rounded-2xl border border-gray-100"
+                  className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08]"
                 >
-                  <h3 className="font-bold text-boon-text text-sm leading-tight mb-4">{comp.label}</h3>
+                  <h3 className="font-bold text-boon-navy text-sm leading-tight mb-4">{comp.label}</h3>
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-400 uppercase tracking-wide">Baseline</span>
-                      <span className="font-bold text-purple-600">{comp.baseline}/5</span>
+                      <span className="text-boon-charcoal/55 uppercase tracking-wide">Baseline</span>
+                      <span className="font-bold text-boon-purple">{comp.baseline}/5</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                       <div
-                        className="h-full bg-purple-400 rounded-full transition-all duration-500"
+                        className="h-full bg-boon-purple rounded-pill transition-all duration-500"
                         style={{ width: `${(comp.baseline) * 20}%` }}
                       />
                     </div>
@@ -675,10 +675,10 @@ export default function ProgressPage() {
 
         {/* Wellbeing Baseline */}
         {baseline && (baseline.satisfaction || baseline.productivity || baseline.work_life_balance || baseline.motivation) && (
-          <section className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
+          <section className="bg-boon-offWhite rounded-card p-6 border border-boon-charcoal/[0.08]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-600">Wellbeing Baseline</h3>
-              <span className="text-[10px] text-gray-400">From welcome survey</span>
+              <h3 className="text-sm font-bold text-boon-charcoal/75">Wellbeing Baseline</h3>
+              <span className="text-[10px] text-boon-charcoal/55">From welcome survey</span>
             </div>
             <div className="grid grid-cols-4 gap-4">
               {[
@@ -692,12 +692,12 @@ export default function ProgressPage() {
                   : null;
                 return (
                   <div key={metric.key} className="text-center">
-                    <p className="text-xl font-bold text-boon-text">
-                      {metric.value || '—'}<span className="text-sm text-gray-400">/10</span>
+                    <p className="text-xl font-bold text-boon-navy">
+                      {metric.value || '—'}<span className="text-sm text-boon-charcoal/55">/10</span>
                     </p>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
+                    <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">{metric.label}</p>
                     {vsBenchmark !== null && (
-                      <p className={`text-xs font-bold mt-1 ${vsBenchmark >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      <p className={`text-xs font-bold mt-1 ${vsBenchmark >= 0 ? 'text-boon-success' : 'text-boon-error'}`}>
                         {vsBenchmark >= 0 ? '+' : ''}{vsBenchmark}% vs avg
                       </p>
                     )}
@@ -709,35 +709,35 @@ export default function ProgressPage() {
         )}
 
         {/* What to Expect */}
-        <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
-          <h3 className="text-lg font-extrabold text-boon-text mb-6">What You'll Track</h3>
+        <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
+          <h3 className="text-lg font-extrabold text-boon-navy mb-6">What You'll Track</h3>
           <div className="grid sm:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-purple-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 mx-auto mb-4 bg-boon-purple/10 rounded-btn flex items-center justify-center">
+                <svg className="w-6 h-6 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h4 className="font-bold text-boon-text text-sm mb-2">12 Competencies</h4>
-              <p className="text-gray-500 text-xs">Leadership skills like communication, delegation, and emotional intelligence.</p>
+              <h4 className="font-bold text-boon-navy text-sm mb-2">12 Competencies</h4>
+              <p className="text-boon-charcoal/55 text-xs">Leadership skills like communication, delegation, and emotional intelligence.</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-green-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 mx-auto mb-4 bg-green-100 rounded-btn flex items-center justify-center">
+                <svg className="w-6 h-6 text-boon-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
-              <h4 className="font-bold text-boon-text text-sm mb-2">Growth Trends</h4>
-              <p className="text-gray-500 text-xs">Visual comparisons between your baseline and current levels.</p>
+              <h4 className="font-bold text-boon-navy text-sm mb-2">Growth Trends</h4>
+              <p className="text-boon-charcoal/55 text-xs">Visual comparisons between your baseline and current levels.</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-boon-lightBlue rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-4 bg-boon-lightBlue rounded-btn flex items-center justify-center">
                 <svg className="w-6 h-6 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </div>
-              <h4 className="font-bold text-boon-text text-sm mb-2">Wellbeing Metrics</h4>
-              <p className="text-gray-500 text-xs">Track satisfaction, productivity, balance, and motivation over time.</p>
+              <h4 className="font-bold text-boon-navy text-sm mb-2">Wellbeing Metrics</h4>
+              <p className="text-boon-charcoal/55 text-xs">Track satisfaction, productivity, balance, and motivation over time.</p>
             </div>
           </div>
         </section>
@@ -888,28 +888,28 @@ export default function ProgressPage() {
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <header className="text-center">
-          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Your Coaching Journey</h1>
-          <p className="text-gray-500 mt-2 font-medium">Here's what you're working toward</p>
+          <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">Your Coaching Journey</h1>
+          <p className="text-boon-charcoal/55 mt-2 font-medium">Here's what you're working toward</p>
         </header>
 
         {/* Check-in Due Banner - Priority CTA */}
         {coachingState.scaleCheckpointStatus.isCheckpointDue && (
-          <section className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-[2rem] p-6 border-2 border-purple-200">
+          <section className="bg-boon-purple/10 rounded-card p-6 border-2 border-boon-charcoal/[0.08]">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-12 h-12 bg-boon-purple/20 rounded-btn flex items-center justify-center">
+                  <svg className="w-6 h-6 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-boon-text">Complete your check-in</h2>
-                  <p className="text-sm text-gray-600">Reflect on your progress and set your focus for upcoming sessions.</p>
+                  <h2 className="text-lg font-bold text-boon-navy">Complete your check-in</h2>
+                  <p className="text-sm text-boon-charcoal/75">Reflect on your progress and set your focus for upcoming sessions.</p>
                 </div>
               </div>
               <button
                 onClick={onStartCheckpoint}
-                className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all"
+                className="px-6 py-3 bg-boon-purple text-white font-bold rounded-btn hover:bg-boon-purple transition-all"
               >
                 Start Check-In
               </button>
@@ -918,11 +918,11 @@ export default function ProgressPage() {
         )}
 
         {/* Your Goal - Hero Card */}
-        <section className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-8 text-white">
+        <section className="bg-gradient-to-br from-boon-navyDeep to-boon-navy rounded-card p-8 text-white">
           <div className="flex items-start justify-between mb-4">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">What You Want to Work On</p>
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-widest">What You Want to Work On</p>
             {goalDate && (
-              <span className="text-[10px] text-gray-500">{goalDate}</span>
+              <span className="text-[10px] text-boon-charcoal/55">{goalDate}</span>
             )}
           </div>
           <div className="mb-4">
@@ -934,7 +934,7 @@ export default function ProgressPage() {
                 <p className="text-xl font-bold leading-relaxed mb-4">
                   "{goalDisplay.content}"
                 </p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-boon-charcoal/55 text-sm">
                   Refine this with your coach anytime
                 </p>
               </>
@@ -942,18 +942,18 @@ export default function ProgressPage() {
               <>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {(goalDisplay.content as string[]).map((area, idx) => (
-                    <span key={idx} className="px-3 py-1.5 bg-white/10 rounded-lg text-sm font-medium">
+                    <span key={idx} className="px-3 py-1.5 bg-white/10 rounded-btn text-sm font-medium">
                       {area}
                     </span>
                   ))}
                 </div>
-                <p className="text-gray-400 text-sm">
+                <p className="text-boon-charcoal/55 text-sm">
                   Refine these focus areas with your coach anytime
                 </p>
               </>
             )
           ) : (
-            <p className="text-gray-400">
+            <p className="text-boon-charcoal/55">
               Your goals will be refined with your coach
             </p>
           )}
@@ -961,28 +961,28 @@ export default function ProgressPage() {
 
         {/* Session Stats - Compact */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
-            <p className="text-2xl font-black text-boon-text">{completedSessions.length}</p>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions completed</p>
+          <div className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-2xl font-black text-boon-navy">{completedSessions.length}</p>
+            <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest mt-1">Sessions completed</p>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
-            <p className="text-2xl font-black text-boon-text">{monthsInProgram > 0 ? monthsInProgram : '—'}</p>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Months in coaching</p>
+          <div className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-2xl font-black text-boon-navy">{monthsInProgram > 0 ? monthsInProgram : '—'}</p>
+            <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest mt-1">Months in coaching</p>
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 text-center">
-            <p className="text-2xl font-black text-gray-500">Session {nextCheckInSession}</p>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Next check-in</p>
+          <div className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-2xl font-black text-boon-charcoal/55">Session {nextCheckInSession}</p>
+            <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest mt-1">Next check-in</p>
           </div>
         </div>
 
         {/* Wellbeing Progress - Baseline vs Current */}
         {welcomeSurveyScale && (welcomeSurveyScale.satisfaction || welcomeSurveyScale.productivity || welcomeSurveyScale.work_life_balance) && (
-          <section className="bg-gray-50 rounded-[2rem] p-6 border border-gray-100">
+          <section className="bg-boon-offWhite rounded-card p-6 border border-boon-charcoal/[0.08]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-600">
+              <h3 className="text-sm font-bold text-boon-charcoal/75">
                 {latestWellbeingCheckpoint ? 'Your Wellbeing Progress' : 'Your Starting Point'}
               </h3>
-              <span className="text-[10px] text-gray-400">
+              <span className="text-[10px] text-boon-charcoal/55">
                 {latestWellbeingCheckpoint
                   ? `Updated Session ${latestWellbeingCheckpoint.checkpoint_number}`
                   : 'From welcome survey · Check-in every 6 sessions'}
@@ -1004,37 +1004,37 @@ export default function ProgressPage() {
                     {hasUpdate ? (
                       <>
                         {/* Current score - prominent */}
-                        <p className="text-xl font-bold text-boon-text">
-                          {currentValue}<span className="text-sm text-gray-400">/10</span>
+                        <p className="text-xl font-bold text-boon-navy">
+                          {currentValue}<span className="text-sm text-boon-charcoal/55">/10</span>
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
+                        <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">{metric.label}</p>
                         {/* Show improvement from baseline */}
                         {improvement !== null && improvement !== 0 && (
-                          <p className={`text-xs font-bold mt-1 ${improvement > 0 ? 'text-green-600' : 'text-amber-600'}`}>
+                          <p className={`text-xs font-bold mt-1 ${improvement > 0 ? 'text-boon-success' : 'text-boon-warning'}`}>
                             {improvement > 0 ? '↑' : '↓'} {Math.abs(improvement)} from baseline
                           </p>
                         )}
                         {improvement === 0 && (
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-boon-charcoal/55 mt-1">
                             Same as baseline ({baselineValue})
                           </p>
                         )}
                         {/* Baseline reference */}
-                        <p className="text-[10px] text-gray-400 mt-0.5">
+                        <p className="text-[10px] text-boon-charcoal/55 mt-0.5">
                           Baseline: {baselineValue}/10
                         </p>
                       </>
                     ) : (
                       <>
                         {/* Only baseline - original display */}
-                        <p className="text-xl font-bold text-boon-text">
-                          {baselineValue || '—'}<span className="text-sm text-gray-400">/10</span>
+                        <p className="text-xl font-bold text-boon-navy">
+                          {baselineValue || '—'}<span className="text-sm text-boon-charcoal/55">/10</span>
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{metric.label}</p>
+                        <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">{metric.label}</p>
                         {(() => {
                           const vsBenchmark = calculateVsBenchmark(baselineValue, metric.benchmark);
                           return vsBenchmark !== null ? (
-                            <p className={`text-xs mt-1 ${vsBenchmark >= 0 ? 'text-green-600' : 'text-amber-600'}`}>
+                            <p className={`text-xs mt-1 ${vsBenchmark >= 0 ? 'text-boon-success' : 'text-boon-warning'}`}>
                               {vsBenchmark >= 0 ? '+' : ''}{vsBenchmark}% vs avg
                             </p>
                           ) : null;
@@ -1049,8 +1049,8 @@ export default function ProgressPage() {
         )}
 
         {/* Your Journey - Timeline (collapsible) */}
-        <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
-          <h2 className="text-lg font-extrabold text-boon-text mb-6">Your Journey</h2>
+        <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
+          <h2 className="text-lg font-extrabold text-boon-navy mb-6">Your Journey</h2>
           <div className="space-y-0">
             {(() => {
               // Split journey steps for collapsible rendering
@@ -1067,33 +1067,33 @@ export default function ProgressPage() {
                 return (
                   <div key={step.key} className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      <div className={`w-8 h-8 rounded-pill flex items-center justify-center ${
                         step.completed
-                          ? 'bg-green-500'
+                          ? 'bg-boon-success'
                           : isCurrent
                           ? 'bg-boon-blue ring-4 ring-boon-blue/20'
-                          : 'bg-gray-200'
+                          : 'bg-boon-offWhite'
                       }`}>
                         {step.completed ? (
                           <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         ) : isCurrent ? (
-                          <div className="w-2 h-2 bg-white rounded-full" />
+                          <div className="w-2 h-2 bg-white rounded-pill" />
                         ) : (
-                          <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                          <div className="w-2 h-2 bg-boon-charcoal/55 rounded-pill" />
                         )}
                       </div>
                       {!isLast && (
-                        <div className={`w-0.5 h-12 ${step.completed ? 'bg-green-300' : 'bg-gray-200'}`} />
+                        <div className={`w-0.5 h-12 ${step.completed ? 'bg-boon-success/50' : 'bg-boon-offWhite'}`} />
                       )}
                     </div>
                     <div className="pb-8">
-                      <p className={`font-bold ${isCurrent ? 'text-boon-blue' : step.completed ? 'text-boon-text' : 'text-gray-400'}`}>
+                      <p className={`font-bold ${isCurrent ? 'text-boon-blue' : step.completed ? 'text-boon-navy' : 'text-boon-charcoal/55'}`}>
                         {step.label}
                         {isCurrent && <span className="ml-2 text-xs font-normal">(You're here)</span>}
                       </p>
-                      <p className={`text-sm ${step.completed || isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <p className={`text-sm ${step.completed || isCurrent ? 'text-boon-charcoal/55' : 'text-boon-charcoal/55'}`}>
                         {step.detail}
                       </p>
                     </div>
@@ -1114,18 +1114,18 @@ export default function ProgressPage() {
                     {/* Collapsed sessions row */}
                     <div className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-pill bg-boon-success flex items-center justify-center">
                           <span className="text-xs font-bold text-white">{collapsedCount}</span>
                         </div>
-                        <div className="w-0.5 h-12 bg-green-300" />
+                        <div className="w-0.5 h-12 bg-boon-success/50" />
                       </div>
                       <div className="pb-8">
                         <button
                           onClick={() => setTimelineExpanded(true)}
-                          className="font-bold text-boon-text hover:text-boon-blue transition-colors text-left"
+                          className="font-bold text-boon-navy hover:text-boon-blue transition-colors text-left"
                         >
                           Sessions 1-{collapsedCount}
-                          <span className="text-sm font-normal text-gray-400 ml-2">({firstDate} - {lastCollapsedDate})</span>
+                          <span className="text-sm font-normal text-boon-charcoal/55 ml-2">({firstDate} - {lastCollapsedDate})</span>
                         </button>
                         <p className="text-sm text-boon-blue cursor-pointer hover:underline" onClick={() => setTimelineExpanded(true)}>
                           Show all sessions
@@ -1158,12 +1158,12 @@ export default function ProgressPage() {
         </section>
 
         {/* Your Wins */}
-        <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
+        <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-extrabold text-boon-text">Your Wins</h2>
+            <h2 className="text-lg font-extrabold text-boon-navy">Your Wins</h2>
             <button
               onClick={() => setShowAddWinModal(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 rounded-xl transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 rounded-btn transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1175,25 +1175,25 @@ export default function ProgressPage() {
           {coachingWins.length > 0 ? (
             <div className="space-y-4">
               {coachingWins.map((win) => (
-                <div key={win.id} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-2xl border border-amber-100/50 group relative">
+                <div key={win.id} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-card border border-amber-100/50 group relative">
                   {editingWinId === win.id ? (
                     <div className="space-y-3">
                       <textarea
                         value={editWinText}
                         onChange={(e) => setEditWinText(e.target.value)}
-                        className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
                         rows={3}
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveEdit}
-                          className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-lg hover:bg-orange-500"
+                          className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-btn hover:bg-orange-500"
                         >
                           Save
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className="px-3 py-1.5 bg-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-300"
+                          className="px-3 py-1.5 bg-boon-offWhite text-boon-charcoal/75 text-xs font-bold rounded-btn hover:bg-boon-charcoal/20"
                         >
                           Cancel
                         </button>
@@ -1203,8 +1203,8 @@ export default function ProgressPage() {
                     <div className="flex items-start gap-3">
                       <span className="text-xl">🏆</span>
                       <div className="flex-1 pr-12">
-                        <p className="text-gray-800 leading-relaxed">"{win.win_text}"</p>
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-boon-navy leading-relaxed">"{win.win_text}"</p>
+                        <p className="text-xs text-boon-charcoal/55 mt-2">
                           {win.session_number && `Session ${win.session_number} · `}
                           {new Date(win.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </p>
@@ -1215,7 +1215,7 @@ export default function ProgressPage() {
                           {(
                             <button
                               onClick={() => handleStartEdit(win)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                              className="p-1.5 text-boon-charcoal/55 hover:text-boon-charcoal/75 hover:bg-white rounded"
                               title="Edit"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1227,7 +1227,7 @@ export default function ProgressPage() {
                             <button
                               onClick={() => handleDeleteWin(win.id)}
                               disabled={deletingWinId === win.id}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded disabled:opacity-50"
+                              className="p-1.5 text-boon-charcoal/55 hover:text-boon-error hover:bg-white rounded disabled:opacity-50"
                               title="Delete"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1243,21 +1243,21 @@ export default function ProgressPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <div className="rounded-card p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-10 h-10 rounded-btn bg-boon-warning/12 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-boon-text mb-1">What counts as a win?</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                  <h3 className="font-bold text-boon-navy mb-1">What counts as a win?</h3>
+                  <p className="text-sm text-boon-charcoal/75 leading-relaxed mb-3">
                     A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
                   </p>
                   <button
                     onClick={() => setShowAddWinModal(true)}
-                    className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
+                    className="text-sm font-bold text-boon-warning hover:text-amber-800 transition-colors"
                   >
                     + Add your first win
                   </button>
@@ -1270,34 +1270,34 @@ export default function ProgressPage() {
         {/* Add Win Modal */}
         {showAddWinModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-              <h3 className="text-lg font-bold text-boon-text mb-4">Add a Win</h3>
-              <p className="text-sm text-gray-500 mb-4">
+            <div className="bg-white rounded-card p-6 w-full max-w-md">
+              <h3 className="text-lg font-bold text-boon-navy mb-4">Add a Win</h3>
+              <p className="text-sm text-boon-charcoal/55 mb-4">
                 Capture a breakthrough, accomplishment, or moment you're proud of.
               </p>
               <textarea
                 value={newWinText}
                 onChange={(e) => setNewWinText(e.target.value)}
                 placeholder="What's a win you want to celebrate?"
-                className="w-full p-4 border border-gray-200 rounded-xl focus:border-boon-blue focus:ring-0 focus:outline-none resize-none"
+                className="w-full p-4 border border-boon-charcoal/[0.08] rounded-btn focus:border-boon-blue focus:ring-0 focus:outline-none resize-none"
                 rows={4}
                 maxLength={500}
               />
-              <p className="text-xs text-gray-400 text-right mt-1">{newWinText.length}/500</p>
+              <p className="text-xs text-boon-charcoal/55 text-right mt-1">{newWinText.length}/500</p>
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => {
                     setShowAddWinModal(false);
                     setNewWinText('');
                   }}
-                  className="flex-1 px-4 py-3 text-gray-600 font-medium rounded-xl hover:bg-gray-100 transition-colors"
+                  className="flex-1 px-4 py-3 text-boon-charcoal/75 font-medium rounded-btn hover:bg-boon-offWhite transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddWin}
                   disabled={!newWinText.trim() || isSubmittingWin}
-                  className="flex-1 px-4 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-3 bg-boon-blue text-white font-bold rounded-btn hover:bg-boon-darkBlue transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingWin ? 'Saving...' : 'Save Win'}
                 </button>
@@ -1327,26 +1327,26 @@ export default function ProgressPage() {
       <div className="space-y-8 animate-fade-in">
         {/* Header */}
         <header className="text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">Leadership Profile</h1>
-          <p className="text-gray-500 mt-2 font-medium">Track your leadership competency growth over time.</p>
+          <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">Leadership Profile</h1>
+          <p className="text-boon-charcoal/55 mt-2 font-medium">Track your leadership competency growth over time.</p>
         </header>
 
         {/* Completion Status Banner */}
-        <section className="bg-gradient-to-br from-boon-blue/10 via-white to-purple-50 rounded-[2rem] p-8 border-2 border-boon-blue/20">
+        <section className="bg-boon-blue/10 rounded-card p-8 border-2 border-boon-blue/20">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+            <div className="w-10 h-10 rounded-btn bg-boon-blue flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-extrabold text-boon-text">Your Leadership Profile is almost complete</h2>
+            <h2 className="text-xl font-extrabold text-boon-navy">Your Leadership Profile is almost complete</h2>
           </div>
-          <p className="text-gray-600 mb-6">
+          <p className="text-boon-charcoal/75 mb-6">
             Finish your final reflection to see your growth across all 12 competencies.
           </p>
           <button
             onClick={onStartReflection}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-btn hover:bg-boon-darkBlue transition-all"
           >
             Complete Reflection
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1357,56 +1357,56 @@ export default function ProgressPage() {
 
         {/* Summary Stats (Partial) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-            <p className="text-3xl font-black text-green-600">{completedSessions.length}</p>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Sessions</p>
-            <p className="text-[10px] text-green-600 mt-1">Complete</p>
+          <div className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-3xl font-black text-boon-success">{completedSessions.length}</p>
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mt-1">Sessions</p>
+            <p className="text-[10px] text-boon-success mt-1">Complete</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-            <p className="text-3xl font-black text-purple-600">12</p>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Competencies</p>
+          <div className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-3xl font-black text-boon-purple">12</p>
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mt-1">Competencies</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-            <p className="text-3xl font-black text-green-600">
-              <svg className="w-7 h-7 mx-auto text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-3xl font-black text-boon-success">
+              <svg className="w-7 h-7 mx-auto text-boon-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </p>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Baseline</p>
-            <p className="text-[10px] text-green-600 mt-1">Complete</p>
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mt-1">Baseline</p>
+            <p className="text-[10px] text-boon-success mt-1">Complete</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 text-center">
-            <p className="text-3xl font-black text-amber-500">
-              <svg className="w-7 h-7 mx-auto text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] text-center">
+            <p className="text-3xl font-black text-boon-warning">
+              <svg className="w-7 h-7 mx-auto text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </p>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Final Assessment</p>
-            <p className="text-[10px] text-amber-500 mt-1">Pending</p>
+            <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mt-1">Final Assessment</p>
+            <p className="text-[10px] text-boon-warning mt-1">Pending</p>
           </div>
         </div>
 
         {/* Competency Grid - Baseline Only */}
         <section>
-          <h2 className="text-lg font-extrabold text-boon-text mb-4">Core Leadership Competencies</h2>
+          <h2 className="text-lg font-extrabold text-boon-navy mb-4">Core Leadership Competencies</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {baselineCompetencyData.map(comp => (
               <div
                 key={comp.key}
-                className="bg-white p-5 rounded-2xl border border-gray-100"
+                className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08]"
               >
-                <h3 className="font-bold text-boon-text text-sm leading-tight mb-4">{comp.label}</h3>
+                <h3 className="font-bold text-boon-navy text-sm leading-tight mb-4">{comp.label}</h3>
 
                 <div className="space-y-3">
                   {/* Baseline */}
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-400 uppercase tracking-wide">Baseline</span>
-                      <span className="font-bold text-gray-500">{comp.baseline || '—'}/5</span>
+                      <span className="text-boon-charcoal/55 uppercase tracking-wide">Baseline</span>
+                      <span className="font-bold text-boon-charcoal/55">{comp.baseline || '—'}/5</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                       <div
-                        className="h-full bg-gray-300 rounded-full transition-all duration-500"
+                        className="h-full bg-boon-charcoal/20 rounded-pill transition-all duration-500"
                         style={{ width: `${(comp.baseline || 0) * 20}%` }}
                       />
                     </div>
@@ -1415,11 +1415,11 @@ export default function ProgressPage() {
                   {/* Final - Locked */}
                   <div>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-400 uppercase tracking-wide">Final</span>
-                      <span className="font-medium text-amber-500 italic text-[11px]">Complete reflection to reveal</span>
+                      <span className="text-boon-charcoal/55 uppercase tracking-wide">Final</span>
+                      <span className="font-medium text-boon-warning italic text-[11px]">Complete reflection to reveal</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gray-200 rounded-full border-2 border-dashed border-gray-300" style={{ width: '100%' }} />
+                    <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
+                      <div className="h-full bg-boon-offWhite rounded-pill border-2 border-dashed border-boon-charcoal/[0.08]" style={{ width: '100%' }} />
                     </div>
                   </div>
                 </div>
@@ -1430,8 +1430,8 @@ export default function ProgressPage() {
 
         {/* Radar Chart - Baseline Only */}
         {baseline && (
-          <section className="bg-white p-8 rounded-[2rem] border border-gray-100 relative">
-            <h2 className="text-lg font-extrabold text-boon-text mb-6 text-center">
+          <section className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] relative">
+            <h2 className="text-lg font-extrabold text-boon-navy mb-6 text-center">
               Competency Profile
             </h2>
             <div className="h-96 opacity-50">
@@ -1463,14 +1463,14 @@ export default function ProgressPage() {
               </ResponsiveContainer>
             </div>
             {/* Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-[2rem]">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded-card">
               <div className="text-center p-8">
-                <p className="text-gray-600 font-medium mb-4">
+                <p className="text-boon-charcoal/75 font-medium mb-4">
                   Complete your reflection to see your full profile
                 </p>
                 <button
                   onClick={onStartReflection}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-boon-blue text-white font-bold rounded-btn hover:bg-boon-darkBlue transition-all"
                 >
                   Complete Reflection
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1583,10 +1583,10 @@ export default function ProgressPage() {
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <header className="text-center sm:text-left">
-        <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">
+        <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">
           {isCompleted ? 'Leadership Profile' : 'My Progress'}
         </h1>
-        <p className="text-gray-500 mt-2 font-medium">
+        <p className="text-boon-charcoal/55 mt-2 font-medium">
           {isCompleted
             ? 'Your leadership strengths and capabilities.'
             : isGrowOrExec
@@ -1594,22 +1594,22 @@ export default function ProgressPage() {
               : 'Track your wellbeing and growth over time.'}
         </p>
         {isCompleted && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-boon-success/10 text-green-700 rounded-pill text-sm font-medium">
+            <span className="w-2 h-2 bg-boon-success rounded-pill"></span>
             Program Graduate
           </div>
         )}
       </header>
 
       {/* Tab Navigation - Show both tabs for Grow/Exec, only wellbeing for Scale */}
-      <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-2 bg-boon-offWhite p-1 rounded-btn w-fit">
         {isGrowOrExec && (
           <button
             onClick={() => setActiveTab('competencies')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+            className={`px-4 py-2 rounded-btn font-bold text-sm transition-all ${
               activeTab === 'competencies'
-                ? 'bg-white text-boon-text shadow-sm'
-                : 'text-gray-500 hover:text-boon-text'
+                ? 'bg-white text-boon-navy shadow-sm'
+                : 'text-boon-charcoal/55 hover:text-boon-navy'
             }`}
           >
             {isCompleted ? 'Competency Profile' : 'Competencies'}
@@ -1618,10 +1618,10 @@ export default function ProgressPage() {
         {hasWellbeingData && (
           <button
             onClick={() => setActiveTab('wellbeing')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+            className={`px-4 py-2 rounded-btn font-bold text-sm transition-all ${
               activeTab === 'wellbeing'
-                ? 'bg-white text-boon-text shadow-sm'
-                : 'text-gray-500 hover:text-boon-text'
+                ? 'bg-white text-boon-navy shadow-sm'
+                : 'text-boon-charcoal/55 hover:text-boon-navy'
             }`}
           >
             Wellbeing
@@ -1634,57 +1634,57 @@ export default function ProgressPage() {
         {isCompleted ? (
           // Leadership Profile stats (de-emphasize numeric deltas)
           <>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-success/10 p-3 rounded-card text-boon-success">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strengths</p>
-                <p className="text-2xl font-bold text-slate-900">
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Strengths</p>
+                <p className="text-2xl font-bold text-boon-navy">
                   {competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling' || c.score_label?.toLowerCase() === 'mastering').length}
                 </p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-amber-50 p-3 rounded-2xl text-amber-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-warning/12 p-3 rounded-card text-boon-warning">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><circle cx="12" cy="12" r="6" strokeWidth={2} /><circle cx="12" cy="12" r="2" strokeWidth={2} /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessions</p>
-                <p className="text-2xl font-bold text-slate-900">{completedSessions.length}</p>
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Sessions</p>
+                <p className="text-2xl font-bold text-boon-navy">{completedSessions.length}</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-blue-50 p-3 rounded-2xl text-blue-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-blue/10 p-3 rounded-card text-boon-blue">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Competencies</p>
-                <p className="text-2xl font-bold text-slate-900">{competencyScores.length}</p>
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Competencies</p>
+                <p className="text-2xl font-bold text-boon-navy">{competencyScores.length}</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-success/10 p-3 rounded-card text-boon-success">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Complete</p>
-                <p className="text-2xl font-bold text-slate-900">100%</p>
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Complete</p>
+                <p className="text-2xl font-bold text-boon-navy">100%</p>
               </div>
             </div>
           </>
         ) : (
           // Active program stats (show growth metrics)
           <>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-blue-50 p-3 rounded-2xl text-blue-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-blue/10 p-3 rounded-card text-boon-blue">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">
                   {avgCompetencyImprovement !== null ? 'Avg Growth' : 'Scores Recorded'}
                 </p>
-                <p className="text-2xl font-bold text-slate-900">
+                <p className="text-2xl font-bold text-boon-navy">
                   {avgCompetencyImprovement !== null ? (
                     <span>{avgCompetencyImprovement > 0 ? '+' : ''}{avgCompetencyImprovement}%</span>
                   ) : (
@@ -1693,33 +1693,33 @@ export default function ProgressPage() {
                 </p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-amber-50 p-3 rounded-2xl text-amber-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-warning/12 p-3 rounded-card text-boon-warning">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><circle cx="12" cy="12" r="6" strokeWidth={2} /><circle cx="12" cy="12" r="2" strokeWidth={2} /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sessions</p>
-                <p className="text-2xl font-bold text-slate-900">{completedSessions.length}</p>
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Sessions</p>
+                <p className="text-2xl font-bold text-boon-navy">{completedSessions.length}</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-success/10 p-3 rounded-card text-boon-success">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions Done</p>
-                <p className="text-2xl font-bold text-slate-900">{completedActions.length}</p>
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Actions Done</p>
+                <p className="text-2xl font-bold text-boon-navy">{completedActions.length}</p>
               </div>
             </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4">
-              <div className="bg-purple-50 p-3 rounded-2xl text-purple-600">
+            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
+              <div className="bg-boon-purple/10 p-3 rounded-card text-boon-purple">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">
                   {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked'}
                 </p>
-                <p className="text-2xl font-bold text-slate-900">
+                <p className="text-2xl font-bold text-boon-navy">
                   {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'}
                 </p>
               </div>
@@ -1737,12 +1737,12 @@ export default function ProgressPage() {
               {competencyData.map(comp => (
                 <div
                   key={comp.key}
-                  className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-white p-6 rounded-card shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-boon-text text-sm leading-tight">{comp.label}</h3>
+                    <h3 className="font-bold text-boon-navy text-sm leading-tight">{comp.label}</h3>
                     {comp.scoreLabel && (
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getScoreLabelColor(comp.scoreLabel)}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill ${getScoreLabelColor(comp.scoreLabel)}`}>
                         {comp.scoreLabel}
                       </span>
                     )}
@@ -1752,12 +1752,12 @@ export default function ProgressPage() {
                     {/* Baseline */}
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Baseline</span>
-                        <span className="font-bold text-gray-500">{comp.baseline || '—'}/5</span>
+                        <span className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Baseline</span>
+                        <span className="font-bold text-boon-charcoal/55">{comp.baseline || '—'}/5</span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                         <div
-                          className="h-full bg-gray-300 rounded-full transition-all duration-500"
+                          className="h-full bg-boon-charcoal/20 rounded-pill transition-all duration-500"
                           style={{ width: `${(comp.baseline || 0) * 20}%` }}
                         />
                       </div>
@@ -1767,12 +1767,12 @@ export default function ProgressPage() {
                     {hasActualCurrentScores ? (
                       <div>
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current</span>
-                          <span className="text-slate-900 font-bold">{comp.current || '—'}/5</span>
+                          <span className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Current</span>
+                          <span className="text-boon-navy font-bold">{comp.current || '—'}/5</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${(comp.current || 0) < (comp.baseline || 0) ? 'bg-amber-500' : 'bg-blue-600'}`}
+                            className={`h-full rounded-pill transition-all duration-500 ${(comp.current || 0) < (comp.baseline || 0) ? 'bg-boon-warning' : 'bg-boon-blue'}`}
                             style={{ width: `${(comp.current || 0) * 20}%` }}
                           />
                         </div>
@@ -1780,7 +1780,7 @@ export default function ProgressPage() {
                     ) : (
                       /* Show "After Midpoint" placeholder when no current data */
                       isGrowOrExec && !isCompleted && (
-                        <p className="text-xs text-gray-400 italic">
+                        <p className="text-xs text-boon-charcoal/55 italic">
                           Updated after midpoint assessment
                         </p>
                       )
@@ -1788,7 +1788,7 @@ export default function ProgressPage() {
 
                     {/* Improvement indicator - only show if we have actual current scores */}
                     {hasActualCurrentScores && comp.improvement !== null && (
-                      <div className={`flex items-center justify-end gap-1 text-xs font-bold ${comp.improvement > 0 ? 'text-emerald-500' : comp.improvement < 0 ? 'text-amber-500' : 'text-gray-400'}`}>
+                      <div className={`flex items-center justify-end gap-1 text-xs font-bold ${comp.improvement > 0 ? 'text-boon-success' : comp.improvement < 0 ? 'text-boon-warning' : 'text-boon-charcoal/55'}`}>
                         {comp.improvement > 0 ? (
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
                         ) : comp.improvement < 0 ? (
@@ -1804,7 +1804,7 @@ export default function ProgressPage() {
                     {(comp.scoreLabel?.toLowerCase() === 'applying' || comp.current <= 3) && comp.current > 0 && !isCompleted && onNavigate && (
                       <button
                         onClick={() => onNavigate('practice')}
-                        className="mt-3 w-full py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-lg hover:bg-boon-lightBlue transition-all flex items-center justify-center gap-1"
+                        className="mt-3 w-full py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-btn hover:bg-boon-lightBlue transition-all flex items-center justify-center gap-1"
                       >
                         Practice this
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1822,9 +1822,9 @@ export default function ProgressPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Radar Chart */}
             {(baseline || competencyScores.length > 0) && (
-              <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="border-b border-slate-50 bg-slate-50/50 p-6">
-                  <h2 className="text-lg font-bold text-slate-900">Competency Profile</h2>
+              <section className="bg-white rounded-card overflow-hidden">
+                <div className="border-b border-boon-charcoal/[0.08] bg-boon-offWhite/50 p-6">
+                  <h2 className="text-lg font-bold text-boon-navy">Competency Profile</h2>
                 </div>
                 <div className="p-8">
                   <div className="h-96">
@@ -1863,7 +1863,7 @@ export default function ProgressPage() {
                           <Legend
                             wrapperStyle={{ paddingTop: 20 }}
                             formatter={(value) => (
-                              <span className="text-sm font-semibold text-gray-600">{value}</span>
+                              <span className="text-sm font-semibold text-boon-charcoal/75">{value}</span>
                             )}
                           />
                         )}
@@ -1876,9 +1876,9 @@ export default function ProgressPage() {
 
             {/* Bar Chart */}
             {competencyScores.length > 0 && (
-              <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="border-b border-slate-50 bg-slate-50/50 p-6">
-                  <h2 className="text-lg font-bold text-slate-900">Competency Rankings</h2>
+              <section className="bg-white rounded-card overflow-hidden">
+                <div className="border-b border-boon-charcoal/[0.08] bg-boon-offWhite/50 p-6">
+                  <h2 className="text-lg font-bold text-boon-navy">Competency Rankings</h2>
                 </div>
                 <div className="p-6">
                   <div style={{ height: Math.max(barChartData.length * 40, 300) }}>
@@ -1910,14 +1910,14 @@ export default function ProgressPage() {
 
           {/* No Data State */}
           {!baseline && competencyScores.length === 0 && (
-            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-card border border-boon-charcoal/[0.08] text-center">
+              <div className="w-16 h-16 bg-boon-purple/10 rounded-pill flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-boon-text mb-2">Competency Data Coming Soon</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-boon-navy mb-2">Competency Data Coming Soon</h3>
+              <p className="text-boon-charcoal/55 max-w-md mx-auto">
                 Your competency scores will appear here after your baseline assessment and coaching sessions.
               </p>
             </section>
@@ -1929,28 +1929,28 @@ export default function ProgressPage() {
       {activeTab === 'wellbeing' && hasWellbeingData && (
         <div className="space-y-8">
           <section>
-            <h2 className="text-lg font-extrabold text-boon-text mb-4">Wellbeing Metrics</h2>
+            <h2 className="text-lg font-extrabold text-boon-navy mb-4">Wellbeing Metrics</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {wellbeingData.map(metric => (
                 <div
                   key={metric.key}
-                  className="bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-lg hover:border-boon-blue/20 transition-all"
+                  className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] hover:shadow-lg hover:border-boon-blue/20 transition-all"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-2xl">{metric.icon}</span>
                   </div>
-                  <h3 className="font-bold text-boon-text text-sm mb-3">{metric.label}</h3>
+                  <h3 className="font-bold text-boon-navy text-sm mb-3">{metric.label}</h3>
                   <div className="space-y-2">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-400 uppercase tracking-wide">Score</span>
+                        <span className="text-boon-charcoal/55 uppercase tracking-wide">Score</span>
                         <span className="font-bold" style={{ color: metric.color }}>
                           {metric.current || '—'}/{metric.maxScore}
                         </span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-500"
+                          className="h-full rounded-pill transition-all duration-500"
                           style={{
                             width: `${((metric.current || 0) / metric.maxScore) * 100}%`,
                             backgroundColor: metric.color
@@ -1966,14 +1966,14 @@ export default function ProgressPage() {
 
           {/* No Baseline State */}
           {!baseline && (
-            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-[2rem] border border-gray-100 text-center">
-              <div className="w-16 h-16 bg-boon-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
+            <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-card border border-boon-charcoal/[0.08] text-center">
+              <div className="w-16 h-16 bg-boon-lightBlue rounded-pill flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-boon-text mb-2">Complete Your Welcome Survey</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-boon-navy mb-2">Complete Your Welcome Survey</h3>
+              <p className="text-boon-charcoal/55 max-w-md mx-auto">
                 Take the welcome survey to establish your baseline wellbeing metrics and track your progress.
               </p>
             </section>
@@ -1984,13 +1984,13 @@ export default function ProgressPage() {
 
       {/* Your Wins - Show for GROW/Exec */}
       {isGrowOrExec && !isCompleted && (
-        <section className="bg-white rounded-[2rem] p-8 border border-gray-100">
+        <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-extrabold text-boon-text">Your Wins</h2>
+            <h2 className="text-lg font-extrabold text-boon-navy">Your Wins</h2>
             {(
               <button
                 onClick={() => setShowAddWinModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 rounded-xl transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 rounded-btn transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -2003,25 +2003,25 @@ export default function ProgressPage() {
           {coachingWins.length > 0 ? (
             <div className="space-y-4">
               {coachingWins.map((win) => (
-                <div key={win.id} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-2xl border border-amber-100/50 group relative">
+                <div key={win.id} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-card border border-amber-100/50 group relative">
                   {editingWinId === win.id ? (
                     <div className="space-y-3">
                       <textarea
                         value={editWinText}
                         onChange={(e) => setEditWinText(e.target.value)}
-                        className="w-full p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
                         rows={3}
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveEdit}
-                          className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-lg hover:bg-orange-500"
+                          className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-btn hover:bg-orange-500"
                         >
                           Save
                         </button>
                         <button
                           onClick={handleCancelEdit}
-                          className="px-3 py-1.5 bg-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-300"
+                          className="px-3 py-1.5 bg-boon-offWhite text-boon-charcoal/75 text-xs font-bold rounded-btn hover:bg-boon-charcoal/20"
                         >
                           Cancel
                         </button>
@@ -2031,8 +2031,8 @@ export default function ProgressPage() {
                     <div className="flex items-start gap-3">
                       <span className="text-xl">🏆</span>
                       <div className="flex-1 pr-12">
-                        <p className="text-gray-800 leading-relaxed">"{win.win_text}"</p>
-                        <p className="text-xs text-gray-400 mt-2">
+                        <p className="text-boon-navy leading-relaxed">"{win.win_text}"</p>
+                        <p className="text-xs text-boon-charcoal/55 mt-2">
                           {win.session_number && `Session ${win.session_number} · `}
                           {new Date(win.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </p>
@@ -2043,7 +2043,7 @@ export default function ProgressPage() {
                           {(
                             <button
                               onClick={() => handleStartEdit(win)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                              className="p-1.5 text-boon-charcoal/55 hover:text-boon-charcoal/75 hover:bg-white rounded"
                               title="Edit"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2055,7 +2055,7 @@ export default function ProgressPage() {
                             <button
                               onClick={() => handleDeleteWin(win.id)}
                               disabled={deletingWinId === win.id}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-white rounded disabled:opacity-50"
+                              className="p-1.5 text-boon-charcoal/55 hover:text-boon-error hover:bg-white rounded disabled:opacity-50"
                               title="Delete"
                             >
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2071,22 +2071,22 @@ export default function ProgressPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <div className="rounded-card p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-10 h-10 rounded-btn bg-boon-warning/12 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-boon-text mb-1">What counts as a win?</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                  <h3 className="font-bold text-boon-navy mb-1">What counts as a win?</h3>
+                  <p className="text-sm text-boon-charcoal/75 leading-relaxed mb-3">
                     A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
                   </p>
                   {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
-                      className="text-sm font-bold text-amber-700 hover:text-amber-800 transition-colors"
+                      className="text-sm font-bold text-boon-warning hover:text-amber-800 transition-colors"
                     >
                       + Add your first win
                     </button>
@@ -2099,8 +2099,8 @@ export default function ProgressPage() {
       )}
 
       {/* Insights Section - Reframed for completed users */}
-      <section className="bg-gradient-to-br from-purple-50 to-boon-lightBlue/20 p-8 rounded-[2rem] border border-purple-100">
-        <h2 className="text-lg font-extrabold text-boon-text mb-6">Insights</h2>
+      <section className="bg-boon-offWhite p-8 rounded-card border border-boon-charcoal/[0.08]">
+        <h2 className="text-lg font-extrabold text-boon-navy mb-6">Insights</h2>
         <div className="grid sm:grid-cols-3 gap-6">
           {(isCompleted ? [
             {
@@ -2174,11 +2174,11 @@ export default function ProgressPage() {
           ]).map((card, i) => (
             <div
               key={i}
-              className="p-6 bg-white/60 rounded-2xl border border-white hover:bg-white hover:shadow-lg transition-all"
+              className="p-6 bg-white/60 rounded-card border border-white hover:bg-white hover:shadow-lg transition-all"
             >
               <div className="text-3xl mb-4">{card.icon}</div>
-              <h4 className="font-bold text-boon-text mb-2 uppercase tracking-widest text-xs">{card.title}</h4>
-              <p className="text-sm text-gray-600 leading-relaxed">{card.desc}</p>
+              <h4 className="font-bold text-boon-navy mb-2 uppercase tracking-widest text-xs">{card.title}</h4>
+              <p className="text-sm text-boon-charcoal/75 leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>
@@ -2187,25 +2187,25 @@ export default function ProgressPage() {
       {/* Add Win Modal */}
       {showAddWinModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+          <div className="bg-white rounded-card p-6 w-full max-w-md shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-2xl">🏆</span>
-              <h3 className="text-lg font-extrabold text-boon-text">Add a Win</h3>
+              <h3 className="text-lg font-extrabold text-boon-navy">Add a Win</h3>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-boon-charcoal/55 mb-4">
               What breakthrough or accomplishment would you like to celebrate?
             </p>
             <textarea
               value={newWinText}
               onChange={(e) => setNewWinText(e.target.value)}
               placeholder="e.g., Had a difficult conversation that went well, got positive feedback, set a boundary..."
-              className="w-full p-4 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+              className="w-full p-4 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
               rows={4}
               maxLength={500}
               autoFocus
             />
             <div className="flex justify-between items-center mt-2 mb-4">
-              <span className="text-xs text-gray-400">{newWinText.length}/500</span>
+              <span className="text-xs text-boon-charcoal/55">{newWinText.length}/500</span>
             </div>
             <div className="flex gap-3">
               <button
@@ -2213,14 +2213,14 @@ export default function ProgressPage() {
                   setShowAddWinModal(false);
                   setNewWinText('');
                 }}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-boon-charcoal/75 bg-boon-offWhite hover:bg-boon-offWhite rounded-btn transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddWin}
                 disabled={!newWinText.trim() || isSubmittingWin}
-                className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-orange-400 hover:bg-orange-500 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-xl transition-colors"
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-boon-coral hover:bg-boon-coralLight disabled:bg-boon-charcoal/20 disabled:cursor-not-allowed rounded-btn transition-colors"
               >
                 {isSubmittingWin ? 'Saving...' : 'Save Win'}
               </button>

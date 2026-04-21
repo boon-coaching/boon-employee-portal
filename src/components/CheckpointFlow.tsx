@@ -433,9 +433,9 @@ export default function CheckpointFlow({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-boon-text/50 backdrop-blur-md">
-      <div className="relative bg-white w-full max-w-lg max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
+      <div className="relative bg-white w-full max-w-lg max-h-[90vh] rounded-card shadow-2xl overflow-hidden flex flex-col">
         {/* Progress Bar */}
-        <div className="h-1 bg-gray-100">
+        <div className="h-1 bg-boon-offWhite">
           <div
             className="h-full bg-boon-blue transition-all duration-500"
             style={{ width: `${progressPercent}%` }}
@@ -443,25 +443,25 @@ export default function CheckpointFlow({
         </div>
 
         {/* Header */}
-        <div className="px-8 pt-8 pb-4 border-b border-gray-100">
+        <div className="px-8 pt-8 pb-4 border-b border-boon-charcoal/[0.08]">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-2xl font-extrabold text-boon-text">
+                <h2 className="text-2xl font-extrabold text-boon-navy">
                   Quick Check-In
                 </h2>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
+                <span className="px-3 py-1 bg-boon-purple/10 text-boon-purple text-xs font-bold rounded-pill">
                   ~2 min
                 </span>
               </div>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-boon-charcoal/55 text-sm mt-1">
                 Help us make your experience better
               </p>
             </div>
             {step !== 'submitting' && step !== 'complete' && (
               <button
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-2 text-boon-charcoal/55 hover:text-boon-charcoal/75 transition-colors"
                 title="Remind me later"
               >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -478,20 +478,20 @@ export default function CheckpointFlow({
           {step === 'experience_rating' && (
             <div className="space-y-6 py-4">
               <div className="text-center">
-                <h3 className="text-xl font-extrabold text-boon-text mb-2">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-2">
                   How's your coaching experience so far?
                 </h3>
-                <p className="text-gray-500 text-sm">1 = Not great, 10 = Amazing</p>
+                <p className="text-boon-charcoal/55 text-sm">1 = Not great, 10 = Amazing</p>
               </div>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
                   <button
                     key={score}
                     onClick={() => setExperienceRating(score)}
-                    className={`py-4 rounded-xl text-sm font-bold transition-all ${
+                    className={`py-4 rounded-btn text-sm font-bold transition-all ${
                       experienceRating === score
                         ? 'bg-boon-blue text-white shadow-lg scale-110'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-offWhite'
                     }`}
                   >
                     {score}
@@ -505,20 +505,20 @@ export default function CheckpointFlow({
           {step === 'coach_match' && (
             <div className="space-y-6 py-4">
               <div className="text-center">
-                <h3 className="text-xl font-extrabold text-boon-text mb-2">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-2">
                   How's your match with {coachFirstName}?
                 </h3>
-                <p className="text-gray-500 text-sm">1 = Not a fit, 10 = Perfect match</p>
+                <p className="text-boon-charcoal/55 text-sm">1 = Not a fit, 10 = Perfect match</p>
               </div>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
                   <button
                     key={score}
                     onClick={() => setCoachMatchRating(score)}
-                    className={`py-4 rounded-xl text-sm font-bold transition-all ${
+                    className={`py-4 rounded-btn text-sm font-bold transition-all ${
                       coachMatchRating === score
                         ? 'bg-boon-blue text-white shadow-lg scale-110'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-offWhite'
                     }`}
                   >
                     {score}
@@ -532,17 +532,17 @@ export default function CheckpointFlow({
           {step === 'whats_not_working' && (
             <div className="space-y-6 py-4">
               <div>
-                <label className="block text-lg font-bold text-boon-text mb-3 text-center">
+                <label className="block text-lg font-bold text-boon-navy mb-3 text-center">
                   What's not working?
                 </label>
-                <p className="text-gray-500 text-sm text-center mb-4">
+                <p className="text-boon-charcoal/55 text-sm text-center mb-4">
                   Your honest feedback helps us improve
                 </p>
                 <textarea
                   value={whatsNotWorkingText}
                   onChange={(e) => setWhatsNotWorkingText(e.target.value)}
                   placeholder="Tell us what could be better..."
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
+                  className="w-full px-5 py-4 bg-boon-offWhite border-2 border-transparent rounded-card focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
                   autoFocus
                 />
               </div>
@@ -553,10 +553,10 @@ export default function CheckpointFlow({
           {step === 'wellbeing' && (
             <div className="space-y-6 py-4">
               <div className="text-center mb-6">
-                <h3 className="text-xl font-extrabold text-boon-text mb-2">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-2">
                   How are you doing?
                 </h3>
-                <p className="text-gray-500 text-sm">
+                <p className="text-boon-charcoal/55 text-sm">
                   Compare to when you started
                 </p>
               </div>
@@ -564,9 +564,9 @@ export default function CheckpointFlow({
               {/* Job Satisfaction */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-bold text-boon-text">Job satisfaction</label>
+                  <label className="text-sm font-bold text-boon-navy">Job satisfaction</label>
                   {baselineSatisfaction && (
-                    <span className="text-xs text-gray-400">Started at {baselineSatisfaction}</span>
+                    <span className="text-xs text-boon-charcoal/55">Started at {baselineSatisfaction}</span>
                   )}
                 </div>
                 <div className="grid grid-cols-5 gap-2">
@@ -576,17 +576,17 @@ export default function CheckpointFlow({
                       <button
                         key={score}
                         onClick={() => setJobSatisfaction(score)}
-                        className={`py-3 rounded-xl text-xs font-bold transition-all relative ${
+                        className={`py-3 rounded-btn text-xs font-bold transition-all relative ${
                           jobSatisfaction === score
                             ? 'bg-boon-blue text-white shadow-lg scale-105'
                             : isBaseline
-                            ? 'bg-purple-100 text-purple-600 border-2 border-purple-300'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-boon-purple/10 text-boon-purple border-2 border-boon-charcoal/[0.08]'
+                            : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-offWhite'
                         }`}
                       >
                         {score}
                         {isBaseline && jobSatisfaction !== score && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-boon-purple/100 rounded-pill" />
                         )}
                       </button>
                     );
@@ -597,9 +597,9 @@ export default function CheckpointFlow({
               {/* Productivity */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-bold text-boon-text">Productivity</label>
+                  <label className="text-sm font-bold text-boon-navy">Productivity</label>
                   {baselineProductivity && (
-                    <span className="text-xs text-gray-400">Started at {baselineProductivity}</span>
+                    <span className="text-xs text-boon-charcoal/55">Started at {baselineProductivity}</span>
                   )}
                 </div>
                 <div className="grid grid-cols-5 gap-2">
@@ -609,17 +609,17 @@ export default function CheckpointFlow({
                       <button
                         key={score}
                         onClick={() => setProductivity(score)}
-                        className={`py-3 rounded-xl text-xs font-bold transition-all relative ${
+                        className={`py-3 rounded-btn text-xs font-bold transition-all relative ${
                           productivity === score
                             ? 'bg-boon-blue text-white shadow-lg scale-105'
                             : isBaseline
-                            ? 'bg-purple-100 text-purple-600 border-2 border-purple-300'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-boon-purple/10 text-boon-purple border-2 border-boon-charcoal/[0.08]'
+                            : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-offWhite'
                         }`}
                       >
                         {score}
                         {isBaseline && productivity !== score && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-boon-purple/100 rounded-pill" />
                         )}
                       </button>
                     );
@@ -630,9 +630,9 @@ export default function CheckpointFlow({
               {/* Work-Life Balance */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-bold text-boon-text">Work-life balance</label>
+                  <label className="text-sm font-bold text-boon-navy">Work-life balance</label>
                   {baselineWorkLifeBalance && (
-                    <span className="text-xs text-gray-400">Started at {baselineWorkLifeBalance}</span>
+                    <span className="text-xs text-boon-charcoal/55">Started at {baselineWorkLifeBalance}</span>
                   )}
                 </div>
                 <div className="grid grid-cols-5 gap-2">
@@ -642,17 +642,17 @@ export default function CheckpointFlow({
                       <button
                         key={score}
                         onClick={() => setWorkLifeBalance(score)}
-                        className={`py-3 rounded-xl text-xs font-bold transition-all relative ${
+                        className={`py-3 rounded-btn text-xs font-bold transition-all relative ${
                           workLifeBalance === score
                             ? 'bg-boon-blue text-white shadow-lg scale-105'
                             : isBaseline
-                            ? 'bg-purple-100 text-purple-600 border-2 border-purple-300'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-boon-purple/10 text-boon-purple border-2 border-boon-charcoal/[0.08]'
+                            : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-offWhite'
                         }`}
                       >
                         {score}
                         {isBaseline && workLifeBalance !== score && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-boon-purple/100 rounded-pill" />
                         )}
                       </button>
                     );
@@ -661,9 +661,9 @@ export default function CheckpointFlow({
               </div>
 
               {/* Legend */}
-              <div className="flex items-center justify-center gap-4 pt-2 text-xs text-gray-500">
+              <div className="flex items-center justify-center gap-4 pt-2 text-xs text-boon-charcoal/55">
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 bg-purple-100 border border-purple-300 rounded" />
+                  <span className="w-3 h-3 bg-boon-purple/10 border border-boon-charcoal/[0.08] rounded" />
                   Your baseline
                 </span>
               </div>
@@ -674,10 +674,10 @@ export default function CheckpointFlow({
           {step === 'benefits' && (
             <div className="space-y-6 py-4">
               <div className="text-center mb-4">
-                <h3 className="text-xl font-extrabold text-boon-text mb-2">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-2">
                   What benefits have you experienced?
                 </h3>
-                <p className="text-gray-500 text-sm">
+                <p className="text-boon-charcoal/55 text-sm">
                   Select all that apply
                 </p>
               </div>
@@ -703,15 +703,15 @@ export default function CheckpointFlow({
                           }
                         }
                       }}
-                      className={`w-full p-4 rounded-2xl text-left transition-all border-2 ${
+                      className={`w-full p-4 rounded-card text-left transition-all border-2 ${
                         isSelected
                           ? 'border-boon-blue bg-boon-lightBlue/30'
-                          : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                          : 'border-boon-charcoal/[0.08] bg-boon-offWhite hover:border-boon-charcoal/[0.08]'
                       }`}
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
-                          isSelected ? 'bg-boon-blue' : 'border-2 border-gray-300'
+                          isSelected ? 'bg-boon-blue' : 'border-2 border-boon-charcoal/[0.08]'
                         }`}>
                           {isSelected && (
                             <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -719,7 +719,7 @@ export default function CheckpointFlow({
                             </svg>
                           )}
                         </div>
-                        <span className="font-medium text-boon-text">{option.label}</span>
+                        <span className="font-medium text-boon-navy">{option.label}</span>
                       </div>
                     </button>
                   );
@@ -732,16 +732,16 @@ export default function CheckpointFlow({
           {step === 'wins' && (
             <div className="space-y-6 py-4">
               <div>
-                <label className="block text-lg font-bold text-boon-text mb-3 text-center">
+                <label className="block text-lg font-bold text-boon-navy mb-3 text-center">
                   Any wins or breakthroughs since you started?
                 </label>
                 <textarea
                   value={winsText}
                   onChange={(e) => setWinsText(e.target.value)}
                   placeholder="Share something you're proud of... (optional)"
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
+                  className="w-full px-5 py-4 bg-boon-offWhite border-2 border-transparent rounded-card focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
                 />
-                <p className="text-xs text-gray-400 mt-2 text-center">
+                <p className="text-xs text-boon-charcoal/55 mt-2 text-center">
                   This is optional - skip if nothing comes to mind
                 </p>
               </div>
@@ -752,22 +752,22 @@ export default function CheckpointFlow({
           {step === 'continue_with_coach' && (
             <div className="space-y-6 py-4">
               <div className="text-center">
-                <h3 className="text-xl font-extrabold text-boon-text mb-6">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-6">
                   Continue with {coachFirstName}?
                 </h3>
               </div>
               <div className="space-y-3">
                 <button
                   onClick={() => setContinueWithCoach('yes')}
-                  className={`w-full p-5 rounded-2xl text-left transition-all border-2 ${
+                  className={`w-full p-5 rounded-card text-left transition-all border-2 ${
                     continueWithCoach === 'yes'
                       ? 'border-boon-blue bg-boon-lightBlue/30'
-                      : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                      : 'border-boon-charcoal/[0.08] bg-boon-offWhite hover:border-boon-charcoal/[0.08]'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      continueWithCoach === 'yes' ? 'border-boon-blue bg-boon-blue' : 'border-gray-300'
+                    <div className={`w-6 h-6 rounded-pill border-2 flex items-center justify-center ${
+                      continueWithCoach === 'yes' ? 'border-boon-blue bg-boon-blue' : 'border-boon-charcoal/[0.08]'
                     }`}>
                       {continueWithCoach === 'yes' && (
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -775,20 +775,20 @@ export default function CheckpointFlow({
                         </svg>
                       )}
                     </div>
-                    <span className="font-bold text-boon-text">Yes, continue</span>
+                    <span className="font-bold text-boon-navy">Yes, continue</span>
                   </div>
                 </button>
                 <button
                   onClick={() => setContinueWithCoach('explore')}
-                  className={`w-full p-5 rounded-2xl text-left transition-all border-2 ${
+                  className={`w-full p-5 rounded-card text-left transition-all border-2 ${
                     continueWithCoach === 'explore'
                       ? 'border-boon-blue bg-boon-lightBlue/30'
-                      : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                      : 'border-boon-charcoal/[0.08] bg-boon-offWhite hover:border-boon-charcoal/[0.08]'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      continueWithCoach === 'explore' ? 'border-boon-blue bg-boon-blue' : 'border-gray-300'
+                    <div className={`w-6 h-6 rounded-pill border-2 flex items-center justify-center ${
+                      continueWithCoach === 'explore' ? 'border-boon-blue bg-boon-blue' : 'border-boon-charcoal/[0.08]'
                     }`}>
                       {continueWithCoach === 'explore' && (
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -796,7 +796,7 @@ export default function CheckpointFlow({
                         </svg>
                       )}
                     </div>
-                    <span className="font-bold text-boon-text">Explore options</span>
+                    <span className="font-bold text-boon-navy">Explore options</span>
                   </div>
                 </button>
               </div>
@@ -807,17 +807,17 @@ export default function CheckpointFlow({
           {step === 'better_match' && (
             <div className="space-y-6 py-4">
               <div>
-                <label className="block text-lg font-bold text-boon-text mb-3 text-center">
+                <label className="block text-lg font-bold text-boon-navy mb-3 text-center">
                   What would make a better match?
                 </label>
-                <p className="text-gray-500 text-sm text-center mb-4">
+                <p className="text-boon-charcoal/55 text-sm text-center mb-4">
                   Help us find the right coach for you
                 </p>
                 <textarea
                   value={betterMatchText}
                   onChange={(e) => setBetterMatchText(e.target.value)}
                   placeholder="Coaching style, background, expertise..."
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
+                  className="w-full px-5 py-4 bg-boon-offWhite border-2 border-transparent rounded-card focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
                   autoFocus
                 />
               </div>
@@ -828,27 +828,27 @@ export default function CheckpointFlow({
           {step === 'booked_next' && (
             <div className="space-y-6 py-4">
               <div className="text-center">
-                <h3 className="text-xl font-extrabold text-boon-text mb-6">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-6">
                   Booked your next session?
                 </h3>
               </div>
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => setBookedNext('yes')}
-                  className={`px-10 py-4 rounded-2xl font-bold transition-all border-2 ${
+                  className={`px-10 py-4 rounded-card font-bold transition-all border-2 ${
                     bookedNext === 'yes'
                       ? 'border-boon-blue bg-boon-blue text-white'
-                      : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+                      : 'border-boon-charcoal/[0.08] bg-boon-offWhite text-boon-charcoal/75 hover:border-boon-charcoal/[0.08]'
                   }`}
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setBookedNext('no')}
-                  className={`px-10 py-4 rounded-2xl font-bold transition-all border-2 ${
+                  className={`px-10 py-4 rounded-card font-bold transition-all border-2 ${
                     bookedNext === 'no'
                       ? 'border-boon-blue bg-boon-blue text-white'
-                      : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+                      : 'border-boon-charcoal/[0.08] bg-boon-offWhite text-boon-charcoal/75 hover:border-boon-charcoal/[0.08]'
                   }`}
                 >
                   No
@@ -861,10 +861,10 @@ export default function CheckpointFlow({
           {step === 'whats_in_the_way' && (
             <div className="space-y-6 py-4">
               <div className="text-center mb-4">
-                <h3 className="text-xl font-extrabold text-boon-text mb-2">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-2">
                   What's in the way?
                 </h3>
-                <p className="text-gray-500 text-sm">
+                <p className="text-boon-charcoal/55 text-sm">
                   We might be able to help
                 </p>
               </div>
@@ -879,21 +879,21 @@ export default function CheckpointFlow({
                   <button
                     key={option.value}
                     onClick={() => setWhatsInTheWayOption(option.value)}
-                    className={`w-full p-4 rounded-2xl text-left transition-all border-2 ${
+                    className={`w-full p-4 rounded-card text-left transition-all border-2 ${
                       whatsInTheWayOption === option.value
                         ? 'border-boon-blue bg-boon-lightBlue/30'
-                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                        : 'border-boon-charcoal/[0.08] bg-boon-offWhite hover:border-boon-charcoal/[0.08]'
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                        whatsInTheWayOption === option.value ? 'border-boon-blue bg-boon-blue' : 'border-gray-300'
+                      <div className={`w-5 h-5 rounded-pill border-2 flex items-center justify-center flex-shrink-0 ${
+                        whatsInTheWayOption === option.value ? 'border-boon-blue bg-boon-blue' : 'border-boon-charcoal/[0.08]'
                       }`}>
                         {whatsInTheWayOption === option.value && (
-                          <div className="w-2 h-2 bg-white rounded-full" />
+                          <div className="w-2 h-2 bg-white rounded-pill" />
                         )}
                       </div>
-                      <span className="font-medium text-boon-text">{option.label}</span>
+                      <span className="font-medium text-boon-navy">{option.label}</span>
                     </div>
                   </button>
                 ))}
@@ -903,7 +903,7 @@ export default function CheckpointFlow({
                   value={whatsInTheWayOtherText}
                   onChange={(e) => setWhatsInTheWayOtherText(e.target.value)}
                   placeholder="Tell us more..."
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-24 mt-2"
+                  className="w-full px-5 py-4 bg-boon-offWhite border-2 border-transparent rounded-card focus:bg-white focus:border-boon-blue outline-none resize-none h-24 mt-2"
                   autoFocus
                 />
               )}
@@ -914,16 +914,16 @@ export default function CheckpointFlow({
           {step === 'anything_else' && (
             <div className="space-y-6 py-4">
               <div>
-                <label className="block text-lg font-bold text-boon-text mb-3 text-center">
+                <label className="block text-lg font-bold text-boon-navy mb-3 text-center">
                   Anything else?
                 </label>
                 <textarea
                   value={anythingElseText}
                   onChange={(e) => setAnythingElseText(e.target.value)}
                   placeholder="Any other thoughts... (optional)"
-                  className="w-full px-5 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
+                  className="w-full px-5 py-4 bg-boon-offWhite border-2 border-transparent rounded-card focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
                 />
-                <p className="text-xs text-gray-400 mt-2 text-center">
+                <p className="text-xs text-boon-charcoal/55 mt-2 text-center">
                   This is optional - skip if nothing comes to mind
                 </p>
               </div>
@@ -934,26 +934,26 @@ export default function CheckpointFlow({
           {step === 'nps' && (
             <div className="space-y-6 py-4">
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-btn text-boon-error text-sm">
                   {error}
                 </div>
               )}
 
               <div className="text-center">
-                <h3 className="text-lg font-extrabold text-boon-text mb-2">
+                <h3 className="text-lg font-extrabold text-boon-navy mb-2">
                   How likely are you to recommend Boon to a colleague?
                 </h3>
-                <p className="text-gray-500 text-sm">0 = Not likely, 10 = Extremely likely</p>
+                <p className="text-boon-charcoal/55 text-sm">0 = Not likely, 10 = Extremely likely</p>
               </div>
               <div className="grid grid-cols-11 gap-1">
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
                   <button
                     key={score}
                     onClick={() => setNpsScore(score)}
-                    className={`py-3 rounded-lg text-xs font-bold transition-all ${
+                    className={`py-3 rounded-btn text-xs font-bold transition-all ${
                       npsScore === score
                         ? 'bg-boon-blue text-white shadow-lg scale-110'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-offWhite'
                     }`}
                   >
                     {score}
@@ -967,30 +967,30 @@ export default function CheckpointFlow({
           {step === 'open_to_chat' && (
             <div className="space-y-6 py-4">
               <div className="text-center">
-                <h3 className="text-xl font-extrabold text-boon-text mb-2">
+                <h3 className="text-xl font-extrabold text-boon-navy mb-2">
                   Open to a quick chat with our team?
                 </h3>
-                <p className="text-gray-500 text-sm mb-6">
+                <p className="text-boon-charcoal/55 text-sm mb-6">
                   We'd love to hear more about your experience
                 </p>
               </div>
               <div className="flex gap-4 justify-center">
                 <button
                   onClick={() => setOpenToChat('yes')}
-                  className={`px-10 py-4 rounded-2xl font-bold transition-all border-2 ${
+                  className={`px-10 py-4 rounded-card font-bold transition-all border-2 ${
                     openToChat === 'yes'
                       ? 'border-boon-blue bg-boon-blue text-white'
-                      : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+                      : 'border-boon-charcoal/[0.08] bg-boon-offWhite text-boon-charcoal/75 hover:border-boon-charcoal/[0.08]'
                   }`}
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setOpenToChat('no')}
-                  className={`px-10 py-4 rounded-2xl font-bold transition-all border-2 ${
+                  className={`px-10 py-4 rounded-card font-bold transition-all border-2 ${
                     openToChat === 'no'
                       ? 'border-boon-blue bg-boon-blue text-white'
-                      : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+                      : 'border-boon-charcoal/[0.08] bg-boon-offWhite text-boon-charcoal/75 hover:border-boon-charcoal/[0.08]'
                   }`}
                 >
                   No
@@ -1002,27 +1002,27 @@ export default function CheckpointFlow({
           {/* Submitting */}
           {step === 'submitting' && (
             <div className="py-16 text-center">
-              <div className="w-16 h-16 mx-auto mb-6 bg-purple-100 rounded-full flex items-center justify-center animate-pulse">
-                <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 mx-auto mb-6 bg-boon-purple/10 rounded-pill flex items-center justify-center animate-pulse">
+                <svg className="w-8 h-8 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
-              <p className="text-gray-600 font-medium">Saving...</p>
+              <p className="text-boon-charcoal/75 font-medium">Saving...</p>
             </div>
           )}
 
           {/* Complete */}
           {step === 'complete' && (
             <div className="py-16 text-center">
-              <div className="w-20 h-20 mx-auto mb-8 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-20 h-20 mx-auto mb-8 bg-green-100 rounded-pill flex items-center justify-center">
+                <svg className="w-10 h-10 text-boon-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-extrabold text-boon-text mb-3">
+              <h3 className="text-2xl font-extrabold text-boon-navy mb-3">
                 Thanks!
               </h3>
-              <p className="text-gray-500">
+              <p className="text-boon-charcoal/55">
                 Your feedback helps us improve.
               </p>
             </div>
@@ -1031,12 +1031,12 @@ export default function CheckpointFlow({
 
         {/* Footer */}
         {step !== 'submitting' && step !== 'complete' && (
-          <div className="px-8 py-6 border-t border-gray-100 bg-gray-50/50">
+          <div className="px-8 py-6 border-t border-boon-charcoal/[0.08] bg-boon-offWhite/50">
             <div className="flex items-center justify-between">
               {step !== 'experience_rating' ? (
                 <button
                   onClick={goToPrevStep}
-                  className="px-6 py-3 text-gray-500 font-bold hover:text-boon-text transition-colors"
+                  className="px-6 py-3 text-boon-charcoal/55 font-bold hover:text-boon-navy transition-colors"
                 >
                   Back
                 </button>
@@ -1047,7 +1047,7 @@ export default function CheckpointFlow({
               <button
                 onClick={goToNextStep}
                 disabled={!canProceed()}
-                className="px-8 py-3 bg-boon-blue text-white font-bold rounded-xl disabled:bg-gray-200 disabled:text-gray-400 transition-all hover:bg-boon-darkBlue"
+                className="px-8 py-3 bg-boon-blue text-white font-bold rounded-btn disabled:bg-boon-offWhite disabled:text-boon-charcoal/55 transition-all hover:bg-boon-darkBlue"
               >
                 {getNextButtonText()}
               </button>

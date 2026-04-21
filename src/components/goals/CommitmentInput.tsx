@@ -21,7 +21,7 @@ export function CommitmentInput({ onSubmit }: CommitmentInputProps) {
 
   return (
     <div className="mt-2 mb-1">
-      <label className="block text-xs font-bold text-gray-400 mb-2">
+      <label className="block text-xs font-bold text-boon-charcoal/55 mb-2">
         What will you do this week?
       </label>
       <div className="flex items-center gap-3">
@@ -30,7 +30,7 @@ export function CommitmentInput({ onSubmit }: CommitmentInputProps) {
           value={text}
           onChange={e => setText(e.target.value)}
           placeholder="e.g., Practice giving direct feedback in 1:1s"
-          className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-boon-text text-sm placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-boon-blue/30 focus:border-boon-blue transition-all"
+          className="flex-1 px-4 py-2.5 rounded-btn border border-boon-charcoal/[0.08] text-boon-navy text-sm placeholder:text-boon-charcoal/40 focus:outline-none focus:ring-2 focus:ring-boon-blue/30 focus:border-boon-blue transition-all"
           onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -42,7 +42,7 @@ export function CommitmentInput({ onSubmit }: CommitmentInputProps) {
         <button
           onClick={handleSubmit}
           disabled={submitting || !text.trim()}
-          className="px-5 py-2.5 bg-boon-blue text-white rounded-xl font-bold text-xs hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          className="px-5 py-2.5 bg-boon-blue text-white rounded-btn font-bold text-xs hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
         >
           {submitting ? (
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

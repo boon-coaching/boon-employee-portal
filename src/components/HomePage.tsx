@@ -41,32 +41,32 @@ export function HomePage() {
     return (
       <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 animate-fade-in">
         <header className="text-center pt-2">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
+          <h1 className="font-display font-bold text-boon-navy text-[36px] md:text-[52px] leading-[1.05] tracking-[-0.025em]">
             Hi {profile?.first_name || 'there'}
           </h1>
-          <p className="text-gray-500 mt-2 text-lg font-medium">
+          <p className="text-boon-charcoal/55 mt-2 text-lg font-medium">
             Your coaching is currently paused
           </p>
         </header>
 
-        <section className="bg-gradient-to-br from-amber-50 via-white to-orange-50 rounded-[2.5rem] p-8 md:p-10 border-2 border-amber-200 shadow-lg">
+        <section className="bg-boon-warning/12 rounded-card p-8 md:p-10 border border-boon-charcoal/[0.08]">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-btn bg-boon-warning flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">On Hold</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-warning">On Hold</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-boon-text mb-4">
+          <h2 className="font-display font-bold text-boon-navy tracking-[-0.02em] leading-[1.15] text-2xl md:text-3xl mb-4">
             Your coaching program is paused
           </h2>
-          <p className="text-gray-600 text-lg leading-relaxed mb-6">
+          <p className="text-boon-charcoal/75 text-lg leading-relaxed mb-6">
             Your sessions are temporarily on hold. You can still review your past sessions, progress, and practice scenarios while you wait.
           </p>
           <a
             href="mailto:hello@boon-health.com?subject=Question%20About%20My%20Paused%20Program"
-            className="inline-flex items-center gap-2 text-amber-700 font-bold hover:underline"
+            className="inline-flex items-center gap-2 text-boon-warning font-bold hover:underline"
           >
             Questions? Contact Boon Support
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,17 +79,17 @@ export function HomePage() {
           <div className="grid md:grid-cols-2 gap-8">
             <button
               onClick={() => navigate('/sessions')}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm text-left hover:border-boon-blue/20 transition-all"
+              className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm text-left hover:border-boon-blue/20 transition-all"
             >
-              <p className="text-[11px] font-black text-boon-blue uppercase tracking-widest mb-2">Session History</p>
-              <p className="text-gray-600 text-sm">{completedSessions.length} completed session{completedSessions.length !== 1 ? 's' : ''}</p>
+              <p className="text-[11px] font-extrabold text-boon-blue uppercase tracking-[0.18em] mb-2">Session History</p>
+              <p className="text-boon-charcoal/75 text-sm">{completedSessions.length} completed session{completedSessions.length !== 1 ? 's' : ''}</p>
             </button>
             <button
               onClick={() => navigate('/practice')}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm text-left hover:border-boon-blue/20 transition-all"
+              className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm text-left hover:border-boon-blue/20 transition-all"
             >
-              <p className="text-[11px] font-black text-purple-600 uppercase tracking-widest mb-2">Practice Space</p>
-              <p className="text-gray-600 text-sm">Continue practicing leadership scenarios</p>
+              <p className="text-[11px] font-extrabold text-boon-purple uppercase tracking-[0.18em] mb-2">Practice Space</p>
+              <p className="text-boon-charcoal/75 text-sm">Continue practicing leadership scenarios</p>
             </button>
           </div>
         )}
@@ -102,27 +102,27 @@ export function HomePage() {
     return (
       <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 animate-fade-in">
         <header className="text-center pt-2">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
+          <h1 className="font-display font-bold text-boon-navy text-[36px] md:text-[52px] leading-[1.05] tracking-[-0.025em]">
             Hi {profile?.first_name || 'there'}
           </h1>
-          <p className="text-gray-500 mt-2 text-lg font-medium">
+          <p className="text-boon-charcoal/55 mt-2 text-lg font-medium">
             Your coaching program has ended
           </p>
         </header>
 
-        <section className="bg-gradient-to-br from-gray-50 via-white to-slate-50 rounded-[2.5rem] p-8 md:p-10 border-2 border-gray-200 shadow-lg">
+        <section className="bg-boon-offWhite rounded-card p-8 md:p-10 border border-boon-charcoal/[0.08]">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gray-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-btn bg-boon-charcoal/55 flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Program Ended</span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/55">Program Ended</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-boon-text mb-4">
+          <h2 className="font-display font-bold text-boon-navy tracking-[-0.02em] leading-[1.15] text-2xl md:text-3xl mb-4">
             Your coaching program has concluded
           </h2>
-          <p className="text-gray-600 text-lg leading-relaxed mb-6">
+          <p className="text-boon-charcoal/75 text-lg leading-relaxed mb-6">
             {completedSessions.length > 0
               ? 'You can still access your session history and practice space below.'
               : 'If you have questions about your program status, please reach out to us.'}
@@ -142,17 +142,17 @@ export function HomePage() {
           <div className="grid md:grid-cols-2 gap-8">
             <button
               onClick={() => navigate('/sessions')}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm text-left hover:border-boon-blue/20 transition-all"
+              className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm text-left hover:border-boon-blue/20 transition-all"
             >
-              <p className="text-[11px] font-black text-boon-blue uppercase tracking-widest mb-2">Session Archive</p>
-              <p className="text-gray-600 text-sm">{completedSessions.length} completed session{completedSessions.length !== 1 ? 's' : ''}</p>
+              <p className="text-[11px] font-extrabold text-boon-blue uppercase tracking-[0.18em] mb-2">Session Archive</p>
+              <p className="text-boon-charcoal/75 text-sm">{completedSessions.length} completed session{completedSessions.length !== 1 ? 's' : ''}</p>
             </button>
             <button
               onClick={() => navigate('/practice')}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm text-left hover:border-boon-blue/20 transition-all"
+              className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm text-left hover:border-boon-blue/20 transition-all"
             >
-              <p className="text-[11px] font-black text-purple-600 uppercase tracking-widest mb-2">Practice Space</p>
-              <p className="text-gray-600 text-sm">Continue practicing leadership scenarios</p>
+              <p className="text-[11px] font-extrabold text-boon-purple uppercase tracking-[0.18em] mb-2">Practice Space</p>
+              <p className="text-boon-charcoal/75 text-sm">Continue practicing leadership scenarios</p>
             </button>
           </div>
         )}

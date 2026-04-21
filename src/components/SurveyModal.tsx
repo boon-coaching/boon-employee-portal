@@ -514,7 +514,7 @@ export default function SurveyModal({
     highLabel: string
   ) => (
     <div className="space-y-4">
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-boon-charcoal/55">
         <span>{lowLabel}</span>
         <span>{highLabel}</span>
       </div>
@@ -523,10 +523,10 @@ export default function SurveyModal({
           <button
             key={n}
             onClick={() => onChange(n)}
-            className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${
+            className={`w-8 h-8 rounded-btn font-bold text-xs transition-all ${
               value === n
                 ? 'bg-boon-amber text-white shadow-lg scale-110'
-                : 'bg-gray-100 text-gray-600 hover:bg-boon-amberLight'
+                : 'bg-boon-offWhite text-boon-charcoal/75 hover:bg-boon-amberLight'
             }`}
           >
             {n}
@@ -544,7 +544,7 @@ export default function SurveyModal({
       case 'experience':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How's your coaching experience so far?
             </h3>
             {renderRatingScale(
@@ -561,7 +561,7 @@ export default function SurveyModal({
       case 'coach_match':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How's your match with {coachFirstName}?
             </h3>
             {renderRatingScale(
@@ -578,10 +578,10 @@ export default function SurveyModal({
       case 'whats_not_working':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What's not working?
             </h3>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-boon-charcoal/55 text-center">
               Help us understand so we can improve your experience
             </p>
             <textarea
@@ -589,7 +589,7 @@ export default function SurveyModal({
               onChange={e => setWhatsNotWorking(e.target.value)}
               placeholder="Tell us what could be better..."
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -597,44 +597,44 @@ export default function SurveyModal({
       case 'continue_with_coach':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               Would you like to continue with {coachFirstName}?
             </h3>
             <div className="space-y-3">
               <button
                 onClick={() => setContinueWithCoach('yes')}
-                className={`w-full p-4 rounded-xl text-left font-medium transition-all flex items-center gap-3 ${
+                className={`w-full p-4 rounded-btn text-left font-medium transition-all flex items-center gap-3 ${
                   continueWithCoach === 'yes'
-                    ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-text'
-                    : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-boon-amber/30'
+                    ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-navy'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber/30'
                 }`}
               >
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                <div className={`w-5 h-5 rounded-pill border-2 flex items-center justify-center transition-all ${
                   continueWithCoach === 'yes'
                     ? 'bg-boon-amber border-boon-amber'
-                    : 'border-gray-300'
+                    : 'border-boon-charcoal/[0.08]'
                 }`}>
                   {continueWithCoach === 'yes' && (
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <div className="w-2 h-2 bg-white rounded-pill" />
                   )}
                 </div>
                 Yes, continue with {coachFirstName}
               </button>
               <button
                 onClick={() => setContinueWithCoach('explore')}
-                className={`w-full p-4 rounded-xl text-left font-medium transition-all flex items-center gap-3 ${
+                className={`w-full p-4 rounded-btn text-left font-medium transition-all flex items-center gap-3 ${
                   continueWithCoach === 'explore'
-                    ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-text'
-                    : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-boon-amber/30'
+                    ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-navy'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber/30'
                 }`}
               >
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                <div className={`w-5 h-5 rounded-pill border-2 flex items-center justify-center transition-all ${
                   continueWithCoach === 'explore'
                     ? 'bg-boon-amber border-boon-amber'
-                    : 'border-gray-300'
+                    : 'border-boon-charcoal/[0.08]'
                 }`}>
                   {continueWithCoach === 'explore' && (
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <div className="w-2 h-2 bg-white rounded-pill" />
                   )}
                 </div>
                 Explore other options
@@ -646,10 +646,10 @@ export default function SurveyModal({
       case 'better_match':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What would make a better match?
             </h3>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-boon-charcoal/55 text-center">
               Help us find the right coach for you
             </p>
             <textarea
@@ -657,7 +657,7 @@ export default function SurveyModal({
               onChange={e => setBetterMatchDescription(e.target.value)}
               placeholder="e.g., Someone with more experience in leadership, a different coaching style..."
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -665,10 +665,10 @@ export default function SurveyModal({
       case 'wins':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               Any wins or breakthroughs?
             </h3>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-boon-charcoal/55 text-center">
               Capture any insights from this session (optional)
             </p>
             <textarea
@@ -676,7 +676,7 @@ export default function SurveyModal({
               onChange={e => setWinText(e.target.value)}
               placeholder="e.g., I realized I need to delegate more, I had a breakthrough about..."
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-orange-200 bg-orange-50/50 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-orange-200 bg-orange-50/50 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -684,26 +684,26 @@ export default function SurveyModal({
       case 'booked_next':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               Have you booked your next session?
             </h3>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => setHasBookedNext(true)}
-                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${
+                className={`px-8 py-4 rounded-btn font-bold text-lg transition-all ${
                   hasBookedNext === true
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 Yes
               </button>
               <button
                 onClick={() => setHasBookedNext(false)}
-                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${
+                className={`px-8 py-4 rounded-btn font-bold text-lg transition-all ${
                   hasBookedNext === false
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 No
@@ -715,25 +715,25 @@ export default function SurveyModal({
       case 'booking_blockers':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What's getting in the way?
             </h3>
-            <p className="text-sm text-gray-500 text-center">Select all that apply</p>
+            <p className="text-sm text-boon-charcoal/55 text-center">Select all that apply</p>
             <div className="space-y-3">
               {BOOKING_BLOCKERS.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => toggleBlocker(key)}
-                  className={`w-full p-4 rounded-xl text-left font-medium transition-all flex items-center gap-3 ${
+                  className={`w-full p-4 rounded-btn text-left font-medium transition-all flex items-center gap-3 ${
                     bookingBlockers.includes(key)
-                      ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-text'
-                      : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-boon-amber/30'
+                      ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-navy'
+                      : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber/30'
                   }`}
                 >
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                     bookingBlockers.includes(key)
                       ? 'bg-boon-amber border-boon-amber'
-                      : 'border-gray-300'
+                      : 'border-boon-charcoal/[0.08]'
                   }`}>
                     {bookingBlockers.includes(key) && (
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -751,7 +751,7 @@ export default function SurveyModal({
       case 'anything_else':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               Anything else you'd like to share?
             </h3>
             <textarea
@@ -759,7 +759,7 @@ export default function SurveyModal({
               onChange={e => setAnythingElse(e.target.value)}
               placeholder="Optional feedback or suggestions..."
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -767,7 +767,7 @@ export default function SurveyModal({
       case 'nps':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How likely are you to recommend Boon to a friend or colleague?
             </h3>
             {renderRatingScale(
@@ -784,29 +784,29 @@ export default function SurveyModal({
       case 'open_to_chat':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               Would you be open to a quick chat with our team?
             </h3>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-sm text-boon-charcoal/55 text-center">
               We'd love to hear more about your experience
             </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => setOpenToChat(true)}
-                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${
+                className={`px-8 py-4 rounded-btn font-bold text-lg transition-all ${
                   openToChat === true
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 Yes
               </button>
               <button
                 onClick={() => setOpenToChat(false)}
-                className={`px-8 py-4 rounded-xl font-bold text-lg transition-all ${
+                className={`px-8 py-4 rounded-btn font-bold text-lg transition-all ${
                   openToChat === false
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 No thanks
@@ -828,7 +828,7 @@ export default function SurveyModal({
       case 'progress':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How are you progressing toward your coaching goals?
             </h3>
             {renderRatingScale(
@@ -845,7 +845,7 @@ export default function SurveyModal({
       case 'confidence':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How confident are you in applying what you've learned?
             </h3>
             {renderRatingScale(
@@ -862,7 +862,7 @@ export default function SurveyModal({
       case 'meaningful_change':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What's the most meaningful change you've experienced so far?
             </h3>
             <textarea
@@ -870,7 +870,7 @@ export default function SurveyModal({
               onChange={e => setMeaningfulChange(e.target.value)}
               placeholder="Share a breakthrough, insight, or change you've noticed..."
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -878,7 +878,7 @@ export default function SurveyModal({
       case 'coach_relationship':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How would you rate your relationship with {coachFirstName}?
             </h3>
             {renderRatingScale(
@@ -895,7 +895,7 @@ export default function SurveyModal({
       case 'coach_understands':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How well does {coachFirstName} understand your challenges?
             </h3>
             {renderRatingScale(
@@ -912,36 +912,36 @@ export default function SurveyModal({
       case 'program_pace':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How is the pace of the program?
             </h3>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setProgramPace('too_slow')}
-                className={`px-6 py-4 rounded-xl font-medium text-sm transition-all ${
+                className={`px-6 py-4 rounded-btn font-medium text-sm transition-all ${
                   programPace === 'too_slow'
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 Too slow
               </button>
               <button
                 onClick={() => setProgramPace('just_right')}
-                className={`px-6 py-4 rounded-xl font-medium text-sm transition-all ${
+                className={`px-6 py-4 rounded-btn font-medium text-sm transition-all ${
                   programPace === 'just_right'
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 Just right
               </button>
               <button
                 onClick={() => setProgramPace('too_fast')}
-                className={`px-6 py-4 rounded-xl font-medium text-sm transition-all ${
+                className={`px-6 py-4 rounded-btn font-medium text-sm transition-all ${
                   programPace === 'too_fast'
                     ? 'bg-boon-amber text-white shadow-lg'
-                    : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-boon-amber'
+                    : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                 }`}
               >
                 Too fast
@@ -953,7 +953,7 @@ export default function SurveyModal({
       case 'whats_working':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What's working well in your coaching experience?
             </h3>
             <textarea
@@ -961,7 +961,7 @@ export default function SurveyModal({
               onChange={e => setWhatsWorkingWell(e.target.value)}
               placeholder="What aspects of coaching have been most valuable? (optional)"
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -969,7 +969,7 @@ export default function SurveyModal({
       case 'could_improve':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What could be improved?
             </h3>
             <textarea
@@ -977,7 +977,7 @@ export default function SurveyModal({
               onChange={e => setWhatCouldImprove(e.target.value)}
               placeholder="Any suggestions for how we could make your experience better? (optional)"
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -985,7 +985,7 @@ export default function SurveyModal({
       case 'remaining_focus':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               What would you like to focus on for the remaining sessions?
             </h3>
             <textarea
@@ -993,7 +993,7 @@ export default function SurveyModal({
               onChange={e => setRemainingFocus(e.target.value)}
               placeholder="What goals or areas would you like to prioritize? (optional)"
               style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-              className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
+              className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none"
             />
           </div>
         );
@@ -1001,7 +1001,7 @@ export default function SurveyModal({
       case 'nps':
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How likely are you to recommend Boon to a friend or colleague?
             </h3>
             {renderRatingScale(
@@ -1027,10 +1027,10 @@ export default function SurveyModal({
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text">
+              <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy">
                 Rate yourself on each competency
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-boon-charcoal/55">
                 This helps us understand where you're starting from
               </p>
             </div>
@@ -1038,7 +1038,7 @@ export default function SurveyModal({
             {/* Score legend */}
             <div className="flex justify-center gap-2 flex-wrap text-xs">
               {SCORE_OPTIONS.map(({ value, label }) => (
-                <span key={value} className="px-2 py-1 bg-gray-100 rounded text-gray-600">
+                <span key={value} className="px-2 py-1 bg-boon-offWhite rounded text-boon-charcoal/75">
                   {value} = {label}
                 </span>
               ))}
@@ -1047,17 +1047,17 @@ export default function SurveyModal({
             {/* Competency grid */}
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
               {competencies.map(comp => (
-                <div key={comp.id} className="p-4 bg-gray-50 rounded-xl">
-                  <p className="font-medium text-boon-text mb-3">{comp.name}</p>
+                <div key={comp.id} className="p-4 bg-boon-offWhite rounded-btn">
+                  <p className="font-medium text-boon-navy mb-3">{comp.name}</p>
                   <div className="flex gap-2">
                     {SCORE_OPTIONS.map(({ value }) => (
                       <button
                         key={value}
                         onClick={() => setCompetencyScore(comp.name, value)}
-                        className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                        className={`flex-1 py-2 rounded-btn text-xs font-medium transition-all ${
                           competencyScores[comp.name] === value
                             ? 'bg-boon-amber text-white'
-                            : 'bg-white border border-gray-200 text-gray-600 hover:border-boon-amber'
+                            : 'bg-white border border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                         }`}
                       >
                         {value}
@@ -1068,7 +1068,7 @@ export default function SurveyModal({
               ))}
             </div>
 
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-boon-charcoal/55">
               {Object.keys(competencyScores).length} of {competencies.length} rated
             </p>
           </div>
@@ -1078,10 +1078,10 @@ export default function SurveyModal({
         return (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text">
+              <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy">
                 Which areas would you most like to focus on?
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-boon-charcoal/55">
                 Select up to 3 competencies
               </p>
             </div>
@@ -1092,18 +1092,18 @@ export default function SurveyModal({
                   key={comp.id}
                   onClick={() => toggleFocusArea(comp.name)}
                   disabled={!focusAreas.includes(comp.name) && focusAreas.length >= 3}
-                  className={`w-full p-4 rounded-xl text-left font-medium transition-all flex items-center gap-3 ${
+                  className={`w-full p-4 rounded-btn text-left font-medium transition-all flex items-center gap-3 ${
                     focusAreas.includes(comp.name)
-                      ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-text'
+                      ? 'bg-boon-amber/10 border-2 border-boon-amber text-boon-navy'
                       : focusAreas.length >= 3
-                        ? 'bg-gray-50 border-2 border-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border-2 border-gray-100 text-gray-600 hover:border-boon-amber/30'
+                        ? 'bg-boon-offWhite border-2 border-boon-charcoal/[0.08] text-boon-charcoal/55 cursor-not-allowed'
+                        : 'bg-white border-2 border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber/30'
                   }`}
                 >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  <div className={`w-5 h-5 rounded-pill border-2 flex items-center justify-center transition-all ${
                     focusAreas.includes(comp.name)
                       ? 'bg-boon-amber border-boon-amber'
-                      : 'border-gray-300'
+                      : 'border-boon-charcoal/[0.08]'
                   }`}>
                     {focusAreas.includes(comp.name) && (
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1137,7 +1137,7 @@ export default function SurveyModal({
       case 2:
         return (
           <div className="space-y-6">
-            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+            <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
               How likely are you to recommend Boon to a friend or colleague?
             </h3>
             {renderRatingScale(
@@ -1155,7 +1155,7 @@ export default function SurveyModal({
         return (
           <div className="space-y-8">
             <div className="space-y-4">
-              <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text text-center">
+              <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-navy text-center">
                 What outcomes have you achieved through coaching?
               </h3>
               <textarea
@@ -1163,31 +1163,31 @@ export default function SurveyModal({
                 onChange={e => setOutcomes(e.target.value)}
                 placeholder="Reflect on your growth and accomplishments..."
                 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-                className="w-full p-4 rounded-xl border border-gray-200 focus:border-boon-amber focus:ring-0 focus:outline-none min-h-[120px] resize-none"
+                className="w-full p-4 rounded-btn border border-boon-charcoal/[0.08] focus:border-boon-amber focus:ring-0 focus:outline-none min-h-[120px] resize-none"
               />
             </div>
 
-            <div className="pt-6 border-t border-gray-100 space-y-4">
-              <p className="text-gray-700 font-medium">
+            <div className="pt-6 border-t border-boon-charcoal/[0.08] space-y-4">
+              <p className="text-boon-charcoal/75 font-medium">
                 Would you be open to sharing a testimonial?
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setOpenToTestimonial(true)}
-                  className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+                  className={`flex-1 py-3 rounded-btn font-medium transition-all ${
                     openToTestimonial === true
                       ? 'bg-boon-amber text-white'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:border-boon-amber'
+                      : 'bg-white border border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                   }`}
                 >
                   Yes
                 </button>
                 <button
                   onClick={() => setOpenToTestimonial(false)}
-                  className={`flex-1 py-3 rounded-xl font-medium transition-all ${
+                  className={`flex-1 py-3 rounded-btn font-medium transition-all ${
                     openToTestimonial === false
                       ? 'bg-boon-amber text-white'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:border-boon-amber'
+                      : 'bg-white border border-boon-charcoal/[0.08] text-boon-charcoal/75 hover:border-boon-amber'
                   }`}
                 >
                   No
@@ -1239,24 +1239,24 @@ export default function SurveyModal({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-lg bg-white rounded-card shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-boon-charcoal/[0.08]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-boon-amber uppercase tracking-widest">
                 {getSurveyTitle()}
               </p>
-              <h2 className="text-lg font-bold text-boon-text mt-1">
+              <h2 className="text-lg font-bold text-boon-navy mt-1">
                 Share your feedback
               </h2>
             </div>
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-btn hover:bg-boon-offWhite transition-colors"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-boon-charcoal/55" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1268,8 +1268,8 @@ export default function SurveyModal({
             {Array.from({ length: getProgressSteps() }, (_, i) => (
               <div
                 key={i}
-                className={`flex-1 h-1 rounded-full transition-all ${
-                  i < currentStep ? 'bg-boon-amber' : 'bg-gray-200'
+                className={`flex-1 h-1 rounded-pill transition-all ${
+                  i < currentStep ? 'bg-boon-amber' : 'bg-boon-offWhite'
                 }`}
               />
             ))}
@@ -1279,7 +1279,7 @@ export default function SurveyModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-btn text-red-700 text-sm">
               {error}
             </div>
           )}
@@ -1292,12 +1292,12 @@ export default function SurveyModal({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-100 flex gap-3">
+        <div className="p-6 border-t border-boon-charcoal/[0.08] flex gap-3">
           {currentStep > 1 && (
             <button
               onClick={handlePrevious}
               disabled={isSubmitting}
-              className="px-6 py-3 rounded-xl font-bold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="px-6 py-3 rounded-btn font-bold text-boon-charcoal/75 border border-boon-charcoal/[0.08] hover:bg-boon-offWhite transition-colors disabled:opacity-50"
             >
               Back
             </button>
@@ -1305,7 +1305,7 @@ export default function SurveyModal({
           <button
             onClick={handleNext}
             disabled={!canProceed() || isSubmitting}
-            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-boon-amber hover:bg-boon-amberDark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 rounded-btn font-bold text-white bg-boon-amber hover:bg-boon-amberDark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">

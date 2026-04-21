@@ -101,10 +101,10 @@ export default function ScaleHome({
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-2">
         <div className="text-center sm:text-left">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
+          <h1 className="font-display font-bold text-boon-navy text-[36px] md:text-[52px] leading-[1.05] tracking-[-0.025em]">
             Hi {profile?.first_name || 'there'}
           </h1>
-          <p className="text-gray-500 mt-2 text-lg font-medium">
+          <p className="text-boon-charcoal/55 mt-2 text-lg font-medium">
             This is your personal coaching space.
           </p>
         </div>
@@ -122,27 +122,27 @@ export default function ScaleHome({
 
       {/* Coach Card - compact inline */}
       {coachName && (
-        <section className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-sm">
+        <section className="bg-white rounded-card p-5 border border-boon-charcoal/[0.08] shadow-sm">
           <div className="flex items-center gap-4">
             {coachPhotoUrl ? (
               <img
                 src={coachPhotoUrl}
                 alt={coachName}
-                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+                className="w-12 h-12 rounded-pill object-cover border-2 border-white shadow"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-boon-lightBlue flex items-center justify-center border-2 border-white shadow">
+              <div className="w-12 h-12 rounded-pill bg-boon-lightBlue flex items-center justify-center border-2 border-white shadow">
                 <span className="text-boon-blue text-sm font-bold">
                   {coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                 </span>
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-boon-text text-sm">{coachName}</p>
+              <p className="font-bold text-boon-navy text-sm">{coachName}</p>
               {coachProfile?.headline && (
-                <p className="text-xs text-gray-500 truncate">{coachProfile.headline}</p>
+                <p className="text-xs text-boon-charcoal/55 truncate">{coachProfile.headline}</p>
               )}
-              <p className="text-xs text-gray-400">{completedSessions.length} {completedSessions.length === 1 ? 'session' : 'sessions'} together</p>
+              <p className="text-xs text-boon-charcoal/55">{completedSessions.length} {completedSessions.length === 1 ? 'session' : 'sessions'} together</p>
             </div>
             <Link
               to="/coach"
@@ -156,35 +156,35 @@ export default function ScaleHome({
 
       {/* Session Progress - PEPM clients with session caps */}
       {showSessionProgress && (
-        <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
+        <section className="bg-white rounded-card p-6 border border-boon-charcoal/[0.08] shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-boon-lightBlue flex items-center justify-center">
+              <div className="w-10 h-10 rounded-btn bg-boon-lightBlue flex items-center justify-center">
                 <svg className="w-5 h-5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-bold text-boon-text">
+                <p className="text-sm font-bold text-boon-navy">
                   Session {Math.min(contractSessionCount, sessionCap!)} of {sessionCap}
                 </p>
                 {programConfig?.program_end_date && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-boon-charcoal/55">
                     Through {new Date(programConfig.program_end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </p>
                 )}
               </div>
             </div>
             {contractSessionCount >= sessionCap! && (
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold text-boon-success bg-boon-success/10 px-3 py-1 rounded-pill">
                 Complete
               </span>
             )}
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-2.5">
+          <div className="w-full bg-boon-offWhite rounded-pill h-2.5">
             <div
-              className={`h-2.5 rounded-full transition-all duration-500 ${
-                contractSessionCount >= sessionCap! ? 'bg-emerald-500' : 'bg-boon-blue'
+              className={`h-2.5 rounded-pill transition-all duration-500 ${
+                contractSessionCount >= sessionCap! ? 'bg-boon-success' : 'bg-boon-blue'
               }`}
               style={{ width: `${Math.min((contractSessionCount / sessionCap!) * 100, 100)}%` }}
             />
@@ -209,24 +209,24 @@ export default function ScaleHome({
           href={profile.booking_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="block bg-gradient-to-br from-boon-lightBlue/30 to-white rounded-[2rem] p-6 border-2 border-boon-blue/20 hover:border-boon-blue/40 transition-all group"
+          className="block bg-gradient-to-br from-boon-lightBlue/30 to-white rounded-card p-6 border-2 border-boon-blue/20 hover:border-boon-blue/40 transition-all group"
         >
           <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-boon-lightBlue rounded-2xl flex items-center justify-center flex-shrink-0">
+            <div className="w-14 h-14 bg-boon-lightBlue rounded-card flex items-center justify-center flex-shrink-0">
               <svg className="w-7 h-7 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div className="flex-1">
               {daysSinceLastSession > 21 && (
-                <p className="text-amber-600 text-sm font-medium mb-3">
+                <p className="text-boon-warning text-sm font-medium mb-3">
                   It's been {daysSinceLastSession} days since your last session. Book your next one to keep your momentum going.
                 </p>
               )}
-              <h2 className="text-xl font-extrabold text-boon-text group-hover:text-boon-blue transition-colors">
+              <h2 className="text-xl font-extrabold text-boon-navy group-hover:text-boon-blue transition-colors">
                 Ready for your next session?
               </h2>
-              <p className="text-gray-500 mt-1">
+              <p className="text-boon-charcoal/55 mt-1">
                 Continue your coaching journey with {lastSession?.coach_name?.split(' ')[0] || 'your coach'}.
               </p>
             </div>
@@ -239,34 +239,34 @@ export default function ScaleHome({
 
       {/* Checkpoint Prompt - Prominent when due */}
       {checkpointStatus.isCheckpointDue && onStartCheckpoint && (
-        <section className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-[2.5rem] p-8 border-2 border-purple-200 shadow-lg relative overflow-hidden">
+        <section className="bg-boon-purple/10 rounded-card p-8 border border-boon-charcoal/[0.08] relative overflow-hidden">
           <div className="absolute inset-0 opacity-5">
-            <div className="absolute -right-16 -top-16 w-64 h-64 bg-purple-600 rounded-full" />
-            <div className="absolute -left-8 -bottom-8 w-48 h-48 bg-purple-600 rounded-full" />
+            <div className="absolute -right-16 -top-16 w-64 h-64 bg-boon-purple rounded-pill" />
+            <div className="absolute -left-8 -bottom-8 w-48 h-48 bg-boon-purple rounded-pill" />
           </div>
           <div className="relative z-10">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-purple-200 rounded-2xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-12 h-12 bg-boon-purple/20 rounded-card flex items-center justify-center">
+                    <svg className="w-6 h-6 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">
+                  <span className="text-xs font-bold text-boon-purple uppercase tracking-widest">
                     {checkpointStatus.currentCheckpointNumber === 1
                       ? (completedSessions.length > 6 ? 'Check-in due' : 'First check-in')
                       : `Check-in ${checkpointStatus.currentCheckpointNumber}`}
                   </span>
                 </div>
-                <h2 className="text-2xl font-extrabold text-boon-text mb-2">
+                <h2 className="text-2xl font-extrabold text-boon-navy mb-2">
                   {checkpointStatus.currentCheckpointNumber === 1
                     ? (completedSessions.length > 6
                       ? 'Time for a check-in'
                       : 'Time for your first check-in')
                     : `${checkpointStatus.nextCheckpointDueAtSession} sessions in. See what's shifted.`}
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-boon-charcoal/75 mb-6">
                   {checkpointStatus.currentCheckpointNumber === 1
                     ? (completedSessions.length > 6
                       ? 'Take 2 minutes to reflect on your coaching journey so far.'
@@ -275,7 +275,7 @@ export default function ScaleHome({
                 </p>
                 <button
                   onClick={onStartCheckpoint}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-purple-600 text-white font-bold rounded-2xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/30 active:scale-95"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-boon-purple text-white font-bold rounded-card hover:bg-boon-purple/90 transition-all shadow-sm active:scale-95"
                 >
                   Start Check-In
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,7 +286,7 @@ export default function ScaleHome({
               {onDismissCheckpoint && (
                 <button
                   onClick={onDismissCheckpoint}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-2 text-boon-charcoal/55 hover:text-boon-charcoal/75 transition-colors"
                   title="Remind me later"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -302,25 +302,25 @@ export default function ScaleHome({
       {/* 3. Where You Left Off - ONLY when no upcoming session (otherwise redundant with SessionPrep) */}
       {!upcomingSession && (
         currentFocus ? (
-          <section className="bg-gradient-to-br from-purple-50/50 to-boon-lightBlue/20 rounded-[2rem] p-8 border border-purple-100/50">
+          <section className="bg-boon-offWhite rounded-card p-8 border border-boon-charcoal/[0.08]">
             <div className="flex items-start justify-between mb-4">
-              <h2 className="text-xl font-extrabold text-boon-text">Current Focus</h2>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <h2 className="text-xl font-extrabold text-boon-navy">Current Focus</h2>
+              <span className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">
                 From check-in {checkpointStatus.latestCheckpoint?.checkpoint_number}
               </span>
             </div>
             <div className="prose prose-sm max-w-none">
-              <div className="text-gray-700 leading-relaxed">
+              <div className="text-boon-charcoal/75 leading-relaxed">
                 {currentFocus}
               </div>
             </div>
           </section>
         ) : (sessionWithGoals || actionItems.length > 0) ? (
-          <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
+          <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-card p-8 border border-boon-amber/20">
             <div className="flex items-start justify-between mb-6">
               <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where You Left Off</h2>
               {sessionWithGoals && (
-                <span className="text-xs font-medium text-gray-400">
+                <span className="text-xs font-medium text-boon-charcoal/55">
                   {new Date(sessionWithGoals.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </span>
               )}
@@ -329,15 +329,15 @@ export default function ScaleHome({
             {/* Goals */}
             {sessionWithGoals?.goals && (
               <div className="mb-6">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Goals</h3>
-                <p className="font-serif text-gray-700 leading-relaxed whitespace-pre-line">{sessionWithGoals.goals}</p>
+                <h3 className="text-xs font-bold text-boon-charcoal/55 uppercase tracking-wider mb-3">Goals</h3>
+                <p className="font-serif text-boon-charcoal/75 leading-relaxed whitespace-pre-line">{sessionWithGoals.goals}</p>
               </div>
             )}
 
             {/* Action Items - primary source: action_items table */}
             {actionItems.length > 0 ? (
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Action Items</h3>
+                <h3 className="text-xs font-bold text-boon-charcoal/55 uppercase tracking-wider mb-3">Action Items</h3>
                 <div className="space-y-2">
                   {actionItems.map(item => {
                     const isCompleted = item.status === 'completed';
@@ -346,10 +346,10 @@ export default function ScaleHome({
                     return (
                       <label
                         key={item.id}
-                        className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                        className={`flex items-start gap-3 p-3 rounded-btn cursor-pointer transition-all ${
                           isCompleted
-                            ? 'bg-green-50/50 text-gray-400'
-                            : 'bg-white/60 hover:bg-white text-gray-700'
+                            ? 'bg-boon-success/10 text-boon-charcoal/55'
+                            : 'bg-white/60 hover:bg-white text-boon-charcoal/75'
                         } ${isUpdating ? 'opacity-50' : ''}`}
                       >
                         <input
@@ -357,7 +357,7 @@ export default function ScaleHome({
                           checked={isCompleted}
                           disabled={isUpdating}
                           onChange={() => handleToggleAction(item.id, item.status)}
-                          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-boon-amber focus:ring-boon-amber disabled:opacity-50"
+                          className="mt-0.5 w-4 h-4 rounded border-boon-charcoal/[0.08] text-boon-amber focus:ring-boon-amber disabled:opacity-50"
                         />
                         <span className={`text-sm leading-relaxed ${isCompleted ? 'line-through' : ''}`}>
                           {item.action_text}
@@ -370,7 +370,7 @@ export default function ScaleHome({
             ) : sessionWithGoals?.plan ? (
               /* Fallback: parse plan text only when no action_items exist */
               <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Action Items</h3>
+                <h3 className="text-xs font-bold text-boon-charcoal/55 uppercase tracking-wider mb-3">Action Items</h3>
                 <div className="space-y-2">
                   {sessionWithGoals.plan.split(/[\n;]/).filter(line => line.trim()).map((item, idx) => {
                     const cleanText = item.trim().replace(/^[\s•\-\*\d\.:\)]+/, '').trim();
@@ -379,9 +379,9 @@ export default function ScaleHome({
                     return (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-3 rounded-xl bg-white/60 text-gray-700"
+                        className="flex items-start gap-3 p-3 rounded-btn bg-white/60 text-boon-charcoal/75"
                       >
-                        <div className="mt-0.5 w-4 h-4 rounded border border-gray-300 flex-shrink-0" />
+                        <div className="mt-0.5 w-4 h-4 rounded border border-boon-charcoal/[0.08] flex-shrink-0" />
                         <span className="text-sm leading-relaxed">{cleanText}</span>
                       </div>
                     );

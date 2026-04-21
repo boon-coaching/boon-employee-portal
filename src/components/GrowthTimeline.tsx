@@ -94,7 +94,7 @@ export default function GrowthTimeline({ checkpoints, baseline, onCheckpointClic
                     isPositive
                       ? 'bg-green-100 text-green-700'
                       : isNeutral
-                      ? 'bg-purple-100 text-purple-700'
+                      ? 'bg-boon-purple/10 text-boon-purple'
                       : 'bg-amber-100 text-amber-700'
                   }`}
                 >

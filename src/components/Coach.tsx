@@ -133,23 +133,23 @@ export default function CoachPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <header className="text-center sm:text-left">
-        <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">My Coach</h1>
-        <p className="text-gray-500 mt-2 font-medium">Your dedicated growth partner.</p>
+        <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">My Coach</h1>
+        <p className="text-boon-charcoal/55 mt-2 font-medium">Your dedicated growth partner.</p>
       </header>
 
       <div className="grid lg:grid-cols-12 gap-8 items-start">
         {/* Profile Card */}
         <section className="lg:col-span-4">
-          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100 text-center">
+          <div className="bg-white p-8 md:p-10 rounded-card shadow-sm border border-boon-charcoal/[0.08] text-center">
             <div className="relative w-28 h-28 mx-auto mb-6">
               <img
                 src={photoUrl}
                 alt={coachName}
-                className="w-full h-full rounded-full object-cover object-[center_15%] border-4 border-white shadow-xl"
+                className="w-full h-full rounded-pill object-cover object-[center_15%] border-4 border-white shadow-xl"
               />
-              <div className="absolute bottom-0 right-0 w-7 h-7 bg-green-500 border-4 border-white rounded-full" />
+              <div className="absolute bottom-0 right-0 w-7 h-7 bg-boon-success border-4 border-white rounded-pill" />
             </div>
-            <h2 className="text-2xl font-black text-boon-text">{coachName}</h2>
+            <h2 className="text-2xl font-black text-boon-navy">{coachName}</h2>
 
             {/* Headline - former corporate experience */}
             {coach?.headline && (
@@ -160,21 +160,21 @@ export default function CoachPage() {
 
             {/* Notable Credentials - certifications */}
             {coach?.notable_credentials && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-boon-charcoal/55 mt-1">
                 {coach.notable_credentials}
               </p>
             )}
 
             {/* Match Summary */}
-            <p className="text-sm text-gray-700 mt-4 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
+            <p className="text-sm text-boon-charcoal/75 mt-4 bg-boon-bg/50 px-4 py-3 rounded-btn border border-boon-charcoal/[0.08]">
               {displayMatchSummary}
             </p>
 
-            <div className="mt-6 pt-6 border-t border-gray-100">
+            <div className="mt-6 pt-6 border-t border-boon-charcoal/[0.08]">
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <p className="text-2xl font-black text-boon-blue">{completedWithCoach.length}</p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sessions</p>
+                  <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Sessions</p>
                 </div>
                 <div>
                   <p className="text-2xl font-black text-boon-blue">
@@ -182,7 +182,7 @@ export default function CoachPage() {
                       ? Math.ceil((Date.now() - new Date(completedWithCoach[completedWithCoach.length - 1]?.session_date).getTime()) / (1000 * 60 * 60 * 24 * 30))
                       : 0}
                   </p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Months</p>
+                  <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Months</p>
                 </div>
               </div>
             </div>
@@ -190,7 +190,7 @@ export default function CoachPage() {
             <div className="mt-8 space-y-3">
               <a
                 href={`mailto:${coach?.email || 'coaching@boon-health.com'}?subject=Message for ${coachName}`}
-                className="w-full py-4 bg-boon-blue text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-95 flex items-center justify-center gap-2"
+                className="w-full py-4 bg-boon-blue text-white rounded-card font-black uppercase tracking-widest text-xs hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-95 flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -202,7 +202,7 @@ export default function CoachPage() {
                   href={bookingLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-4 bg-white text-boon-text border border-gray-100 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-white text-boon-navy border border-boon-charcoal/[0.08] rounded-card font-black uppercase tracking-widest text-xs hover:bg-boon-offWhite transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -217,15 +217,15 @@ export default function CoachPage() {
         {/* Info Column */}
         <section className="lg:col-span-8 space-y-8">
           {/* About */}
-          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
-            <h3 className="text-xl font-extrabold text-boon-text mb-5">About {coachFirstName}</h3>
-            <p className="text-gray-600 leading-relaxed">
+          <div className="bg-white p-8 md:p-10 rounded-card shadow-sm border border-boon-charcoal/[0.08]">
+            <h3 className="text-xl font-extrabold text-boon-navy mb-5">About {coachFirstName}</h3>
+            <p className="text-boon-charcoal/75 leading-relaxed">
               {bioExpanded ? coachBio : truncateBio(coachBio, 280)}
             </p>
             {coachBio.length > 280 && (
               <button
                 onClick={() => setBioExpanded(!bioExpanded)}
-                className="mt-3 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                className="mt-3 text-sm font-semibold text-boon-blue hover:text-boon-darkBlue transition-colors"
               >
                 {bioExpanded ? 'Show less' : 'Read more'}
               </button>
@@ -234,7 +234,7 @@ export default function CoachPage() {
               {specialties.map(skill => (
                 <span
                   key={skill}
-                  className="px-4 py-2 bg-boon-bg text-boon-text rounded-xl text-[10px] font-black uppercase tracking-[0.1em]"
+                  className="px-4 py-2 bg-boon-bg text-boon-navy rounded-btn text-[10px] font-black uppercase tracking-[0.1em]"
                 >
                   {skill}
                 </span>
@@ -243,44 +243,44 @@ export default function CoachPage() {
           </div>
 
           {/* Session History */}
-          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-gray-100">
-            <h3 className="text-xl font-extrabold text-boon-text mb-6">Session History</h3>
+          <div className="bg-white p-8 md:p-10 rounded-card shadow-sm border border-boon-charcoal/[0.08]">
+            <h3 className="text-xl font-extrabold text-boon-navy mb-6">Session History</h3>
             <div className="space-y-3">
               {historyWithCoach.length > 0 ? historyWithCoach.slice(0, 5).map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between p-5 rounded-2xl bg-boon-bg/40 border border-gray-50 hover:bg-white hover:border-boon-blue/10 transition-all"
+                  className="flex items-center justify-between p-5 rounded-card bg-boon-bg/40 border border-gray-50 hover:bg-white hover:border-boon-blue/10 transition-all"
                 >
                   <div>
-                    <p className="font-bold text-boon-text">
+                    <p className="font-bold text-boon-navy">
                       {new Date(s.session_date).toLocaleDateString('en-US', {
                         month: 'short', day: 'numeric', year: 'numeric'
                       })}
                     </p>
                     <p className={`text-[10px] font-black uppercase tracking-widest mt-0.5 ${
-                      s.status === 'Completed' ? 'text-green-600' : 'text-orange-600'
+                      s.status === 'Completed' ? 'text-boon-success' : 'text-orange-600'
                     }`}>
                       {s.status}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     {s.leadership_management_skills && (
-                      <span className="p-2 bg-white rounded-lg text-sm" title="Leadership">👔</span>
+                      <span className="p-2 bg-white rounded-btn text-sm" title="Leadership">👔</span>
                     )}
                     {s.communication_skills && (
-                      <span className="p-2 bg-white rounded-lg text-sm" title="Communication">💬</span>
+                      <span className="p-2 bg-white rounded-btn text-sm" title="Communication">💬</span>
                     )}
                     {s.mental_well_being && (
-                      <span className="p-2 bg-white rounded-lg text-sm" title="Wellbeing">🧠</span>
+                      <span className="p-2 bg-white rounded-btn text-sm" title="Wellbeing">🧠</span>
                     )}
                   </div>
                 </div>
               )) : (
-                <p className="text-gray-400 italic py-4">No sessions yet with {coachName}.</p>
+                <p className="text-boon-charcoal/55 italic py-4">No sessions yet with {coachName}.</p>
               )}
 
               {historyWithCoach.length > 5 && (
-                <p className="text-center text-sm text-gray-400 pt-2">
+                <p className="text-center text-sm text-boon-charcoal/55 pt-2">
                   + {historyWithCoach.length - 5} more sessions
                 </p>
               )}
@@ -288,9 +288,9 @@ export default function CoachPage() {
           </div>
 
           {/* Quick Tips */}
-          <div className="bg-boon-lightBlue/20 p-8 rounded-[2rem] border border-boon-lightBlue/30">
-            <h3 className="font-bold text-boon-text mb-3">Getting the most from your sessions</h3>
-            <ul className="text-sm text-gray-600 space-y-2">
+          <div className="bg-boon-lightBlue/20 p-8 rounded-card border border-boon-lightBlue/30">
+            <h3 className="font-bold text-boon-navy mb-3">Getting the most from your sessions</h3>
+            <ul className="text-sm text-boon-charcoal/75 space-y-2">
               <li>• Come with a specific situation or challenge in mind</li>
               <li>• Share what's been on your mind since the last session</li>
               <li>• Be open about what's working and what's not</li>

@@ -170,7 +170,7 @@ export default function Settings() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-8 h-8 border-2 border-boon-blue border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-boon-blue border-t-transparent rounded-pill animate-spin" />
       </div>
     );
   }
@@ -179,32 +179,32 @@ export default function Settings() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-boon-text">Settings</h1>
-        <p className="text-gray-500 mt-1">Manage your notifications and integrations</p>
+        <h1 className="text-2xl font-bold text-boon-navy">Settings</h1>
+        <p className="text-boon-charcoal/55 mt-1">Manage your notifications and integrations</p>
       </div>
 
       {/* Coaching Nudges Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
+      <div className="bg-white rounded-card shadow-sm border border-boon-charcoal/[0.08] overflow-hidden">
+        <div className="p-6 border-b border-boon-charcoal/[0.08]">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-boon-lightBlue/30 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-btn bg-boon-lightBlue/30 flex items-center justify-center">
               <svg className="w-6 h-6 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-boon-text">Coaching Nudges</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-boon-navy">Coaching Nudges</h2>
+              <p className="text-sm text-boon-charcoal/55">
                 Get friendly reminders about your coaching goals and action items
               </p>
             </div>
             {connected ? (
-              <span className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+              <span className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-pill">
                 {activeChannel === 'teams' ? <TeamsIcon className="w-4 h-4" /> : <SlackIcon className="w-4 h-4" />}
                 Connected via {channelLabel}
               </span>
             ) : (
-              <span className="px-3 py-1 bg-gray-100 text-gray-500 text-sm font-medium rounded-full">
+              <span className="px-3 py-1 bg-boon-offWhite text-boon-charcoal/55 text-sm font-medium rounded-pill">
                 Not connected
               </span>
             )}
@@ -216,19 +216,19 @@ export default function Settings() {
             {/* Nudge Toggle */}
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-boon-text">Enable Nudges</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-medium text-boon-navy">Enable Nudges</h3>
+                <p className="text-sm text-boon-charcoal/55">
                   Receive {channelLabel} messages about your coaching journey
                 </p>
               </div>
               <button
                 onClick={() => setNudgeEnabled(!nudgeEnabled)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
-                  nudgeEnabled ? 'bg-boon-blue' : 'bg-gray-300'
+                className={`relative w-12 h-6 rounded-pill transition-colors ${
+                  nudgeEnabled ? 'bg-boon-blue' : 'bg-boon-charcoal/20'
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-pill shadow transition-transform ${
                     nudgeEnabled ? 'translate-x-6' : 'translate-x-0.5'
                   }`}
                 />
@@ -239,7 +239,7 @@ export default function Settings() {
               <>
                 {/* Frequency */}
                 <div>
-                  <h3 className="font-medium text-boon-text mb-3">Nudge Frequency</h3>
+                  <h3 className="font-medium text-boon-navy mb-3">Nudge Frequency</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
                       { value: 'smart', label: 'Smart', desc: 'Based on your activity' },
@@ -250,14 +250,14 @@ export default function Settings() {
                       <button
                         key={option.value}
                         onClick={() => setNudgeFrequency(option.value as typeof nudgeFrequency)}
-                        className={`p-3 rounded-xl border-2 text-left transition-colors ${
+                        className={`p-3 rounded-btn border-2 text-left transition-colors ${
                           nudgeFrequency === option.value
                             ? 'border-boon-blue bg-boon-lightBlue/30'
-                            : 'border-gray-200 hover:border-gray-300'
+                            : 'border-boon-charcoal/[0.08] hover:border-boon-charcoal/[0.08]'
                         }`}
                       >
-                        <div className="font-medium text-boon-text">{option.label}</div>
-                        <div className="text-xs text-gray-500">{option.desc}</div>
+                        <div className="font-medium text-boon-navy">{option.label}</div>
+                        <div className="text-xs text-boon-charcoal/55">{option.desc}</div>
                       </button>
                     ))}
                   </div>
@@ -266,21 +266,21 @@ export default function Settings() {
                 {/* Preferred Time */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium text-boon-text mb-2">Preferred Time</label>
+                    <label className="block font-medium text-boon-navy mb-2">Preferred Time</label>
                     <input
                       type="time"
                       value={preferredTime}
                       onChange={(e) => setPreferredTime(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
+                      className="w-full px-4 py-2.5 border border-boon-charcoal/[0.08] rounded-btn focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Nudges will be sent around this time</p>
+                    <p className="text-xs text-boon-charcoal/55 mt-1">Nudges will be sent around this time</p>
                   </div>
                   <div>
-                    <label className="block font-medium text-boon-text mb-2">Timezone</label>
+                    <label className="block font-medium text-boon-navy mb-2">Timezone</label>
                     <select
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
+                      className="w-full px-4 py-2.5 border border-boon-charcoal/[0.08] rounded-btn focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
                     >
                       {timezones.map((tz) => (
                         <option key={tz.value} value={tz.value}>
@@ -294,18 +294,18 @@ export default function Settings() {
             )}
 
             {/* Save / Disconnect buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between pt-4 border-t border-boon-charcoal/[0.08]">
               <button
                 onClick={handleDisconnect}
                 disabled={disconnecting}
-                className="px-4 py-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-boon-error hover:text-red-700 font-medium text-sm transition-colors disabled:opacity-50"
               >
                 {disconnecting ? 'Disconnecting...' : `Disconnect ${channelLabel}`}
               </button>
               <button
                 onClick={handleSaveSettings}
                 disabled={saving}
-                className="px-6 py-2.5 bg-boon-blue text-white font-medium rounded-xl hover:bg-boon-blue/90 transition-colors disabled:opacity-50"
+                className="px-6 py-2.5 bg-boon-blue text-white font-medium rounded-btn hover:bg-boon-blue/90 transition-colors disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>
@@ -313,9 +313,9 @@ export default function Settings() {
           </div>
         ) : (
           <div className="p-6">
-            <div className="bg-boon-lightBlue/30 rounded-xl p-4 mb-6">
-              <h3 className="font-medium text-boon-text mb-2">What you'll get:</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
+            <div className="bg-boon-lightBlue/30 rounded-btn p-4 mb-6">
+              <h3 className="font-medium text-boon-navy mb-2">What you'll get:</h3>
+              <ul className="space-y-2 text-sm text-boon-charcoal/75">
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-boon-blue flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -339,19 +339,19 @@ export default function Settings() {
             <div className="space-y-3">
               <button
                 onClick={handleConnectSlack}
-                className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-[#4A154B] text-white font-medium rounded-xl hover:bg-[#3a1039] transition-colors"
+                className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-[#4A154B] text-white font-medium rounded-btn hover:bg-[#3a1039] transition-colors"
               >
                 <SlackIcon className="w-5 h-5" />
                 Connect Slack
               </button>
               <button
                 onClick={handleConnectTeams}
-                className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-[#6264A7] text-white font-medium rounded-xl hover:bg-[#4f5199] transition-colors"
+                className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-[#6264A7] text-white font-medium rounded-btn hover:bg-[#4f5199] transition-colors"
               >
                 <TeamsIcon className="w-5 h-5" />
                 Connect Microsoft Teams
               </button>
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-boon-charcoal/55 text-center">
                 For Teams, install the Boon Coaching app in your Microsoft Teams workspace first.{' '}
                 <a
                   href="https://www.boon-health.com/teams-support"
@@ -370,14 +370,14 @@ export default function Settings() {
 
       {/* Nudge Analytics (only show if connected and has history) */}
       {connected && nudgeHistory.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-boon-text">Your Nudge Engagement</h2>
-            <p className="text-sm text-gray-500 mt-1">Track how you're responding to coaching reminders</p>
+        <div className="bg-white rounded-card shadow-sm border border-boon-charcoal/[0.08] overflow-hidden">
+          <div className="p-6 border-b border-boon-charcoal/[0.08]">
+            <h2 className="text-lg font-semibold text-boon-navy">Your Nudge Engagement</h2>
+            <p className="text-sm text-boon-charcoal/55 mt-1">Track how you're responding to coaching reminders</p>
           </div>
 
           {/* Analytics Cards */}
-          <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-gray-100">
+          <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-boon-charcoal/[0.08]">
             {(() => {
               const responded = nudgeHistory.filter(n => n.status === 'responded').length;
               const total = nudgeHistory.length;
@@ -388,21 +388,21 @@ export default function Settings() {
 
               return (
                 <>
-                  <div className="bg-gradient-to-br from-boon-blue/10 to-boon-blue/5 rounded-xl p-4">
+                  <div className="bg-gradient-to-br from-boon-blue/10 to-boon-blue/5 rounded-btn p-4">
                     <div className="text-3xl font-bold text-boon-blue">{responseRate}%</div>
-                    <div className="text-sm text-gray-600 mt-1">Response Rate</div>
+                    <div className="text-sm text-boon-charcoal/75 mt-1">Response Rate</div>
                   </div>
-                  <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-xl p-4">
-                    <div className="text-3xl font-bold text-green-600">{completedActions}</div>
-                    <div className="text-sm text-gray-600 mt-1">Actions Done</div>
+                  <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-btn p-4">
+                    <div className="text-3xl font-bold text-boon-success">{completedActions}</div>
+                    <div className="text-sm text-boon-charcoal/75 mt-1">Actions Done</div>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl p-4">
-                    <div className="text-3xl font-bold text-blue-600">{inProgress}</div>
-                    <div className="text-sm text-gray-600 mt-1">In Progress</div>
+                  <div className="bg-gradient-to-br from-blue-100 to-blue-50 rounded-btn p-4">
+                    <div className="text-3xl font-bold text-boon-blue">{inProgress}</div>
+                    <div className="text-sm text-boon-charcoal/75 mt-1">In Progress</div>
                   </div>
-                  <div className="bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl p-4">
-                    <div className="text-3xl font-bold text-purple-600">{greatProgress}</div>
-                    <div className="text-sm text-gray-600 mt-1">Great Progress</div>
+                  <div className="bg-boon-purple/12 rounded-btn p-4">
+                    <div className="text-3xl font-bold text-boon-purple">{greatProgress}</div>
+                    <div className="text-sm text-boon-charcoal/75 mt-1">Great Progress</div>
                   </div>
                 </>
               );
@@ -410,8 +410,8 @@ export default function Settings() {
           </div>
 
           {/* Nudge Type Breakdown */}
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="font-medium text-boon-text mb-4">Nudge Breakdown</h3>
+          <div className="p-6 border-b border-boon-charcoal/[0.08]">
+            <h3 className="font-medium text-boon-navy mb-4">Nudge Breakdown</h3>
             <div className="space-y-3">
               {(() => {
                 const typeCount = nudgeHistory.reduce((acc, n) => {
@@ -421,16 +421,16 @@ export default function Settings() {
 
                 const typeLabels: Record<string, { label: string; color: string; icon: string }> = {
                   action_reminder: { label: 'Action Reminders', color: 'bg-orange-500', icon: '📋' },
-                  goal_checkin: { label: 'Goal Check-ins', color: 'bg-blue-500', icon: '🎯' },
-                  session_prep: { label: 'Session Prep', color: 'bg-purple-500', icon: '📅' },
-                  weekly_digest: { label: 'Weekly Digest', color: 'bg-green-500', icon: '📊' },
-                  daily_digest: { label: 'Daily Digest', color: 'bg-yellow-500', icon: '📰' },
+                  goal_checkin: { label: 'Goal Check-ins', color: 'bg-boon-blue', icon: '🎯' },
+                  session_prep: { label: 'Session Prep', color: 'bg-boon-purple/100', icon: '📅' },
+                  weekly_digest: { label: 'Weekly Digest', color: 'bg-boon-success', icon: '📊' },
+                  daily_digest: { label: 'Daily Digest', color: 'bg-boon-warning', icon: '📰' },
                 };
 
                 const total = nudgeHistory.length;
 
                 return Object.entries(typeCount).map(([type, count]) => {
-                  const info = typeLabels[type] || { label: type, color: 'bg-gray-500', icon: '📨' };
+                  const info = typeLabels[type] || { label: type, color: 'bg-boon-offWhite0', icon: '📨' };
                   const pct = Math.round((count / total) * 100);
 
                   return (
@@ -438,11 +438,11 @@ export default function Settings() {
                       <span className="text-xl">{info.icon}</span>
                       <div className="flex-1">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-gray-700">{info.label}</span>
-                          <span className="text-gray-500">{count} ({pct}%)</span>
+                          <span className="text-boon-charcoal/75">{info.label}</span>
+                          <span className="text-boon-charcoal/55">{count} ({pct}%)</span>
                         </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full ${info.color} rounded-full`} style={{ width: `${pct}%` }} />
+                        <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
+                          <div className={`h-full ${info.color} rounded-pill`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     </div>
@@ -453,38 +453,38 @@ export default function Settings() {
           </div>
 
           {/* Recent Nudges */}
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="font-medium text-boon-text mb-4">Recent Activity</h3>
+          <div className="p-6 border-b border-boon-charcoal/[0.08]">
+            <h3 className="font-medium text-boon-navy mb-4">Recent Activity</h3>
           </div>
           <div className="divide-y divide-gray-100">
             {nudgeHistory.slice(0, 5).map((nudge) => (
               <div key={nudge.id} className="p-4 flex items-center gap-4">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  className={`w-10 h-10 rounded-pill flex items-center justify-center ${
                     nudge.status === 'responded'
                       ? 'bg-green-100'
                       : nudge.status === 'sent'
-                      ? 'bg-blue-100'
-                      : 'bg-gray-100'
+                      ? 'bg-boon-blue/10'
+                      : 'bg-boon-offWhite'
                   }`}
                 >
                   {nudge.nudge_type === 'action_reminder' || nudge.nudge_type === 'daily_digest' ? (
-                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-boon-charcoal/75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   ) : nudge.nudge_type === 'goal_checkin' ? (
-                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-boon-charcoal/75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-boon-charcoal/75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   )}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-boon-text">
+                    <span className="font-medium text-boon-navy">
                       {nudge.nudge_type === 'action_reminder' && 'Action Reminder'}
                       {nudge.nudge_type === 'goal_checkin' && 'Goal Check-in'}
                       {nudge.nudge_type === 'session_prep' && 'Session Prep'}
@@ -492,12 +492,12 @@ export default function Settings() {
                       {nudge.nudge_type === 'daily_digest' && 'Daily Digest'}
                     </span>
                     {nudge.channel && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-boon-charcoal/55">
                         via {nudge.channel === 'teams' ? 'Microsoft Teams' : 'Slack'}
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-boon-charcoal/55">
                     {new Date(nudge.sent_at).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -508,12 +508,12 @@ export default function Settings() {
                 </div>
                 <div>
                   {nudge.status === 'responded' && nudge.response && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-pill">
                       {nudge.response.replace('action_', '').replace('progress_', '').replace('complete_', '')}
                     </span>
                   )}
                   {nudge.status === 'sent' && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                    <span className="px-2 py-1 bg-boon-offWhite text-boon-charcoal/55 text-xs font-medium rounded-pill">
                       Sent
                     </span>
                   )}
@@ -525,20 +525,20 @@ export default function Settings() {
       )}
 
       {/* Account Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-boon-text">Account</h2>
+      <div className="bg-white rounded-card shadow-sm border border-boon-charcoal/[0.08] overflow-hidden">
+        <div className="p-6 border-b border-boon-charcoal/[0.08]">
+          <h2 className="text-lg font-semibold text-boon-navy">Account</h2>
         </div>
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-boon-text">
+              <div className="font-medium text-boon-navy">
                 {employee?.first_name} {employee?.last_name}
               </div>
-              <div className="text-sm text-gray-500">{employee?.company_email}</div>
+              <div className="text-sm text-boon-charcoal/55">{employee?.company_email}</div>
             </div>
           </div>
-          <div className="pt-4 border-t border-gray-100 space-y-3">
+          <div className="pt-4 border-t border-boon-charcoal/[0.08] space-y-3">
             <Link
               to="/help/privacy"
               className="flex items-center gap-2 text-boon-blue hover:text-boon-darkBlue font-medium text-sm transition-colors"
@@ -550,7 +550,7 @@ export default function Settings() {
             </Link>
             <button
               onClick={signOut}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors"
+              className="flex items-center gap-2 text-boon-error hover:text-red-700 font-medium text-sm transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

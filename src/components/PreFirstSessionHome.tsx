@@ -355,19 +355,19 @@ export default function PreFirstSessionHome({
     <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 animate-fade-in">
       {/* Header */}
       <header className="text-center pt-2">
-        <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
+        <h1 className="font-display font-bold text-boon-navy text-[36px] md:text-[52px] leading-[1.05] tracking-[-0.025em]">
           Hi {profile?.first_name || 'there'}
         </h1>
-        <p className="text-gray-500 mt-2 text-lg font-medium">
+        <p className="text-boon-charcoal/55 mt-2 text-lg font-medium">
           Your coaching journey is about to begin
         </p>
       </header>
 
       {/* First Session Card - Show scheduled session or Book CTA */}
       {upcomingSession ? (
-        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
+        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-card p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+            <div className="w-10 h-10 rounded-btn bg-boon-blue flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -376,7 +376,7 @@ export default function PreFirstSessionHome({
           </div>
 
           <div>
-            <p className="text-3xl font-extrabold text-boon-text mb-2">
+            <p className="text-3xl font-extrabold text-boon-navy mb-2">
               {new Date(upcomingSession.session_date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -384,7 +384,7 @@ export default function PreFirstSessionHome({
                 year: 'numeric',
               })}
             </p>
-            <p className="text-gray-500 text-lg">
+            <p className="text-boon-charcoal/55 text-lg">
               {new Date(upcomingSession.session_date).toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
@@ -399,9 +399,9 @@ export default function PreFirstSessionHome({
                 href={upcomingSession.zoom_join_link || ''}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all shadow-lg ${
+                className={`inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-btn transition-all shadow-lg ${
                   showJoinButton
-                    ? 'text-white bg-green-600 hover:bg-green-700'
+                    ? 'text-white bg-boon-success hover:bg-boon-success/90'
                     : 'text-boon-blue bg-boon-lightBlue hover:bg-boon-lightBlue/80'
                 }`}
               >
@@ -415,9 +415,9 @@ export default function PreFirstSessionHome({
         </section>
       ) : profile?.booking_link ? (
         /* No upcoming session yet - show Book Your Session CTA */
-        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
+        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-card p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+            <div className="w-10 h-10 rounded-btn bg-boon-blue flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -426,10 +426,10 @@ export default function PreFirstSessionHome({
           </div>
 
           <div>
-            <p className="text-2xl font-extrabold text-boon-text mb-2">
+            <p className="text-2xl font-extrabold text-boon-navy mb-2">
               Ready to meet {coachFirstName}?
             </p>
-            <p className="text-gray-500 text-lg">
+            <p className="text-boon-charcoal/55 text-lg">
               Schedule your first coaching session at a time that works for you
             </p>
           </div>
@@ -439,7 +439,7 @@ export default function PreFirstSessionHome({
               href={profile.booking_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-boon-blue rounded-xl hover:bg-boon-navy transition-all shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-boon-blue rounded-btn hover:bg-boon-navy transition-all shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -450,9 +450,9 @@ export default function PreFirstSessionHome({
         </section>
       ) : (
         /* No upcoming session and no booking link - guide the user */
-        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
+        <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-card p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
           <div className="flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+            <div className="w-10 h-10 rounded-btn bg-boon-blue flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -461,10 +461,10 @@ export default function PreFirstSessionHome({
           </div>
 
           <div>
-            <p className="text-2xl font-extrabold text-boon-text mb-2">
+            <p className="text-2xl font-extrabold text-boon-navy mb-2">
               Your session with {coachFirstName} is being scheduled
             </p>
-            <p className="text-gray-500 text-lg">
+            <p className="text-boon-charcoal/55 text-lg">
               You'll receive an email with scheduling details shortly. If you don't hear back within a few days, reach out to us.
             </p>
           </div>
@@ -484,27 +484,27 @@ export default function PreFirstSessionHome({
       )}
 
       {/* Meet Your Coach */}
-      <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
-        <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Meet Your Coach</h2>
+      <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08] shadow-sm">
+        <h2 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-6">Meet Your Coach</h2>
 
         {isLoadingCoachData ? (
           /* Loading skeleton */
           <div className="animate-pulse flex flex-col sm:flex-row gap-6">
             <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
-              <div className="aspect-[3/4] rounded-2xl bg-gray-200" />
+              <div className="aspect-[3/4] rounded-card bg-boon-offWhite" />
             </div>
             <div className="flex-1 space-y-3 text-center sm:text-left">
-              <div className="h-6 bg-gray-200 rounded w-40 mx-auto sm:mx-0" />
-              <div className="h-4 bg-gray-200 rounded w-56 mx-auto sm:mx-0" />
-              <div className="h-4 bg-gray-200 rounded w-32 mx-auto sm:mx-0" />
-              <div className="mt-3 bg-gray-200 rounded-xl h-20 w-full" />
+              <div className="h-6 bg-boon-offWhite rounded w-40 mx-auto sm:mx-0" />
+              <div className="h-4 bg-boon-offWhite rounded w-56 mx-auto sm:mx-0" />
+              <div className="h-4 bg-boon-offWhite rounded w-32 mx-auto sm:mx-0" />
+              <div className="mt-3 bg-boon-offWhite rounded-btn h-20 w-full" />
             </div>
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-6">
             {/* Coach headshot - using aspect-ratio container with object-position to show face */}
             <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
-              <div className="aspect-[3/4] rounded-2xl overflow-hidden ring-4 ring-boon-bg shadow-lg bg-gray-100">
+              <div className="aspect-[3/4] rounded-card overflow-hidden ring-4 ring-boon-bg shadow-lg bg-boon-offWhite">
                 <img
                   src={coachPhotoUrl}
                   alt={coachName}
@@ -515,7 +515,7 @@ export default function PreFirstSessionHome({
             </div>
 
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="text-xl font-extrabold text-boon-text">{coachName}</h3>
+              <h3 className="text-xl font-extrabold text-boon-navy">{coachName}</h3>
 
               {/* Headline - former corporate experience (title case) */}
               {coach?.headline && (
@@ -526,13 +526,13 @@ export default function PreFirstSessionHome({
 
               {/* Notable Credentials - certifications */}
               {coach?.notable_credentials && (
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-boon-charcoal/55 mt-1">
                   {coach.notable_credentials}
                 </p>
               )}
 
               {/* Match Summary */}
-              <p className="text-sm text-gray-700 mt-3 bg-boon-bg/50 px-4 py-3 rounded-xl border border-gray-100">
+              <p className="text-sm text-boon-charcoal/75 mt-3 bg-boon-bg/50 px-4 py-3 rounded-btn border border-boon-charcoal/[0.08]">
                 {displayMatchSummary}
               </p>
             </div>
@@ -542,14 +542,14 @@ export default function PreFirstSessionHome({
 
       {/* What You Shared - Reflect back their survey data */}
       {hasWelcomeSurvey && (
-        <section className="bg-gradient-to-br from-purple-50 to-boon-bg rounded-[2rem] p-8 border border-purple-100">
+        <section className="bg-boon-offWhite rounded-card p-8 border border-boon-charcoal/[0.08]">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-8 h-8 rounded-btn bg-boon-purple/10 flex items-center justify-center">
+              <svg className="w-4 h-4 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
             </div>
-            <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+            <h2 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-widest">
               What You Shared
             </h2>
           </div>
@@ -557,10 +557,10 @@ export default function PreFirstSessionHome({
           {/* Show coaching goals if they exist */}
           {coachingGoals && (
             <div className="mb-6">
-              <p className="text-xs font-bold text-purple-600 uppercase tracking-widest mb-2">
+              <p className="text-xs font-bold text-boon-purple uppercase tracking-[0.18em] mb-2">
                 What you're hoping to work on
               </p>
-              <p className="text-gray-700 bg-white/60 p-4 rounded-xl border border-purple-100/50 italic leading-relaxed">
+              <p className="text-boon-charcoal/75 bg-white/60 p-4 rounded-btn border border-boon-charcoal/[0.08]/50 italic leading-relaxed">
                 "{coachingGoals}"
               </p>
             </div>
@@ -570,12 +570,12 @@ export default function PreFirstSessionHome({
           {focusAreas.length > 0 && (
             <div>
               {!coachingGoals && (
-                <p className="text-xs font-bold text-purple-600 uppercase tracking-widest mb-3">
+                <p className="text-xs font-bold text-boon-purple uppercase tracking-[0.18em] mb-3">
                   Focus areas you selected
                 </p>
               )}
               {coachingGoals && (
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-3">
                   Focus areas you selected
                 </p>
               )}
@@ -583,7 +583,7 @@ export default function PreFirstSessionHome({
                 {focusAreas.map((area) => (
                   <span
                     key={area}
-                    className="px-3 py-1.5 text-sm font-medium bg-white/70 text-purple-700 rounded-full border border-purple-200/50"
+                    className="px-3 py-1.5 text-sm font-medium bg-white/70 text-boon-purple rounded-pill border border-boon-charcoal/[0.08]/50"
                   >
                     {area}
                   </span>
@@ -593,8 +593,8 @@ export default function PreFirstSessionHome({
           )}
 
           {/* Confirmation message */}
-          <p className="text-sm text-gray-500 mt-5 flex items-center gap-2">
-            <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <p className="text-sm text-boon-charcoal/55 mt-5 flex items-center gap-2">
+            <svg className="w-4 h-4 text-boon-success flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             {coachFirstName} will use this to personalize your first conversation
@@ -603,11 +603,11 @@ export default function PreFirstSessionHome({
       )}
 
       {/* Pre-Session Note - Always show */}
-      <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
-        <h2 className="text-lg font-extrabold text-boon-text mb-2">
+      <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08] shadow-sm">
+        <h2 className="text-lg font-extrabold text-boon-navy mb-2">
           Before you meet {coachFirstName}
         </h2>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-boon-charcoal/55 mb-6">
           Anything specific (beyond your welcome survey) you want to make sure {coachFirstName} knows before your first conversation?
         </p>
 
@@ -616,11 +616,11 @@ export default function PreFirstSessionHome({
             value={preSessionNote}
             onChange={(e) => setPreSessionNote(e.target.value)}
             placeholder="Optional—share anything that might be helpful"
-            className="w-full p-5 rounded-2xl border-2 border-gray-100 focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none bg-boon-bg placeholder-gray-400 transition-all"
+            className="w-full p-5 rounded-card border-2 border-boon-charcoal/[0.08] focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[120px] resize-none bg-boon-bg placeholder-gray-400 transition-all"
           />
           <div className="absolute bottom-3 right-3 flex items-center gap-2">
             {isSaving && (
-              <span className="text-xs text-gray-400 flex items-center gap-1">
+              <span className="text-xs text-boon-charcoal/55 flex items-center gap-1">
                 <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
@@ -628,7 +628,7 @@ export default function PreFirstSessionHome({
               </span>
             )}
             {!isSaving && lastSaved && !saveError && (
-              <span className="text-xs text-green-600 flex items-center gap-1">
+              <span className="text-xs text-boon-success flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -636,7 +636,7 @@ export default function PreFirstSessionHome({
               </span>
             )}
             {!isSaving && saveError && (
-              <span className="text-xs text-amber-600 flex items-center gap-1" title={saveError}>
+              <span className="text-xs text-boon-warning flex items-center gap-1" title={saveError}>
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -645,7 +645,7 @@ export default function PreFirstSessionHome({
             )}
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+        <p className="text-xs text-boon-charcoal/55 mt-3 flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -655,19 +655,19 @@ export default function PreFirstSessionHome({
       </section>
 
       {/* Explore Your Toolkit */}
-      <section className="bg-gradient-to-br from-boon-bg via-white to-purple-50/30 rounded-[2rem] p-8 border border-gray-100 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-4">
-          <svg className="w-7 h-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <section className="bg-boon-offWhite rounded-card p-8 border border-boon-charcoal/[0.08] text-center">
+        <div className="w-14 h-14 rounded-card bg-boon-purple/10 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
         </div>
-        <h3 className="text-lg font-extrabold text-boon-text mb-2">Explore Your Toolkit</h3>
-        <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+        <h3 className="text-lg font-extrabold text-boon-navy mb-2">Explore Your Toolkit</h3>
+        <p className="text-boon-charcoal/55 text-sm mb-6 max-w-md mx-auto">
           While you wait, explore the Practice Space—AI-powered scenarios to help you prepare for real leadership moments.
         </p>
         <button
           onClick={() => navigate('/practice')}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-boon-purple text-white font-bold rounded-btn hover:bg-boon-purple transition-all shadow-sm"
         >
           Explore Practice Space
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -678,7 +678,7 @@ export default function PreFirstSessionHome({
 
       {/* Support */}
       <div className="text-center pb-8">
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-boon-charcoal/55">
           Questions about what to expect?{' '}
           <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">
             Reach out anytime

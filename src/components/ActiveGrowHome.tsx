@@ -455,13 +455,13 @@ export default function ActiveGrowHome({
             {/* Last session context */}
             {lastSession?.plan && (
               <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Last time, you were working on:</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-2">Last time, you were working on:</p>
                 <p className="font-serif text-gray-700 leading-relaxed italic">"{lastSession.plan}"</p>
               </div>
             )}
             {!lastSession?.plan && lastSession?.goals && (
               <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Last time, you were working on:</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-2">Last time, you were working on:</p>
                 <p className="font-serif text-gray-700 leading-relaxed italic">"{lastSession.goals}"</p>
               </div>
             )}
@@ -565,7 +565,7 @@ export default function ActiveGrowHome({
 
           {/* Your Coach - More prominent when no session scheduled */}
           <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Your Coach</h2>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-6">Your Coach</h2>
             {isLoadingCoach ? (
               /* Loading skeleton */
               <div className="animate-pulse flex flex-col sm:flex-row gap-6">
@@ -630,8 +630,8 @@ export default function ActiveGrowHome({
 
                 {/* Existing note display */}
                 {actionNotes[action.id] && expandedNoteId !== action.id && (
-                  <div className="mt-3 p-3 bg-boon-amberLight/30 rounded-lg border border-boon-amber/10">
-                    <p className="text-xs font-bold text-boon-amber uppercase tracking-widest mb-1">Your note</p>
+                  <div className="mt-3 p-3 bg-boon-amberLight/30 rounded-btn border border-boon-amber/10">
+                    <p className="text-xs font-bold text-boon-amber uppercase tracking-[0.18em] mb-1">Your note</p>
                     <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-sm text-gray-600 italic">{actionNotes[action.id]}</p>
                   </div>
                 )}
@@ -643,7 +643,7 @@ export default function ActiveGrowHome({
                       defaultValue={actionNotes[action.id] || ''}
                       placeholder="How's this going? Any progress to note..."
                       style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-                      className="w-full p-3 rounded-lg border border-boon-amber/20 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white placeholder-gray-400"
+                      className="w-full p-3 rounded-btn border border-boon-amber/20 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white placeholder-gray-400"
                       id={`note-${action.id}`}
                     />
                     <div className="flex items-center gap-2">
@@ -653,7 +653,7 @@ export default function ActiveGrowHome({
                           saveNote(action.id, textarea.value);
                         }}
                         disabled={savingNoteId === action.id}
-                        className="px-4 py-2 text-xs font-bold text-white bg-boon-amber rounded-lg hover:bg-boon-amberDark transition-colors disabled:opacity-50"
+                        className="px-4 py-2 text-xs font-bold text-white bg-boon-amber rounded-btn hover:bg-boon-amberDark transition-colors disabled:opacity-50"
                       >
                         {savingNoteId === action.id ? 'Saving...' : 'Save note'}
                       </button>
@@ -689,7 +689,7 @@ export default function ActiveGrowHome({
 
       {/* Coaching at a Glance - Progress indicator */}
       <section className="bg-white rounded-[2rem] p-7 md:p-8 shadow-sm border border-gray-100">
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">
+        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-6">
           Coaching at a Glance
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">

@@ -79,22 +79,22 @@ export function PracticePrompt() {
   const cat = CATEGORY_INFO[scenario.category];
 
   return (
-    <section className="bg-gradient-to-br from-purple-50 to-boon-bg rounded-[2rem] p-8 border border-purple-100/50">
-      <p className="text-xs font-bold uppercase tracking-widest text-purple-500 mb-4 flex items-center gap-2">
+    <section className="bg-boon-offWhite rounded-card p-8 border border-boon-charcoal/[0.08]/50">
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-purple mb-4 flex items-center gap-2">
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
         Recommended Practice
       </p>
-      <p className="text-gray-500 text-sm mb-4">Before your next session, try this:</p>
-      <h3 className="text-lg font-bold text-boon-text mb-2">{scenario.title}</h3>
-      <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full ${cat.bgColor} ${cat.color} mb-3`}>
+      <p className="text-boon-charcoal/55 text-sm mb-4">Before your next session, try this:</p>
+      <h3 className="text-lg font-bold text-boon-navy mb-2">{scenario.title}</h3>
+      <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-pill ${cat.bgColor} ${cat.color} mb-3`}>
         {cat.label}
       </span>
-      <p className="text-gray-600 text-sm mb-6">{scenario.description}</p>
+      <p className="text-boon-charcoal/75 text-sm mb-6">{scenario.description}</p>
       <button
         onClick={() => navigate('/practice')}
-        className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-boon-purple text-white font-bold rounded-btn hover:bg-boon-purple transition-all shadow-sm"
       >
         Start Practice
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
