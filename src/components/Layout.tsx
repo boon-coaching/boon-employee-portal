@@ -15,7 +15,6 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
 
   const isCompleted = coachingState ? isAlumniState(coachingState.state) : false;
 
-  // Goals nav only for active coaching states
   const showGoals = coachingState && !isCompleted && coachingState.state !== 'NOT_SIGNED_UP' && coachingState.state !== 'SIGNED_UP_NOT_MATCHED';
 
   const navItems: { to: string; label: string; icon: string; end?: boolean }[] = [
@@ -32,77 +31,95 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
     ? `${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase()
     : 'ME';
 
+  const programLabel = coachingState?.isScale
+    ? 'Your Scale access'
+    : 'Your Grow program';
+
   return (
-    <div className="flex flex-col min-h-screen bg-boon-bg pb-[calc(72px+env(safe-area-inset-bottom,16px))] md:pb-0 md:pl-64">
+    <div className="flex flex-col min-h-screen bg-boon-bg pb-[calc(72px+env(safe-area-inset-bottom,16px))] md:pb-0 md:pl-60">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-boon-charcoal/[0.08] z-30">
-        <div className="p-6 flex flex-col h-full">
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-60 bg-white border-r border-boon-charcoal/[0.08] z-30">
+        <div className="px-4 py-6 flex flex-col h-full">
           <img
             src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863780/Wordmark_Blue_16_aw7lvc.png"
-            className="h-7 max-w-[140px] object-contain mb-8"
+            className="h-6 max-w-[120px] object-contain mb-7 ml-3"
             alt="Boon Health"
           />
 
-          <nav className="space-y-1 flex-1">
+          <div className="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/45">
+            {programLabel}
+          </div>
+
+          <nav className="flex-1 space-y-0.5">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `relative w-full flex items-center px-4 py-3 text-sm font-medium rounded-btn transition-colors ${
+                  `relative w-full flex items-center gap-3 px-3 py-2.5 text-sm rounded-btn transition-all ${
                     isActive
-                      ? 'bg-boon-blue text-white shadow-sm'
-                      : 'text-boon-charcoal/75 hover:bg-boon-blue/10 hover:text-boon-blue'
+                      ? 'bg-boon-blue/10 text-boon-darkBlue font-bold'
+                      : 'text-boon-charcoal/75 font-medium hover:bg-boon-blue/5 hover:text-boon-navy'
                   }`
                 }
               >
-                <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                </svg>
-                {item.label}
-                {badges?.[item.to] && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-boon-error rounded-pill" />
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="absolute -left-4 top-2 bottom-2 w-[3px] bg-boon-blue rounded-pill"
+                      />
+                    )}
+                    <svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+                    </svg>
+                    <span>{item.label}</span>
+                    {badges?.[item.to] && (
+                      <span className="ml-auto w-1.5 h-1.5 bg-boon-coral rounded-pill" />
+                    )}
+                  </>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          {/* User info and settings */}
+          {/* User block */}
           <div className="pt-4 border-t border-boon-charcoal/[0.08]">
-            <div className="flex items-center gap-3 px-2 py-3">
-              <div className="w-10 h-10 rounded-pill bg-boon-blue/10 flex items-center justify-center">
-                <span className="text-boon-blue text-sm font-bold">{initials}</span>
+            <div className="flex items-center gap-3 px-2 py-2.5">
+              <div className="w-9 h-9 rounded-pill bg-boon-blue/10 flex items-center justify-center shrink-0">
+                <span className="text-boon-blue text-[11px] font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-boon-navy truncate">
+                <p className="text-sm font-semibold text-boon-navy truncate leading-tight">
                   {employee?.first_name} {employee?.last_name}
                 </p>
-                <p className="text-xs text-boon-charcoal/55 truncate">{employee?.job_title || 'Employee'}</p>
+                <p className="text-[11px] text-boon-charcoal/55 truncate mt-0.5">{employee?.job_title || 'Employee'}</p>
               </div>
               <NavLink
                 to="/settings"
                 className={({ isActive }) =>
-                  `p-2 rounded-btn transition-colors ${
+                  `p-1.5 rounded-btn transition-colors shrink-0 ${
                     isActive
-                      ? 'bg-boon-blue text-white'
-                      : 'text-boon-charcoal/55 hover:text-boon-blue hover:bg-boon-blue/10'
+                      ? 'text-boon-blue bg-boon-blue/10'
+                      : 'text-boon-charcoal/45 hover:text-boon-blue hover:bg-boon-blue/5'
                   }`
                 }
                 title="Settings"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </NavLink>
             </div>
             <button
               onClick={signOut}
-              className="w-full flex items-center px-4 py-2 text-sm text-boon-charcoal/55 hover:text-boon-error transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 text-xs text-boon-charcoal/55 hover:text-boon-error transition-colors"
             >
-              <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               Sign out
             </button>
