@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Headline } from '../lib/design-system';
 import type { SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CoachingWin } from '../lib/types';
 
 const devLog = (...args: unknown[]) => {
@@ -1581,151 +1582,100 @@ export default function ProgressPage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <header className="text-center sm:text-left">
-        <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">
-          {isCompleted ? 'Leadership Profile' : 'My Progress'}
-        </h1>
-        <p className="text-boon-charcoal/55 mt-2 font-medium">
-          {isCompleted
-            ? 'Your leadership strengths and capabilities.'
-            : isGrowOrExec
-              ? 'Track your leadership competency growth over time.'
-              : 'Track your wellbeing and growth over time.'}
-        </p>
-        {isCompleted && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-boon-success/10 text-green-700 rounded-pill text-sm font-medium">
-            <span className="w-2 h-2 bg-boon-success rounded-pill"></span>
-            Program Graduate
-          </div>
-        )}
+      {/* Editorial hero */}
+      <header className="pb-6 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+            {isCompleted ? 'A leadership profile' : 'Competency view'}
+          </span>
+          {isCompleted && (
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-success">
+              · Program graduate
+            </span>
+          )}
+        </div>
+        <Headline as="h1" size="lg">
+          {isCompleted ? 'What you built.' : 'Where you\u2019re growing.'}
+          <Headline.Kicker block color="blue">
+            {isCompleted ? 'Your leadership signal.' : 'Across 12 competencies.'}
+          </Headline.Kicker>
+        </Headline>
       </header>
 
-      {/* Tab Navigation - Show both tabs for Grow/Exec, only wellbeing for Scale */}
-      <div className="flex gap-2 bg-boon-offWhite p-1 rounded-btn w-fit">
-        {isGrowOrExec && (
-          <button
-            onClick={() => setActiveTab('competencies')}
-            className={`px-4 py-2 rounded-btn font-bold text-sm transition-all ${
-              activeTab === 'competencies'
-                ? 'bg-white text-boon-navy shadow-sm'
-                : 'text-boon-charcoal/55 hover:text-boon-navy'
-            }`}
-          >
-            {isCompleted ? 'Competency Profile' : 'Competencies'}
-          </button>
-        )}
-        {hasWellbeingData && (
-          <button
-            onClick={() => setActiveTab('wellbeing')}
-            className={`px-4 py-2 rounded-btn font-bold text-sm transition-all ${
-              activeTab === 'wellbeing'
-                ? 'bg-white text-boon-navy shadow-sm'
-                : 'text-boon-charcoal/55 hover:text-boon-navy'
-            }`}
-          >
-            Wellbeing
-          </button>
-        )}
+      {/* Tab navigation — minimal underline tabs */}
+      <div className="flex items-center gap-1">
+        {isGrowOrExec && (() => {
+          const isActive = activeTab === 'competencies';
+          return (
+            <button
+              onClick={() => setActiveTab('competencies')}
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap ${
+                isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
+              }`}
+            >
+              {isCompleted ? 'Competency profile' : 'Competencies'}
+              {isActive && (
+                <span aria-hidden className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill" />
+              )}
+            </button>
+          );
+        })()}
+        {hasWellbeingData && (() => {
+          const isActive = activeTab === 'wellbeing';
+          return (
+            <button
+              onClick={() => setActiveTab('wellbeing')}
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap ${
+                isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
+              }`}
+            >
+              Wellbeing
+              {isActive && (
+                <span aria-hidden className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill" />
+              )}
+            </button>
+          );
+        })()}
       </div>
 
-      {/* Stats Summary - Different for completed vs active */}
+      {/* Stats — editorial stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {isCompleted ? (
-          // Leadership Profile stats (de-emphasize numeric deltas)
-          <>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-success/10 p-3 rounded-card text-boon-success">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Strengths</p>
-                <p className="text-2xl font-bold text-boon-navy">
-                  {competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling' || c.score_label?.toLowerCase() === 'mastering').length}
-                </p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-warning/12 p-3 rounded-card text-boon-warning">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><circle cx="12" cy="12" r="6" strokeWidth={2} /><circle cx="12" cy="12" r="2" strokeWidth={2} /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Sessions</p>
-                <p className="text-2xl font-bold text-boon-navy">{completedSessions.length}</p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-blue/10 p-3 rounded-card text-boon-blue">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Competencies</p>
-                <p className="text-2xl font-bold text-boon-navy">{competencyScores.length}</p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-success/10 p-3 rounded-card text-boon-success">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Complete</p>
-                <p className="text-2xl font-bold text-boon-navy">100%</p>
-              </div>
-            </div>
-          </>
-        ) : (
-          // Active program stats (show growth metrics)
-          <>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-blue/10 p-3 rounded-card text-boon-blue">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">
-                  {avgCompetencyImprovement !== null ? 'Avg Growth' : 'Scores Recorded'}
-                </p>
-                <p className="text-2xl font-bold text-boon-navy">
-                  {avgCompetencyImprovement !== null ? (
-                    <span>{avgCompetencyImprovement > 0 ? '+' : ''}{avgCompetencyImprovement}%</span>
-                  ) : (
-                    <span>{competencyScores.length > 0 ? competencyScores.length : '—'}</span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-warning/12 p-3 rounded-card text-boon-warning">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth={2} /><circle cx="12" cy="12" r="6" strokeWidth={2} /><circle cx="12" cy="12" r="2" strokeWidth={2} /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Sessions</p>
-                <p className="text-2xl font-bold text-boon-navy">{completedSessions.length}</p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-success/10 p-3 rounded-card text-boon-success">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">Actions Done</p>
-                <p className="text-2xl font-bold text-boon-navy">{completedActions.length}</p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-card shadow-sm flex items-center gap-4">
-              <div className="bg-boon-purple/10 p-3 rounded-card text-boon-purple">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">
-                  {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked'}
-                </p>
-                <p className="text-2xl font-bold text-boon-navy">
-                  {competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'}
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+        {(isCompleted ? [
+          {
+            label: 'Strengths',
+            value: String(competencyScores.filter(c => c.score_label?.toLowerCase() === 'excelling' || c.score_label?.toLowerCase() === 'mastering').length),
+            accent: 'bg-boon-success',
+          },
+          { label: 'Sessions', value: String(completedSessions.length), accent: 'bg-boon-blue' },
+          { label: 'Competencies', value: String(competencyScores.length), accent: 'bg-boon-navy' },
+          { label: 'Complete', value: '100%', accent: 'bg-boon-success' },
+        ] : [
+          {
+            label: avgCompetencyImprovement !== null ? 'Avg growth' : 'Scores recorded',
+            value: avgCompetencyImprovement !== null
+              ? `${avgCompetencyImprovement > 0 ? '+' : ''}${avgCompetencyImprovement}%`
+              : String(competencyScores.length > 0 ? competencyScores.length : '—'),
+            accent: 'bg-boon-blue',
+          },
+          { label: 'Sessions', value: String(completedSessions.length), accent: 'bg-boon-navy' },
+          { label: 'Actions done', value: String(completedActions.length), accent: 'bg-boon-success' },
+          {
+            label: competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked',
+            value: String(competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'),
+            accent: 'bg-boon-coral',
+          },
+        ]).map((stat, i) => (
+          <div key={i} className="relative bg-white rounded-card border border-boon-charcoal/[0.08] p-5 overflow-hidden">
+            <span aria-hidden className={`absolute left-0 top-0 bottom-0 w-[3px] ${stat.accent}`} />
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/55">
+              {stat.label}
+            </p>
+            <p className="mt-2 font-display font-bold text-boon-navy text-[30px] leading-none tracking-[-0.02em]">
+              {stat.value}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Competencies Tab */}
