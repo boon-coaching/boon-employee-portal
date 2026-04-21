@@ -229,20 +229,18 @@ export default function GrowDashboard({
           <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
           <Eyebrow color="coral">· {momentumLabel}</Eyebrow>
         </div>
-        <div className="flex items-end justify-between gap-8 flex-wrap">
-          <Headline as="h1" size="lg">
-            {heroStatement}{' '}
-            <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
-          </Headline>
-          <div className="flex items-center gap-3 pb-2 shrink-0">
-            <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
-              <div
-                className="h-full bg-boon-blue rounded-pill transition-all"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <Eyebrow color="muted">{Math.round(progressPct)}%</Eyebrow>
+        <Headline as="h1" size="lg">
+          {heroStatement}{' '}
+          <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
+        </Headline>
+        <div className="mt-5 flex items-center gap-3">
+          <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+            <div
+              className="h-full bg-boon-blue rounded-pill transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
+          <Eyebrow color="muted">{Math.round(progressPct)}% complete</Eyebrow>
         </div>
       </header>
 
