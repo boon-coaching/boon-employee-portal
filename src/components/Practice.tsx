@@ -1,6 +1,19 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { Headline, Badge } from '../lib/design-system';
 import { SCENARIOS, CATEGORY_INFO, type PracticeScenario, type ScenarioCategory } from '../data/scenarios';
+
+const CATEGORY_ACCENT: Record<ScenarioCategory, string> = {
+  leadership: 'bg-boon-navy',
+  communication: 'bg-boon-blue',
+  wellbeing: 'bg-boon-success',
+};
+
+const DIFFICULTY_BADGE: Record<string, 'error' | 'warning' | 'success' | 'neutral'> = {
+  high: 'error',
+  medium: 'warning',
+  low: 'success',
+};
 // Types now accessed via usePortalData()
 import { isAlumniState } from '../lib/coachingState';
 import PracticeModal from './PracticeModal';
@@ -177,36 +190,27 @@ Describe your situation in detail so we can provide the most relevant guidance.`
     setSelectedScenario(customScenario);
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'High': return 'bg-red-100 text-boon-error';
-      case 'Medium': return 'bg-boon-warning/12 text-boon-warning';
-      case 'Low': return 'bg-green-100 text-boon-success';
-      default: return 'bg-boon-offWhite text-boon-charcoal/75';
-    }
-  };
-
-  return (
+    return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-      {/* Header */}
-      <header className="text-center pt-4">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-boon-navy mb-3">
-          {isCompleted ? 'Leadership Toolkit' : 'Practice Space'}
-        </h1>
-        <p className="text-boon-charcoal/55 text-lg max-w-2xl mx-auto">
-          {isCompleted
-            ? 'Apply your coaching insights when it matters most. Prepare for real leadership moments with confidence.'
-            : 'Prepare for challenging moments with AI-powered scenarios. Get a gameplan, then practice the conversation.'
-          }
-        </p>
-        {isCompleted && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-boon-success/10 text-green-700 rounded-pill text-sm font-medium">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Available to you as a program graduate
-          </div>
-        )}
+      {/* Editorial hero */}
+      <header className="pb-6 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+            {isCompleted ? 'Leadership toolkit' : 'Before the hard conversation'}
+          </span>
+          {isCompleted && (
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-success">
+              · Program graduate
+            </span>
+          )}
+        </div>
+        <Headline as="h1" size="lg">
+          {isCompleted ? 'Leadership toolkit.' : 'Practice space.'}
+          <Headline.Kicker block color="blue">
+            {isCompleted ? 'For when it matters most.' : 'Rehearse before you raise it.'}
+          </Headline.Kicker>
+        </Headline>
       </header>
 
       {/* My Team & My Playbook Row */}
@@ -293,13 +297,16 @@ Describe your situation in detail so we can provide the most relevant guidance.`
       </div>
 
       {/* Custom Situation Input */}
-      <section className={`rounded-card p-6 md:p-8 border ${
-        isCompleted
-          ? 'bg-gradient-to-br from-green-50/50 via-white to-emerald-50/30 border-green-100'
-          : 'bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 border-boon-blue/10'
-      }`}>
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-lg font-extrabold text-boon-navy mb-4 text-center">
+      <section className="relative bg-white rounded-card border border-boon-charcoal/[0.08] p-6 md:p-8 overflow-hidden">
+        <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[3px] bg-boon-coral" />
+        <div className="max-w-2xl mx-auto pl-2">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-6 h-px bg-boon-coral" aria-hidden />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">
+              In the moment
+            </span>
+          </div>
+          <h2 className="font-display font-bold text-boon-navy text-[22px] leading-tight tracking-[-0.02em] mb-4">
             {isCompleted ? 'What challenge are you facing?' : "What's on your mind?"}
           </h2>
 
@@ -351,39 +358,41 @@ Describe your situation in detail so we can provide the most relevant guidance.`
             <button
               onClick={handleCustomSubmit}
               disabled={!customSituation.trim()}
-              className={`absolute bottom-4 right-4 px-5 py-2.5 text-white rounded-btn font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg ${
-                isCompleted
-                  ? 'bg-boon-success hover:bg-boon-success/90 shadow-green-600/20'
-                  : 'bg-boon-blue hover:bg-boon-darkBlue shadow-boon-blue/20'
-              }`}
+              className="absolute bottom-4 right-4 px-5 py-2.5 text-white bg-boon-coral rounded-pill font-semibold text-sm hover:opacity-90 disabled:cursor-not-allowed transition-opacity"
+              style={{ opacity: !customSituation.trim() ? 0.5 : 1 }}
             >
-              {isCompleted ? 'Get Strategy' : 'Get Help'}
+              {isCompleted ? 'Get strategy' : 'Get help'}
             </button>
           </div>
         </div>
       </section>
 
-      {/* Category Filter */}
-      <div className="flex justify-center">
-        <div className="flex gap-2 bg-white p-2 rounded-card shadow-sm border border-boon-charcoal/[0.08] overflow-x-auto">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-btn text-sm font-bold transition-all whitespace-nowrap ${
-              selectedCategory === 'all'
-                ? 'bg-boon-blue text-white shadow-sm'
-                : 'text-boon-charcoal/55 hover:bg-boon-offWhite'
-            }`}
-          >
-            All Scenarios
-          </button>
-          {(['leadership', 'communication', 'wellbeing'] as ScenarioCategory[]).map(cat => (
+      {/* Category Filter — underline tabs */}
+      <div className="flex items-center gap-1 border-b border-boon-charcoal/10 -mb-px overflow-x-auto">
+        {(() => {
+          const isActive = selectedCategory === 'all';
+          return (
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap ${
+                isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
+              }`}
+            >
+              All scenarios
+              {isActive && (
+                <span aria-hidden className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill" />
+              )}
+            </button>
+          );
+        })()}
+        {(['leadership', 'communication', 'wellbeing'] as ScenarioCategory[]).map(cat => {
+          const isActive = selectedCategory === cat;
+          return (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-btn text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-                selectedCategory === cat
-                  ? 'bg-boon-blue text-white shadow-sm'
-                  : 'text-boon-charcoal/55 hover:bg-boon-offWhite'
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap flex items-center gap-2 ${
+                isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
               }`}
             >
               {CATEGORY_INFO[cat].label}
@@ -392,11 +401,14 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                 (cat === 'communication' && userThemes.communication) ||
                 (cat === 'wellbeing' && userThemes.wellbeing)
               ) && (
-                <span className={`w-2 h-2 rounded-pill ${selectedCategory === cat ? 'bg-white' : 'bg-boon-blue'}`} />
+                <span className="w-1.5 h-1.5 rounded-pill bg-boon-blue" />
+              )}
+              {isActive && (
+                <span aria-hidden className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill" />
               )}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* Recommended for you badge */}
@@ -410,55 +422,49 @@ Describe your situation in detail so we can provide the most relevant guidance.`
       )}
 
       {/* Scenario Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredScenarios.map(scenario => (
-          <div
-            key={scenario.id}
-            onClick={() => setSelectedScenario(scenario)}
-            className="group bg-white rounded-[1.5rem] p-6 cursor-pointer border-2 border-transparent hover:border-boon-blue/20 hover:shadow-xl transition-all duration-300 relative overflow-hidden"
-          >
-            {/* Background accent */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-boon-lightBlue/30 to-transparent rounded-pill blur-2xl group-hover:scale-125 transition-transform duration-500" />
-
-            <div className="relative z-10">
-              {/* Header */}
-              <div className="flex justify-between items-start mb-4">
-                <span className={`px-3 py-1 rounded-pill text-[10px] font-bold uppercase tracking-wider ${getDifficultyColor(scenario.difficulty)}`}>
-                  {scenario.difficulty}
-                </span>
-                <span className={`px-2.5 py-1 rounded-btn text-[10px] font-bold uppercase tracking-wide ${CATEGORY_INFO[scenario.category].bgColor} ${CATEGORY_INFO[scenario.category].color}`}>
-                  {CATEGORY_INFO[scenario.category].label}
-                </span>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-lg font-extrabold text-boon-navy mb-2 leading-tight group-hover:text-boon-blue transition-colors">
-                {scenario.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-boon-charcoal/55 text-sm leading-relaxed mb-4 line-clamp-2">
-                {scenario.description}
-              </p>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5">
-                {scenario.tags.slice(0, 3).map(tag => (
-                  <span key={tag} className="text-[10px] font-bold text-boon-blue bg-boon-lightBlue/50 px-2 py-0.5 rounded-md">
-                    #{tag}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredScenarios.map(scenario => {
+          const diffBadge = DIFFICULTY_BADGE[scenario.difficulty.toLowerCase()] || 'neutral';
+          return (
+            <button
+              key={scenario.id}
+              onClick={() => setSelectedScenario(scenario)}
+              className="group relative bg-white rounded-card border border-boon-charcoal/[0.08] hover:border-boon-blue/30 hover:shadow-sm transition-all text-left overflow-hidden"
+            >
+              <span
+                aria-hidden
+                className={`absolute left-0 top-0 bottom-0 w-[3px] ${CATEGORY_ACCENT[scenario.category]}`}
+              />
+              <div className="p-5 pl-6">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/55">
+                    {CATEGORY_INFO[scenario.category].label}
                   </span>
-                ))}
-              </div>
-            </div>
+                  <Badge variant={diffBadge}>{scenario.difficulty}</Badge>
+                </div>
 
-            {/* Arrow indicator */}
-            <div className="absolute bottom-4 right-4 w-8 h-8 rounded-pill bg-boon-offWhite flex items-center justify-center text-gray-300 group-hover:bg-boon-blue group-hover:text-white transition-all">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        ))}
+                <h3 className="font-display font-bold text-boon-navy text-[17px] leading-tight tracking-[-0.015em] mb-2 group-hover:text-boon-blue transition-colors">
+                  {scenario.title}
+                </h3>
+
+                <p className="text-boon-charcoal/65 text-sm leading-relaxed line-clamp-2 mb-4">
+                  {scenario.description}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {scenario.tags.slice(0, 3).map(tag => (
+                    <span
+                      key={tag}
+                      className="text-[11px] font-semibold text-boon-charcoal/65 bg-boon-offWhite px-2 py-0.5 rounded-pill"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {filteredScenarios.length === 0 && (
