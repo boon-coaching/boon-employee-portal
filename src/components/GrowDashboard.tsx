@@ -368,17 +368,17 @@ export default function GrowDashboard({
         {/* ── Right column: Session, Coach, Reflection, Practice ── */}
         <div className="lg:col-span-2 space-y-8">
           {/* Next Session */}
-          <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
+          <section className="bg-white rounded-card border border-boon-charcoal/[0.08] p-6">
             {hasUpcomingSession ? (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-pill bg-boon-blue/10 flex items-center justify-center text-boon-blue">
+                      <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                    </div>
-                    <span className="font-semibold text-slate-900">Next Session</span>
+                    </span>
+                    <Eyebrow color="charcoal">Next session</Eyebrow>
                   </div>
                   {upcomingSession?.zoom_join_link && (() => {
                     const sessionTime = new Date(upcomingSession.session_date).getTime();
@@ -388,73 +388,77 @@ export default function GrowDashboard({
                         href={upcomingSession.zoom_join_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
+                        className="px-3.5 py-1.5 bg-boon-success text-white text-[11px] font-bold uppercase tracking-[0.08em] rounded-pill hover:opacity-90 transition-opacity"
                       >
                         Join
                       </a>
                     ) : null;
                   })()}
                 </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm font-medium text-slate-700">
-                    {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} with {coachFirstName}
-                  </p>
-                </div>
+                <p className="font-display font-bold text-[22px] leading-[1.15] tracking-[-0.02em] text-boon-navy">
+                  {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                </p>
+                <p className="mt-1.5 text-sm text-boon-charcoal/60">
+                  {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} with {coachFirstName}
+                </p>
               </>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-pill bg-boon-blue/10 flex items-center justify-center text-boon-blue">
+                      <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                    </div>
-                    <span className="font-semibold text-slate-900">Next Session</span>
+                    </span>
+                    <Eyebrow color="charcoal">Next session</Eyebrow>
                   </div>
                   {profile?.booking_link && (
                     <a
                       href={profile.booking_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
+                      className="px-3.5 py-1.5 bg-boon-blue text-white text-[11px] font-bold uppercase tracking-[0.08em] rounded-pill hover:bg-boon-darkBlue transition-colors"
                     >
                       Book
                     </a>
                   )}
                 </div>
-                <div className="p-4 bg-slate-50 rounded-xl text-center">
-                  <p className="text-sm text-slate-500 font-medium">No upcoming session</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {daysSinceLastSession > 21
-                      ? `${daysSinceLastSession} days since last session`
-                      : `Schedule your next 1:1 with ${coachFirstName}`}
-                  </p>
-                </div>
+                <p className="font-display font-bold text-[22px] leading-[1.15] tracking-[-0.02em] text-boon-navy">
+                  Not yet scheduled.
+                </p>
+                <p className="mt-1.5 text-sm text-boon-charcoal/60">
+                  {daysSinceLastSession > 21
+                    ? `${daysSinceLastSession} days since your last session.`
+                    : `Book your next 1:1 with ${coachFirstName}.`}
+                </p>
               </>
             )}
           </section>
 
           {/* Coach */}
-          <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {getCoachPhotoUrl() ? (
-                  <img src={getCoachPhotoUrl()!} alt={coachName} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center border-2 border-white shadow-sm">
-                    <span className="text-blue-600 text-sm font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
-                  </div>
-                )}
-                <div>
-                  <h4 className="font-bold text-slate-900">{coachName}</h4>
-                  <p className="text-xs text-slate-500">{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</p>
+          <section className="bg-white rounded-card border border-boon-charcoal/[0.08] p-6">
+            <Eyebrow color="muted" className="mb-4">Your coach</Eyebrow>
+            <div className="flex items-center gap-4">
+              {getCoachPhotoUrl() ? (
+                <img src={getCoachPhotoUrl()!} alt={coachName} className="w-14 h-14 rounded-pill object-cover" />
+              ) : (
+                <div className="w-14 h-14 rounded-pill bg-boon-blue/10 flex items-center justify-center">
+                  <span className="text-boon-blue text-sm font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
                 </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-display font-bold text-boon-navy text-[17px] leading-tight tracking-[-0.01em]">{coachName}</h4>
+                <p className="text-xs text-boon-charcoal/55 mt-0.5">
+                  {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together
+                </p>
               </div>
-              <a href="/coach" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">Profile</a>
+              <a
+                href="/coach"
+                className="text-[11px] font-bold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors px-3 py-1.5 rounded-pill border border-boon-blue/20 hover:border-boon-blue/40"
+              >
+                Profile
+              </a>
             </div>
           </section>
 
