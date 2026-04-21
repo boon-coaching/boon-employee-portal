@@ -83,7 +83,7 @@ export default function JournalPage() {
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Reflections</p>
         </div>
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
-          <p className="text-2xl font-black text-indigo-600">{weeksWithEntries}</p>
+          <p className="text-2xl font-black text-boon-blue">{weeksWithEntries}</p>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Weeks Active</p>
         </div>
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
@@ -133,8 +133,8 @@ export default function JournalPage() {
       {/* Empty state */}
       {entries.length === 0 && (
         <section className="bg-white rounded-[2rem] p-8 md:p-10 border border-gray-100 shadow-sm text-center">
-          <div className="w-14 h-14 mx-auto mb-4 bg-indigo-100 rounded-2xl flex items-center justify-center">
-            <svg className="w-7 h-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-14 h-14 mx-auto mb-4 bg-boon-lightBlue rounded-2xl flex items-center justify-center">
+            <svg className="w-7 h-7 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </div>

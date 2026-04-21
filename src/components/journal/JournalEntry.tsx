@@ -39,7 +39,7 @@ export function JournalEntry({ entry }: JournalEntryProps) {
         </span>
         <div className="flex items-center gap-2">
           {entry.competency_area && (
-            <span className="text-xs bg-indigo-50 text-indigo-600 font-medium rounded-full px-2.5 py-0.5">
+            <span className="text-xs bg-boon-lightBlue text-boon-blue font-medium rounded-full px-2.5 py-0.5">
               {entry.competency_area}
             </span>
           )}
@@ -66,7 +66,7 @@ export function JournalEntry({ entry }: JournalEntryProps) {
         <button
           onClick={handleToggleShare}
           disabled={sharing}
-          className="text-xs text-gray-400 hover:text-indigo-600 transition-colors disabled:opacity-50"
+          className="text-xs text-gray-400 hover:text-boon-blue transition-colors disabled:opacity-50"
         >
           {sharing
             ? 'Updating...'
