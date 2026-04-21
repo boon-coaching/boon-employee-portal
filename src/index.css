@@ -1,3 +1,15 @@
+/*
+ * Boon design system tokens
+ *
+ * Source of truth lives at github.com/boon-coaching/boon-design-system.
+ * These imports pull the CSS variables (colors, spacing, radii, shadows)
+ * into the portal so Tailwind utilities and inline styles reference the
+ * canonical Boon values. Fonts are loaded separately via index.html
+ * (Google Fonts), not via the design-system self-hosted typography.css.
+ */
+@import '@boon/design-system/tokens/colors.css';
+@import '@boon/design-system/tokens/spacing.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
