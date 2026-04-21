@@ -1,14 +1,17 @@
 /*
  * Boon design system tokens
  *
- * Source of truth lives at github.com/boon-coaching/boon-design-system.
- * These imports pull the CSS variables (colors, spacing, radii, shadows)
- * into the portal so Tailwind utilities and inline styles reference the
- * canonical Boon values. Fonts are loaded separately via index.html
- * (Google Fonts), not via the design-system self-hosted typography.css.
+ * Canonical source: github.com/boon-coaching/boon-design-system.
+ * These files are mirrored into the portal because Vercel builds this
+ * repo in isolation and cannot resolve the sibling design-system
+ * directory. When the design system is published as an npm package,
+ * swap these imports for '@boon/design-system/tokens/colors.css' etc.
+ *
+ * If you edit these files directly, also PR the change upstream so
+ * the canonical source stays in sync.
  */
-@import '@boon/design-system/tokens/colors.css';
-@import '@boon/design-system/tokens/spacing.css';
+@import './styles/tokens/colors.css';
+@import './styles/tokens/spacing.css';
 
 @tailwind base;
 @tailwind components;
