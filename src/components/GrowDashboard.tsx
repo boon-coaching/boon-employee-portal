@@ -1,10 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { Employee, Session, ActionItem, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
 
 const devLog = (...args: unknown[]) => {
   if (import.meta.env.DEV) console.log(...args);
 };
+
+// Local Eyebrow helper for editorial section labels.
+// Swap for @boon/design-system's Eyebrow once the package ships.
+type EyebrowColor = 'blue' | 'coral' | 'muted' | 'charcoal';
+const EYEBROW_COLORS: Record<EyebrowColor, string> = {
+  blue: 'text-boon-blue',
+  coral: 'text-boon-coral',
+  muted: 'text-boon-charcoal/55',
+  charcoal: 'text-boon-charcoal',
+};
+function Eyebrow({
+  color = 'charcoal',
+  className = '',
+  children,
+}: {
+  color?: EyebrowColor;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`text-[11px] font-extrabold uppercase tracking-[0.18em] ${EYEBROW_COLORS[color]} ${className}`}>
+      {children}
+    </div>
+  );
+}
 import type { CoachingStateData } from '../lib/coachingState';
 import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
 import { PracticePrompt } from './PracticePrompt';
@@ -254,22 +279,25 @@ export default function GrowDashboard({
             <CompetencyProgressCard focusAreas={focusAreas} />
           ) : null}
 
-          {/* Where We Left Off — goal + action items */}
+          {/* Where We Left Off — warm editorial beige card, per handoff.
+              Intentionally stays warm (not navy-ified) to keep the
+              journal/reflection feel separate from the navy authority
+              surfaces used for focus + practice. */}
           {completedSessions.length > 0 && (
-            <section className="bg-[#FFF9F0] rounded-2xl shadow-xl shadow-slate-200/50 p-8">
-              <div className="flex items-center gap-2 text-amber-600 mb-6">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <section className="rounded-card p-8 border border-[#F5E3C8] bg-[#FFF7EE]">
+              <div className="flex items-center gap-2.5 mb-5">
+                <span className="w-7 h-7 rounded-pill bg-boon-warning/12 flex items-center justify-center text-boon-warning">
+                  <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest">Where we left off</span>
+                </span>
+                <Eyebrow color="coral">Where we left off</Eyebrow>
               </div>
 
               {lastSession?.goals && (
                 <div className="mb-6">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Goal</span>
-                  <h2 className="text-2xl font-bold text-slate-900 mt-2 leading-tight">
+                  <Eyebrow color="muted" className="mb-2.5">Current goal</Eyebrow>
+                  <h2 className="font-display font-bold text-[26px] leading-[1.15] tracking-[-0.02em] text-boon-navy">
                     {lastSession.goals}
                   </h2>
                 </div>
@@ -277,56 +305,59 @@ export default function GrowDashboard({
 
               {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Action Items</span>
-                  <div className="space-y-3 mt-4">
+                  <div className="flex items-center justify-between">
+                    <Eyebrow color="muted">Action items</Eyebrow>
+                    <span className="text-xs font-semibold text-boon-charcoal/60">
+                      {recentlyCompletedActions.length} of {pendingActions.length + recentlyCompletedActions.length} done
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-col gap-2.5">
                     {pendingActions.map((action) => {
                       const isUpdating = updatingActionId === action.id;
                       return (
-                        <div
+                        <button
                           key={action.id}
-                          className={`flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all ${isUpdating ? 'opacity-50' : ''}`}
+                          onClick={() => handleCompleteAction(action.id)}
+                          disabled={isUpdating}
+                          className={`flex items-start gap-3.5 p-4 rounded-btn bg-white border border-boon-charcoal/[0.08] hover:border-boon-blue/40 hover:shadow-sm transition-all text-left group ${isUpdating ? 'opacity-50' : ''}`}
+                          title="Mark as complete"
                         >
-                          <button
-                            onClick={() => handleCompleteAction(action.id)}
-                            disabled={isUpdating}
-                            className="mt-1 w-5 h-5 rounded-full border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex-shrink-0 flex items-center justify-center group"
-                            title="Mark as complete"
-                          >
-                            <svg className="w-2.5 h-2.5 text-transparent group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          <span className="w-5 h-5 rounded-md border-[1.5px] border-boon-charcoal/30 group-hover:border-boon-blue group-hover:bg-boon-blue/5 transition-all flex-shrink-0 mt-0.5 flex items-center justify-center">
+                            <svg className="w-3 h-3 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
-                          </button>
-                          <div className="flex-1">
-                            <p className="text-sm text-slate-700 leading-relaxed">{action.action_text}</p>
-                            <span className="text-[10px] text-slate-400 mt-2 block">
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-boon-charcoal leading-relaxed">{action.action_text}</p>
+                            <p className="mt-1.5 text-[11px] text-boon-charcoal/50">
                               From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
+                            </p>
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                     {recentlyCompletedActions.map((action) => (
                       <div
                         key={action.id}
-                        className="flex items-start gap-4 p-4 bg-green-50/50 rounded-xl border border-green-200/30"
+                        className="flex items-start gap-3.5 p-4 rounded-btn bg-white/50 border border-boon-charcoal/[0.06]"
                       >
-                        <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        <span className="w-5 h-5 rounded-md bg-boon-blue flex-shrink-0 mt-0.5 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-slate-400 leading-relaxed line-through">{action.action_text}</p>
-                          <span className="text-[10px] text-green-600 mt-2 block">
-                            Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
-                          </span>
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-boon-charcoal/50 leading-relaxed line-through">{action.action_text}</p>
+                          <p className="mt-1.5 text-[11px] text-boon-charcoal/50">
+                            Done {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : !lastSession?.goals && (
-                <p className="text-slate-500 text-sm italic">
+                <p className="text-sm italic text-boon-charcoal/60">
                   Your goals and action items from coaching sessions will appear here.
                 </p>
               )}
