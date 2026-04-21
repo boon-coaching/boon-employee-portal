@@ -328,38 +328,50 @@ export default function ActiveGrowHome({
 
       {/* GoalHomeCard removed: action items were duplicated */}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          CURRENT FOCUS - THE HEADLINE (moved to top)
-          Uses Georgia (serif) + amber accents for journal feel
-          ═══════════════════════════════════════════════════════════════════ */}
+      {/* Current Focus — navy authority surface with coral kicker.
+          Replaces the amber/Georgia journal styling with the Boon
+          Product-mode focus-card treatment from the Home prototype. */}
       {focusAreas.length > 0 && (
-        <section className="bg-gradient-to-br from-boon-amberLight/50 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
+        <section className="relative overflow-hidden rounded-card bg-boon-navy text-white p-8 md:p-11">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -bottom-40 -right-32 h-80 w-80 rounded-full"
+            style={{ background: 'radial-gradient(circle, rgba(255, 109, 106, 0.22) 0%, transparent 65%)' }}
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-4 right-4 h-10 w-10"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.22) 1px, transparent 1.2px)',
+              backgroundSize: '6px 6px',
+            }}
+          />
+          <div className="relative">
+            <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-boon-coral mb-6">
+              Your current focus
             </div>
-            <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Current Focus</h2>
-          </div>
-          <div className="space-y-4">
-            {focusAreas.map((area, i) => (
-              <div
-                key={i}
-                className="group"
-              >
-                <h3 style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-xl text-boon-text leading-relaxed">{area!.label}</h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-boon-amber font-medium">
-                    {area!.count} {area!.count === 1 ? 'session' : 'sessions'}
-                  </span>
-                  <span className="text-gray-300">·</span>
-                  <span className="text-xs text-gray-400">
-                    since {new Date(area!.firstDiscussed).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                  </span>
+            <div className="space-y-7">
+              {focusAreas.map((area, i) => (
+                <div
+                  key={i}
+                  className={i > 0 ? 'pt-7 border-t border-white/10' : ''}
+                >
+                  <h3 className="font-display font-bold text-2xl md:text-[28px] leading-[1.2] tracking-[-0.015em] max-w-xl">
+                    {area!.label}
+                  </h3>
+                  <div className="mt-3 flex items-center gap-3 text-[11px] uppercase tracking-[0.06em]">
+                    <span className="w-4 h-px bg-boon-coral" aria-hidden />
+                    <span className="text-boon-coral font-semibold">
+                      {area!.count} {area!.count === 1 ? 'session' : 'sessions'}
+                    </span>
+                    <span className="text-white/30">·</span>
+                    <span className="text-white/55">
+                      since {new Date(area!.firstDiscussed).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
       )}
