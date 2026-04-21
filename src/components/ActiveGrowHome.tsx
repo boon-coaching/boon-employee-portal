@@ -246,33 +246,77 @@ export default function ActiveGrowHome({
     return { label: theme.label, firstDiscussed, count: sessionsWithTheme.length };
   }).filter(Boolean);
 
+  // Hero title + kicker computed from program progress.
+  // Keeps copy editorial and specific to the user's actual stage rather
+  // than a generic "Hi {name}" greeting.
+  const completedCount = coachingState.completedSessionCount;
+  const totalExpected = coachingState.totalExpectedSessions;
+  const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const countAsWord = completedCount >= 0 && completedCount < numberWord.length
+    ? numberWord[completedCount]
+    : String(completedCount);
+
+  let heroTitle: string;
+  let heroKicker: string;
+  if (completedCount === 0) {
+    heroTitle = 'Before the first.';
+    heroKicker = 'Where you begin.';
+  } else if (totalExpected && completedCount >= totalExpected - 2) {
+    heroTitle = 'The home stretch.';
+    heroKicker = `${countAsWord.charAt(0).toUpperCase()}${countAsWord.slice(1)} in.`;
+  } else if (totalExpected && completedCount >= Math.ceil(totalExpected / 2)) {
+    heroTitle = `Session ${countAsWord}.`;
+    heroKicker = 'The middle stretch.';
+  } else {
+    heroTitle = `Session ${countAsWord}.`;
+    heroKicker = 'Still building.';
+  }
+
+  const heroMetaLabel = totalExpected
+    ? `${completedCount} of ${totalExpected} with ${coachFirstName}`
+    : `with ${coachFirstName}`;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 md:space-y-10 animate-fade-in">
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-2">
-        <div className="text-center sm:text-left">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
-            Hi {profile?.first_name || 'there'}
-          </h1>
-          <p className="text-gray-500 mt-2 text-lg font-medium">
-            This is your personal coaching space.
-          </p>
+    <div className="max-w-3xl mx-auto animate-fade-in">
+      {/* Hero header */}
+      <header className="pb-10 mb-10 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-7">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+            Your progress
+          </span>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/50">
+            · {heroMetaLabel}
+          </span>
         </div>
+        <h1 className="font-display font-bold text-boon-navy text-[52px] md:text-[74px] leading-[0.98] tracking-[-0.03em]">
+          {heroTitle}
+          <span className="block font-serif italic font-normal text-boon-blue mt-1">
+            {heroKicker}
+          </span>
+        </h1>
         {profile?.booking_link && (
-          <a
-            href={profile.booking_link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-2xl transition-all active:scale-95 ${
-              hasUpcomingSession
-                ? 'text-boon-blue border-2 border-boon-blue/30 hover:border-boon-blue hover:bg-boon-blue/5'
-                : 'text-white bg-boon-blue hover:bg-boon-darkBlue shadow-lg shadow-boon-blue/20'
-            }`}
-          >
-            Book a session
-          </a>
+          <div className="mt-8">
+            <a
+              href={profile.booking_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-2.5 px-5 py-3 text-[13px] font-display font-medium rounded-btn transition-colors ${
+                hasUpcomingSession
+                  ? 'bg-white text-boon-coral border-[1.5px] border-boon-coral hover:bg-boon-coral hover:text-white'
+                  : 'bg-boon-coral text-white hover:bg-boon-coralLight'
+              }`}
+            >
+              {hasUpcomingSession ? 'Book another' : 'Open calendar'}
+              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+          </div>
         )}
       </header>
+
+      <div className="space-y-8 md:space-y-10">
 
       {/* Session Milestone Celebration */}
       <MilestoneCelebration
@@ -726,6 +770,7 @@ export default function ActiveGrowHome({
 
       {/* Practice Prompt */}
       <PracticePrompt />
+      </div>
     </div>
   );
 }
