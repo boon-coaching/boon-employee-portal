@@ -124,38 +124,75 @@ export default function GrowDashboard({
   const hasUpcomingSession = !!upcomingSession;
   const [prepExpanded, setPrepExpanded] = useState(false);
 
+  // Editorial hero title + kicker computed from program progress.
+  const completedCount = coachingState.completedSessionCount || 0;
+  const totalExpected = programInfo?.sessions_per_employee || 12;
+  const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const countAsWord = completedCount >= 0 && completedCount < numberWord.length
+    ? numberWord[completedCount]
+    : String(completedCount);
+
+  let heroTitle: string;
+  let heroKicker: string;
+  if (completedCount === 0) {
+    heroTitle = 'Before the first.';
+    heroKicker = 'Where you begin.';
+  } else if (completedCount >= totalExpected - 2) {
+    heroTitle = 'The home stretch.';
+    heroKicker = `${countAsWord.charAt(0).toUpperCase()}${countAsWord.slice(1)} in.`;
+  } else if (completedCount >= Math.ceil(totalExpected / 2)) {
+    heroTitle = `Session ${countAsWord}.`;
+    heroKicker = 'The middle stretch.';
+  } else {
+    heroTitle = `Session ${countAsWord}.`;
+    heroKicker = 'Still building.';
+  }
+
+  const progressPct = Math.min((completedCount / totalExpected) * 100, 100);
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
-      {/* Header */}
-      <header className="pt-2">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">
-              Hi {profile?.first_name || 'there'}
-            </h1>
-            <p className="text-slate-500 mt-1">Ready for your next growth milestone?</p>
-          </div>
-          <div className="text-right flex-shrink-0">
-            <span className="inline-block bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
-              Session {coachingState.completedSessionCount || 0} of {programInfo?.sessions_per_employee || 12}
-            </span>
-            <div className="w-48 h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all"
-                style={{ width: `${Math.min(((coachingState.completedSessionCount || 0) / (programInfo?.sessions_per_employee || 12)) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
+    <div className="max-w-6xl mx-auto animate-fade-in">
+      {/* Editorial hero */}
+      <header className="pb-10 mb-10 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-7">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+            Your progress
+          </span>
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/50">
+            · {completedCount} of {totalExpected} with {coachFirstName}
+          </span>
         </div>
-        <div className="mt-6">
-          <MilestoneCelebration
-            completedSessionCount={completedSessions.length}
-            programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
-            totalExpected={12}
-            userEmail={userEmail}
-          />
+        <h1 className="font-display font-bold text-boon-navy text-[52px] md:text-[74px] leading-[0.98] tracking-[-0.03em]">
+          {heroTitle}
+          <span className="block font-serif italic font-normal text-boon-blue mt-1">
+            {heroKicker}
+          </span>
+        </h1>
+        {/* Slim progress bar with Boon tokens */}
+        <div className="mt-8 flex items-center gap-4">
+          <div className="flex-1 max-w-sm h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+            <div
+              className="h-full bg-boon-blue rounded-pill transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-boon-charcoal/60">
+            {Math.round(progressPct)}% complete
+          </span>
         </div>
       </header>
+
+      <div className="mb-10">
+        <MilestoneCelebration
+          completedSessionCount={completedSessions.length}
+          programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
+          totalExpected={totalExpected}
+          userEmail={userEmail}
+        />
+      </div>
+
+      <div className="space-y-6 md:space-y-8">
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
@@ -396,6 +433,7 @@ export default function GrowDashboard({
           {/* Recommended Practice */}
           <PracticePrompt />
         </div>
+      </div>
       </div>
     </div>
   );
