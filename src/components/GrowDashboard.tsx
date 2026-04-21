@@ -213,13 +213,10 @@ export default function GrowDashboard({
           <Eyebrow color="blue">Your progress</Eyebrow>
           <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
         </div>
-        <Headline
-          as="h1"
-          size="xl"
-          statement={heroStatement}
-          kicker={heroKicker}
-          kickerColor="blue"
-        />
+        <Headline as="h1" size="xl">
+          {heroStatement}
+          <Headline.Kicker block color="blue">{heroKicker}</Headline.Kicker>
+        </Headline>
         <div className="mt-8 flex items-center gap-4">
           <div className="flex-1 max-w-sm h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
             <div
@@ -244,16 +241,14 @@ export default function GrowDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6 mb-8">
         <Card variant="navy" glow="blue" dots padding="lg">
           <Eyebrow color="coral-light">{nextSessionEyebrow}</Eyebrow>
-          <div className="mt-4">
-            <Headline
-              as="h2"
-              size="md"
-              statement={nextSessionStatement}
-              kicker={nextSessionKicker}
-              kickerColor="coral-light"
-              style={{ color: '#fff' }}
-            />
-          </div>
+          <h2
+            className="mt-4 font-display font-bold text-white text-[28px] md:text-[32px] leading-[1.15] tracking-[-0.02em]"
+          >
+            {nextSessionStatement}{' '}
+            <span className="font-serif italic font-normal text-boon-coralLight">
+              {nextSessionKicker}
+            </span>
+          </h2>
           <div className="mt-7 flex items-center gap-4">
             <Avatar name={coachName} src={coachPhotoUrl} size="lg" />
             <div>
