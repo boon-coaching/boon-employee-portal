@@ -3,7 +3,7 @@ PARTNER CENTER — NOTES FOR CERTIFICATION (paste-ready)
 ================================================================
 Boon Coaching — Microsoft Teams Bot
 Resubmission for Ticket #5330350
-Manifest version 1.0.5
+Manifest version 1.0.7
 
 Use this as the body of the "Notes for certification" field in
 Partner Center > Product overview > Review and publish > Additional
@@ -13,8 +13,31 @@ Test credentials are also provided in the box below; do NOT email
 them per validator request.
 
 ================================================================
-RESUBMISSION SUMMARY — HOW EACH ISSUE WAS ADDRESSED
+RESUBMISSION SUMMARY — HOW EACH ISSUE WAS ADDRESSED (v1.0.7)
 ================================================================
+
+v1.0.7 delta vs v1.0.6:
+- Fixes Test Blocker #6 (continuous loading screen on Connect
+  Microsoft Teams). Root cause: the OAuth callback was serializing
+  the employee_teams_connections save behind a best-effort Bot
+  Framework "create proactive 1:1 conversation" call. On tenants
+  where the bot app is not yet installed on the user's personal
+  scope, that Bot Framework call could stall long enough for the
+  function to redirect before the connection row was persisted,
+  leaving the portal in a not-connected state.
+- Fix: the employee_teams_connections row is now upserted
+  immediately after the Microsoft Graph profile lookup, with an
+  empty conversation_id. The proactive conversation creation is
+  then attempted with a 7-second timeout; on success the row is
+  updated with the conversation_id. On timeout or failure, the
+  conversationUpdate handler backfills conversation_id + service
+  URL as soon as the bot is added to the user's personal chat
+  (using activity.channelData.tenant.id + activity.from.aadObjectId
+  / membersAdded[].aadObjectId as the match keys).
+- UX: the portal Settings page now shows a visible success or
+  error toast after the OAuth redirect and retries the connection
+  status up to 3 times on a brief read-replica lag, so the
+  "Connected via Microsoft Teams" badge appears deterministically.
 
 1. End-to-end test path missing: this notes block now provides a
    numbered Path A and Path B walkthrough. Path A uses the

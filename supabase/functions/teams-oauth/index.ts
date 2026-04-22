@@ -148,33 +148,17 @@ Deno.serve(async (req) => {
         return redirectToPortal('error=save_failed');
       }
 
-      // Try to create proactive 1:1 conversation
-      // This may fail if the user hasn't installed the Teams app yet
-      let conversationId: string | null = null;
-      try {
-        conversationId = await createProactiveConversation(
-          botToken.token,
-          serviceUrl,
-          userProfile.tenantId,
-          userProfile.id,
-          botId
-        );
-      } catch (e) {
-        console.warn('Proactive conversation creation failed (will retry on first nudge):', e);
-      }
-
-      if (!conversationId) {
-        console.warn('Could not create proactive conversation yet. Connection will be saved without it.');
-      }
-
-      // Save employee Teams connection (conversation_id may be null, will be populated on first nudge)
+      // Save employee Teams connection FIRST so the portal reflects "connected"
+      // as soon as the user lands back. conversation_id may be empty here; it
+      // gets backfilled below (if proactive create succeeds) or by the
+      // conversationUpdate handler when the bot is installed.
       const { error: connectionError } = await supabase
         .from('employee_teams_connections')
         .upsert({
           employee_email: employeeEmail,
           tenant_id: userProfile.tenantId,
           teams_user_id: userProfile.id,
-          conversation_id: conversationId || '',
+          conversation_id: '',
           service_url: serviceUrl,
           nudge_enabled: true,
           nudge_frequency: 'smart',
@@ -192,6 +176,39 @@ Deno.serve(async (req) => {
         .from('employee_slack_connections')
         .delete()
         .ilike('employee_email', employeeEmail);
+
+      // Best-effort proactive conversation creation. Bounded by timeout so a
+      // hung Bot Framework call can never block the redirect. If the bot app
+      // is not yet installed on the user's personal scope, this returns null
+      // and the conversation_id gets filled in on conversationUpdate.
+      let conversationId: string | null = null;
+      try {
+        conversationId = await Promise.race([
+          createProactiveConversation(
+            botToken.token,
+            serviceUrl,
+            userProfile.tenantId,
+            userProfile.id,
+            botId
+          ),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+        ]);
+      } catch (e) {
+        console.warn('Proactive conversation creation failed (will backfill on install):', e);
+      }
+
+      if (conversationId) {
+        const { error: convUpdateError } = await supabase
+          .from('employee_teams_connections')
+          .update({ conversation_id: conversationId })
+          .eq('employee_email', employeeEmail)
+          .eq('tenant_id', userProfile.tenantId);
+        if (convUpdateError) {
+          console.error('Failed to backfill conversation_id:', convUpdateError);
+        }
+      } else {
+        console.log('Proactive conversation not created yet; will backfill on bot install.');
+      }
 
       // Success! Redirect back to portal
       return redirectToPortal('teams_connected=true');

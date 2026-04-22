@@ -28,9 +28,15 @@ Deno.serve(async (req) => {
 
     if (activity.type === 'conversationUpdate') {
       const botId = Deno.env.get('TEAMS_BOT_ID') || '4a2f6756-70f8-4802-ba89-eefe3a0aa790';
+      // Bot Framework sends member IDs with a "28:" prefix
       const botWasAdded = activity.membersAdded?.some(
-        (member: { id: string }) => member.id === botId
+        (member: { id: string }) =>
+          member.id === botId ||
+          member.id === `28:${botId}` ||
+          member.id.endsWith(botId)
       );
+
+      console.log('[conversationUpdate] membersAdded:', JSON.stringify(activity.membersAdded), 'botId:', botId, 'botWasAdded:', botWasAdded);
 
       if (botWasAdded) {
         try {
@@ -38,17 +44,57 @@ Deno.serve(async (req) => {
           const clientSecret = Deno.env.get('TEAMS_CLIENT_SECRET')!;
           const tenantId = Deno.env.get('TEAMS_APP_TENANT_ID')!;
 
+          console.log('[welcome] Acquiring bot token for tenant:', tenantId);
           const tokenResult = await getBotAccessToken(clientId, clientSecret, tenantId);
           if (tokenResult) {
             const serviceUrl = activity.serviceUrl;
             const conversationId = activity.conversation?.id;
 
+            console.log('[welcome] Sending welcome card to:', conversationId);
             if (serviceUrl && conversationId) {
-              await sendTeamsMessage(tokenResult.token, serviceUrl, conversationId, buildWelcomeCard());
+              const result = await sendTeamsMessage(tokenResult.token, serviceUrl, conversationId, buildWelcomeCard());
+              console.log('[welcome] Send result:', JSON.stringify(result));
             }
+
+            // Backfill conversation_id on the matching employee_teams_connections row,
+            // if one exists. This handles the case where the user completes OAuth
+            // before (or after) installing the bot on their personal scope.
+            const activityTenantId: string | undefined = activity.channelData?.tenant?.id;
+            const aadUserId: string | undefined =
+              activity.from?.aadObjectId ||
+              activity.membersAdded?.find((m: { id?: string; aadObjectId?: string }) => m.aadObjectId)?.aadObjectId;
+
+            if (serviceUrl && conversationId && activityTenantId && aadUserId) {
+              try {
+                const supabase = getSupabaseClient();
+                const { error: backfillError, data: updated } = await supabase
+                  .from('employee_teams_connections')
+                  .update({
+                    conversation_id: conversationId,
+                    service_url: serviceUrl,
+                  })
+                  .eq('tenant_id', activityTenantId)
+                  .eq('teams_user_id', aadUserId)
+                  .select('id');
+                if (backfillError) {
+                  console.error('[welcome] conversation_id backfill failed:', backfillError);
+                } else {
+                  console.log('[welcome] conversation_id backfilled for rows:', updated?.length ?? 0);
+                }
+              } catch (err) {
+                console.error('[welcome] backfill threw:', err);
+              }
+            } else {
+              console.log('[welcome] Skipping backfill — missing tenant or aadObjectId', {
+                hasTenant: !!activityTenantId,
+                hasAadUserId: !!aadUserId,
+              });
+            }
+          } else {
+            console.error('[welcome] Failed to acquire bot token');
           }
         } catch (err) {
-          console.error('Failed to send welcome message:', err);
+          console.error('[welcome] Failed to send welcome message:', err);
         }
       }
 
@@ -62,12 +108,15 @@ Deno.serve(async (req) => {
     // Required by Teams Store policy #1140.4.3.3: bot must respond to
     // commands like Hi, Hello, Help with valid responses.
     if (activity.type === 'message' && activity.text && !activity.value) {
+      console.log('[message] Received text:', activity.text, 'from conversation:', activity.conversation?.id);
       try {
         const clientId = Deno.env.get('TEAMS_CLIENT_ID')!;
         const clientSecret = Deno.env.get('TEAMS_CLIENT_SECRET')!;
         const tenantId = Deno.env.get('TEAMS_APP_TENANT_ID')!;
         const serviceUrl = activity.serviceUrl;
         const conversationId = activity.conversation?.id;
+
+        console.log('[message] serviceUrl:', serviceUrl, 'hasClientId:', !!clientId, 'hasTenantId:', !!tenantId);
 
         if (serviceUrl && conversationId) {
           const tokenResult = await getBotAccessToken(clientId, clientSecret, tenantId);
@@ -76,11 +125,17 @@ Deno.serve(async (req) => {
             const greetings = ['hi', 'hello', 'hey', 'help', 'menu', 'start', 'get started'];
             const isGreeting = greetings.some((g) => text === g || text.startsWith(g + ' ') || text.endsWith(' ' + g));
             const card = isGreeting ? buildWelcomeCard() : buildFallbackCard();
-            await sendTeamsMessage(tokenResult.token, serviceUrl, conversationId, card);
+            console.log('[message] Sending', isGreeting ? 'welcome' : 'fallback', 'card');
+            const result = await sendTeamsMessage(tokenResult.token, serviceUrl, conversationId, card);
+            console.log('[message] Send result:', JSON.stringify(result));
+          } else {
+            console.error('[message] Failed to acquire bot token');
           }
+        } else {
+          console.error('[message] Missing serviceUrl or conversationId');
         }
       } catch (err) {
-        console.error('Failed to respond to text message:', err);
+        console.error('[message] Failed to respond to text message:', err);
       }
 
       return new Response(JSON.stringify({ status: 'ok' }), {

@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
   "manifestVersion": "1.17",
-  "version": "1.0.4",
+  "version": "1.0.7",
   "id": "172643ea-a3e4-4797-905b-70f187f71a52",
   "developer": {
     "name": "Boon Coaching",
@@ -15,8 +15,8 @@
     "full": "Boon Coaching Nudges"
   },
   "description": {
-    "short": "Coaching nudges and action reminders from Boon",
-    "full": "Receive coaching nudges, action item reminders, goal check-ins, and session prep notifications directly in Microsoft Teams from your Boon coaching program.\n\nIn order to use this app, you need to have an active Boon Coaching account. Please visit https://www.boon-health.com/contact or contact support@boon-health.com for more details.\n\nSign up: https://www.boon-health.com\nGet started: https://www.boon-health.com/teams-support\nContact us: support@boon-health.com\nHelp: https://www.boon-health.com/teams-support"
+    "short": "Coaching nudges and action reminders from Boon Coaching",
+    "full": "Boon Coaching delivers leadership coaching at scale for enterprise teams. The Boon Coaching bot for Microsoft Teams keeps employees engaged between live coaching sessions by sending timely nudges, action item reminders, goal check-ins, and session prep notifications directly in personal chat.\n\n**Key features inside Teams:**\n- Action Reminders: tap Done to complete coaching action items without leaving Teams\n- Goal Check-ins: regular progress updates on your development goals\n- Session Prep: get ready for upcoming coaching sessions with your coach\n- Welcome card with quick-access buttons to the Boon portal, help, and support\n\n**Target audience:** Employees enrolled in a Boon Coaching program (Scale, Grow, Exec, or Together) whose organization has an active Boon Coaching subscription.\n\n**Account dependency:** You need an active Boon Coaching account to use this app. The bot delivers notifications for your coaching program; it does not provide standalone functionality outside of an active subscription.\n\n**Limitations:** This bot sends coaching nudges and captures responses via Adaptive Cards. It does not replace live coaching sessions, schedule appointments, or provide AI-generated coaching advice. All coaching content originates from your assigned Boon coach and your program configuration.\n\n[Sign up](https://www.boon-health.com) | [Get started](https://www.boon-health.com/teams-support) | [Contact us](https://www.boon-health.com/contact) | [Help](https://www.boon-health.com/teams-support)"
   },
   "icons": {
     "color": "color.png",
@@ -28,7 +28,22 @@
       "botId": "4a2f6756-70f8-4802-ba89-eefe3a0aa790",
       "scopes": ["personal"],
       "supportsFiles": false,
-      "isNotificationOnly": false
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": ["personal"],
+          "commands": [
+            {
+              "title": "help",
+              "description": "See what Boon Coaching can do and get quick-access links"
+            },
+            {
+              "title": "hi",
+              "description": "Get a welcome message with an overview of features"
+            }
+          ]
+        }
+      ]
     }
   ],
   "permissions": ["messageTeamMembers"],

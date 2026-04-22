@@ -197,14 +197,26 @@ export async function createProactiveConversation(
 
   console.log('Creating proactive conversation:', JSON.stringify({ url, botId, userId, tenantId }));
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error('Proactive conversation fetch failed or timed out:', err);
+    return null;
+  }
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorText = await response.text();

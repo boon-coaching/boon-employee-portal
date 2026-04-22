@@ -95,19 +95,40 @@ export default function Settings() {
   const [nudgeFrequency, setNudgeFrequency] = useState<'smart' | 'daily' | 'weekly' | 'none'>('smart');
   const [preferredTime, setPreferredTime] = useState('09:00');
   const [timezone, setTimezone] = useState('America/New_York');
+  const [flash, setFlash] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  const [justConnectedChannel, setJustConnectedChannel] = useState<'slack' | 'teams' | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('slack_connected') === 'true' || params.get('teams_connected') === 'true') {
+    if (params.get('teams_connected') === 'true') {
+      setFlash({ kind: 'success', text: 'Microsoft Teams connected. You will start receiving coaching nudges.' });
+      setJustConnectedChannel('teams');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('slack_connected') === 'true') {
+      setFlash({ kind: 'success', text: 'Slack connected. You will start receiving coaching nudges.' });
+      setJustConnectedChannel('slack');
       window.history.replaceState({}, '', window.location.pathname);
     }
-    if (params.get('error')) {
-      console.error('Connection error:', params.get('error'));
+    const err = params.get('error');
+    if (err) {
+      const errorMessages: Record<string, string> = {
+        oauth_denied: 'Microsoft Teams access was denied. Try again when you are ready.',
+        missing_params: 'The sign-in link was incomplete. Please try connecting again.',
+        invalid_state: 'That sign-in link has expired. Please try connecting again.',
+        token_exchange_failed: 'Microsoft rejected the sign-in. Please try again.',
+        user_not_found: 'We could not read your Microsoft profile. Please try again.',
+        bot_token_failed: 'Our Teams bot is not reachable right now. Please try again in a minute.',
+        save_failed: 'We could not save your Teams connection. Please try again.',
+        connection_failed: 'We could not save your Teams connection. Please try again.',
+      };
+      setFlash({ kind: 'error', text: errorMessages[err] || `Connection error: ${err}` });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadData() {
       setLoading(true);
       try {
@@ -116,6 +137,7 @@ export default function Settings() {
           fetchTeamsConnectionStatus(),
           employee?.company_email ? fetchNudgeHistory(employee.company_email) : Promise.resolve([]),
         ]);
+        if (cancelled) return;
 
         setSlackStatus(slack);
         setTeamsStatus(teams);
@@ -133,15 +155,37 @@ export default function Settings() {
           setPreferredTime(activeSettings.preferred_time?.slice(0, 5) || '09:00');
           setTimezone(activeSettings.timezone || 'America/New_York');
         }
+
+        // Just came back from OAuth but status says not-connected?
+        // Read replica may lag. Retry a couple of times before giving up.
+        if (justConnectedChannel && !slack.connected && !teams.connected) {
+          for (let attempt = 0; attempt < 3 && !cancelled; attempt++) {
+            await new Promise((r) => setTimeout(r, 750));
+            const [slack2, teams2] = await Promise.all([
+              fetchSlackConnectionStatus(),
+              fetchTeamsConnectionStatus(),
+            ]);
+            if (cancelled) return;
+            if (slack2.connected || teams2.connected) {
+              setSlackStatus(slack2);
+              setTeamsStatus(teams2);
+              break;
+            }
+          }
+          setJustConnectedChannel(null);
+        }
       } catch (err) {
         console.error('Error loading settings:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadData();
-  }, [employee?.company_email]);
+    return () => {
+      cancelled = true;
+    };
+  }, [employee?.company_email, justConnectedChannel]);
 
   async function handleSaveSettings() {
     setSaving(true);
@@ -238,6 +282,27 @@ export default function Settings() {
       </header>
 
       <div className="flex flex-col gap-6">
+        {flash && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={`p-4 rounded-btn border text-sm flex items-start justify-between gap-3 ${
+              flash.kind === 'success'
+                ? 'bg-boon-success/10 border-boon-success/30 text-boon-success'
+                : 'bg-boon-coral/10 border-boon-coral/30 text-boon-coral'
+            }`}
+          >
+            <span className="leading-relaxed">{flash.text}</span>
+            <button
+              onClick={() => setFlash(null)}
+              className="text-[11px] font-extrabold uppercase tracking-[0.14em] hover:opacity-70"
+              aria-label="Dismiss"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* ─────────────── Coaching nudges ─────────────── */}
         <Card padding="lg">
           <div className="flex items-start justify-between gap-4 flex-wrap mb-5">

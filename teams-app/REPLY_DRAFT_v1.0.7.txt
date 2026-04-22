@@ -1,0 +1,76 @@
+================================================================
+REPLY EMAIL DRAFT — v1.0.7 submission for Ticket #5330350
+================================================================
+Send to: the thread reply-all (Microsoft Teams App submissions)
+Subject: re: Ticket#5330350: Boon Coaching Validation
+
+Attach:
+  - boon-coaching-v1.0.7.zip
+  - pc-01-packages.png through pc-06-notes.png
+  - boon-teams-demo.mp4 (screen recording of full OAuth + bot flow)
+
+================================================================
+BODY
+================================================================
+
+Hi AH,
+
+Thanks for the v1.0.5 report. Attaching v1.0.7 with the Test
+Blocker #6 fix plus screenshots for every Partner-Center-side
+Must-Fix and Good-to-Fix.
+
+Test Blocker #6 — Connect Microsoft Teams loading loop
+
+Root cause: in the OAuth callback, we were saving the
+employee_teams_connections row only AFTER a best-effort Bot
+Framework "create proactive 1:1 conversation" call. On a fresh
+tenant (including FRE) where the bot app is not yet installed on
+the user's personal scope, the Bot Framework /v3/conversations
+call could stall for long enough that the function redirected
+before the connection row was persisted — so the portal showed
+"Connect Microsoft Teams" again on return.
+
+Fix in v1.0.7:
+  1. employee_teams_connections is now upserted immediately after
+     the Graph /me lookup, with an empty conversation_id. The
+     portal badge flips to "Connected via Microsoft Teams" on
+     redirect regardless of bot install state.
+  2. The proactive conversation creation now runs behind a
+     7-second AbortController timeout so it cannot stall the
+     callback. On success the row is updated with the
+     conversation_id.
+  3. The conversationUpdate handler backfills conversation_id
+     and service_url the moment the bot is added to a personal
+     chat, using the user's aadObjectId from the activity.
+  4. The portal Settings page now shows a visible success or
+     error toast after the redirect and retries the connection
+     status query briefly to absorb any read-replica lag.
+
+Net effect: whether the tester (a) connects OAuth before
+installing the bot, (b) installs the bot before OAuth, or
+(c) connects in a tenant where the app is not yet available,
+the portal reflects the connection state correctly within one
+redirect.
+
+End-to-end video: attached as boon-teams-demo.mp4, ~80 seconds,
+covering bot install > welcome card > portal sign-in > Connect
+Microsoft Teams > MS OAuth > "Connected via Microsoft Teams"
+badge > hi / help / random text responses > Adaptive Card button
+tap > confirmation card.
+
+Must-Fix #3 (long description), #8 (screenshot captions), #13
+(app name / short description), #14 (icons) and Good-to-Fix #12
+(hyperlinks): all implemented in Partner Center. Screenshots
+attached as pc-01 through pc-06 per your request. Please let us
+know if any of those need a different crop or a narrower focus.
+
+Good-to-Fix #9 (video) and #10 (Publisher Attestation) are on our
+roadmap. The demo video above partially addresses #9; a full
+marketing video is in production.
+
+We have NOT resubmitted in Partner Center yet. Awaiting your
+go-ahead after review of this package.
+
+Thanks,
+Alex Simmons
+Boon Coaching
