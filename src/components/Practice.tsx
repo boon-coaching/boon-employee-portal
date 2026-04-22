@@ -1,6 +1,19 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { Headline, Badge } from '../lib/design-system';
 import { SCENARIOS, CATEGORY_INFO, type PracticeScenario, type ScenarioCategory } from '../data/scenarios';
+
+const CATEGORY_ACCENT: Record<ScenarioCategory, string> = {
+  leadership: 'bg-boon-navy',
+  communication: 'bg-boon-blue',
+  wellbeing: 'bg-boon-success',
+};
+
+const DIFFICULTY_BADGE: Record<string, 'error' | 'warning' | 'success' | 'neutral'> = {
+  high: 'error',
+  medium: 'warning',
+  low: 'success',
+};
 // Types now accessed via usePortalData()
 import { isAlumniState } from '../lib/coachingState';
 import PracticeModal from './PracticeModal';
@@ -177,57 +190,48 @@ Describe your situation in detail so we can provide the most relevant guidance.`
     setSelectedScenario(customScenario);
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'High': return 'bg-red-100 text-red-600';
-      case 'Medium': return 'bg-amber-100 text-amber-600';
-      case 'Low': return 'bg-green-100 text-green-600';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  return (
+    return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
-      {/* Header */}
-      <header className="text-center pt-4">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-boon-text mb-3">
-          {isCompleted ? 'Leadership Toolkit' : 'Practice Space'}
-        </h1>
-        <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-          {isCompleted
-            ? 'Apply your coaching insights when it matters most. Prepare for real leadership moments with confidence.'
-            : 'Prepare for challenging moments with AI-powered scenarios. Get a gameplan, then practice the conversation.'
-          }
-        </p>
-        {isCompleted && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Available to you as a program graduate
-          </div>
-        )}
+      {/* Editorial hero */}
+      <header className="pb-6 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+            {isCompleted ? 'Leadership toolkit' : 'Before the hard conversation'}
+          </span>
+          {isCompleted && (
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-success">
+              · Program graduate
+            </span>
+          )}
+        </div>
+        <Headline as="h1" size="lg">
+          {isCompleted ? 'Leadership toolkit.' : 'Practice space.'}
+          <Headline.Kicker block color="blue">
+            {isCompleted ? 'For when it matters most.' : 'Rehearse before you raise it.'}
+          </Headline.Kicker>
+        </Headline>
       </header>
 
       {/* My Team & My Playbook Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* My Team Card */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-card p-5 border border-boon-charcoal/[0.08] hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-btn bg-boon-purple/10 flex items-center justify-center">
+                <svg className="w-5 h-5 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-boon-text">My Team</h3>
-                <p className="text-xs text-gray-400">{teamMembers.length > 0 ? `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}` : 'Get more relevant practice'}</p>
+                <h3 className="font-bold text-boon-navy">My Team</h3>
+                <p className="text-xs text-boon-charcoal/55">{teamMembers.length > 0 ? `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}` : 'Get more relevant practice'}</p>
               </div>
             </div>
             <button
               onClick={() => setShowTeamManager(true)}
-              className="px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+              className="px-3 py-1.5 text-xs font-bold text-boon-purple bg-boon-purple/10 hover:bg-boon-purple/10 rounded-btn transition-colors"
             >
               {teamMembers.length > 0 ? 'Manage' : 'Add'}
             </button>
@@ -235,33 +239,33 @@ Describe your situation in detail so we can provide the most relevant guidance.`
           {teamMembers.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {teamMembers.slice(0, 4).map(member => (
-                <span key={member.id} className="px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-medium text-gray-600">
+                <span key={member.id} className="px-2.5 py-1 bg-boon-offWhite rounded-btn text-xs font-medium text-boon-charcoal/75">
                   {member.name}
                 </span>
               ))}
               {teamMembers.length > 4 && (
-                <span className="px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-medium text-gray-400">
+                <span className="px-2.5 py-1 bg-boon-offWhite rounded-btn text-xs font-medium text-boon-charcoal/55">
                   +{teamMembers.length - 4} more
                 </span>
               )}
             </div>
           ) : (
-            <p className="text-xs text-gray-400">Add the people you work with to get tailored scenarios and conversation strategies.</p>
+            <p className="text-xs text-boon-charcoal/55">Add the people you work with to get tailored scenarios and conversation strategies.</p>
           )}
         </div>
 
         {/* My Playbook Card */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-card p-5 border border-boon-charcoal/[0.08] hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-btn bg-boon-warning/12 flex items-center justify-center">
+                <svg className="w-5 h-5 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
               <div>
-                <h3 className="font-bold text-boon-text">My Playbook</h3>
-                <p className="text-xs text-gray-400">{savedPlans.length > 0 ? `${savedPlans.length} saved plan${savedPlans.length !== 1 ? 's' : ''}` : 'Your conversation playbook'}</p>
+                <h3 className="font-bold text-boon-navy">My Playbook</h3>
+                <p className="text-xs text-boon-charcoal/55">{savedPlans.length > 0 ? `${savedPlans.length} saved plan${savedPlans.length !== 1 ? 's' : ''}` : 'Your conversation playbook'}</p>
               </div>
             </div>
           </div>
@@ -271,13 +275,13 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                 <div key={plan.id} className="flex items-center justify-between group">
                   <button
                     onClick={() => handleOpenSavedPlan(plan)}
-                    className="text-xs text-gray-600 hover:text-boon-blue truncate flex-1 text-left"
+                    className="text-xs text-boon-charcoal/75 hover:text-boon-blue truncate flex-1 text-left"
                   >
                     {plan.scenario_title} {plan.team_member_name && `• ${plan.team_member_name}`}
                   </button>
                   <button
                     onClick={() => handleDeletePlan(plan.id)}
-                    className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-1 text-gray-300 hover:text-boon-error opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -287,26 +291,29 @@ Describe your situation in detail so we can provide the most relevant guidance.`
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-400">Try a scenario above and your gameplan will be saved here for quick reference before real conversations.</p>
+            <p className="text-xs text-boon-charcoal/55">Try a scenario above and your gameplan will be saved here for quick reference before real conversations.</p>
           )}
         </div>
       </div>
 
       {/* Custom Situation Input */}
-      <section className={`rounded-[2rem] p-6 md:p-8 border ${
-        isCompleted
-          ? 'bg-gradient-to-br from-green-50/50 via-white to-emerald-50/30 border-green-100'
-          : 'bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 border-boon-blue/10'
-      }`}>
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-lg font-extrabold text-boon-text mb-4 text-center">
+      <section className="relative bg-white rounded-card border border-boon-charcoal/[0.08] p-6 md:p-8 overflow-hidden">
+        <span aria-hidden className="absolute left-0 top-0 bottom-0 w-[3px] bg-boon-coral" />
+        <div className="max-w-2xl mx-auto pl-2">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-6 h-px bg-boon-coral" aria-hidden />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">
+              In the moment
+            </span>
+          </div>
+          <h2 className="font-display font-bold text-boon-navy text-[22px] leading-tight tracking-[-0.02em] mb-4">
             {isCompleted ? 'What challenge are you facing?' : "What's on your mind?"}
           </h2>
 
           {/* Team Member Selector */}
           {teamMembers.length > 0 && (
             <div className="mb-4">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 block">
+              <label className="text-xs font-bold text-boon-charcoal/55 uppercase tracking-wide mb-2 block">
                 This is about... (optional)
               </label>
               <select
@@ -315,7 +322,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                   const member = teamMembers.find(m => m.id === e.target.value);
                   setSelectedTeamMember(member || null);
                 }}
-                className="w-full p-3 rounded-xl border-2 border-white bg-white text-sm focus:border-boon-blue focus:ring-0 focus:outline-none shadow-sm"
+                className="w-full p-3 rounded-btn border-2 border-white bg-white text-sm focus:border-boon-blue focus:ring-0 focus:outline-none shadow-sm"
               >
                 <option value="">General situation (no specific person)</option>
                 {teamMembers.map(member => (
@@ -325,7 +332,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                 ))}
               </select>
               {selectedTeamMember?.context && (
-                <p className="mt-2 text-xs text-gray-400 italic">
+                <p className="mt-2 text-xs text-boon-charcoal/55 italic">
                   {selectedTeamMember.context}
                 </p>
               )}
@@ -346,44 +353,46 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                 ? `Describe your situation with ${selectedTeamMember.name}...`
                 : "Describe your situation... (e.g., 'I need to give feedback to a senior team member who keeps missing deadlines')"
               }
-              className="w-full p-5 pr-24 rounded-2xl border-2 border-white focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[100px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
+              className="w-full p-5 pr-24 rounded-card border-2 border-white focus:border-boon-blue focus:ring-0 focus:outline-none text-sm min-h-[100px] resize-none bg-white shadow-sm placeholder-gray-400 transition-all"
             />
             <button
               onClick={handleCustomSubmit}
               disabled={!customSituation.trim()}
-              className={`absolute bottom-4 right-4 px-5 py-2.5 text-white rounded-xl font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg ${
-                isCompleted
-                  ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20'
-                  : 'bg-boon-blue hover:bg-boon-darkBlue shadow-boon-blue/20'
-              }`}
+              className="absolute bottom-4 right-4 px-5 py-2.5 text-white bg-boon-coral rounded-pill font-semibold text-sm hover:opacity-90 disabled:cursor-not-allowed transition-opacity"
+              style={{ opacity: !customSituation.trim() ? 0.5 : 1 }}
             >
-              {isCompleted ? 'Get Strategy' : 'Get Help'}
+              {isCompleted ? 'Get strategy' : 'Get help'}
             </button>
           </div>
         </div>
       </section>
 
-      {/* Category Filter */}
-      <div className="flex justify-center">
-        <div className="flex gap-2 bg-white p-2 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
-              selectedCategory === 'all'
-                ? 'bg-boon-blue text-white shadow-sm'
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            All Scenarios
-          </button>
-          {(['leadership', 'communication', 'wellbeing'] as ScenarioCategory[]).map(cat => (
+      {/* Category Filter — underline tabs */}
+      <div className="flex items-center gap-1 border-b border-boon-charcoal/10 -mb-px overflow-x-auto">
+        {(() => {
+          const isActive = selectedCategory === 'all';
+          return (
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap ${
+                isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
+              }`}
+            >
+              All scenarios
+              {isActive && (
+                <span aria-hidden className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill" />
+              )}
+            </button>
+          );
+        })()}
+        {(['leadership', 'communication', 'wellbeing'] as ScenarioCategory[]).map(cat => {
+          const isActive = selectedCategory === cat;
+          return (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-                selectedCategory === cat
-                  ? 'bg-boon-blue text-white shadow-sm'
-                  : 'text-gray-500 hover:bg-gray-50'
+              className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap flex items-center gap-2 ${
+                isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
               }`}
             >
               {CATEGORY_INFO[cat].label}
@@ -392,78 +401,75 @@ Describe your situation in detail so we can provide the most relevant guidance.`
                 (cat === 'communication' && userThemes.communication) ||
                 (cat === 'wellbeing' && userThemes.wellbeing)
               ) && (
-                <span className={`w-2 h-2 rounded-full ${selectedCategory === cat ? 'bg-white' : 'bg-boon-blue'}`} />
+                <span className="w-1.5 h-1.5 rounded-pill bg-boon-blue" />
+              )}
+              {isActive && (
+                <span aria-hidden className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill" />
               )}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {/* Recommended for you badge */}
       {hasAnyTheme && selectedCategory === 'all' && (
-        <p className="text-center text-xs text-gray-400 font-medium">
+        <p className="text-center text-xs text-boon-charcoal/55 font-medium">
           <span className="inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-boon-blue" />
+            <span className="w-2 h-2 rounded-pill bg-boon-blue" />
             Scenarios matching your coaching themes are shown first
           </span>
         </p>
       )}
 
       {/* Scenario Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredScenarios.map(scenario => (
-          <div
-            key={scenario.id}
-            onClick={() => setSelectedScenario(scenario)}
-            className="group bg-white rounded-[1.5rem] p-6 cursor-pointer border-2 border-transparent hover:border-boon-blue/20 hover:shadow-xl transition-all duration-300 relative overflow-hidden"
-          >
-            {/* Background accent */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-boon-lightBlue/30 to-transparent rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500" />
-
-            <div className="relative z-10">
-              {/* Header */}
-              <div className="flex justify-between items-start mb-4">
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getDifficultyColor(scenario.difficulty)}`}>
-                  {scenario.difficulty}
-                </span>
-                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${CATEGORY_INFO[scenario.category].bgColor} ${CATEGORY_INFO[scenario.category].color}`}>
-                  {CATEGORY_INFO[scenario.category].label}
-                </span>
-              </div>
-
-              {/* Title */}
-              <h3 className="text-lg font-extrabold text-boon-text mb-2 leading-tight group-hover:text-boon-blue transition-colors">
-                {scenario.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
-                {scenario.description}
-              </p>
-
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5">
-                {scenario.tags.slice(0, 3).map(tag => (
-                  <span key={tag} className="text-[10px] font-bold text-boon-blue bg-boon-lightBlue/50 px-2 py-0.5 rounded-md">
-                    #{tag}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredScenarios.map(scenario => {
+          const diffBadge = DIFFICULTY_BADGE[scenario.difficulty.toLowerCase()] || 'neutral';
+          return (
+            <button
+              key={scenario.id}
+              onClick={() => setSelectedScenario(scenario)}
+              className="group relative bg-white rounded-card border border-boon-charcoal/[0.08] hover:border-boon-blue/30 hover:shadow-sm transition-all text-left overflow-hidden"
+            >
+              <span
+                aria-hidden
+                className={`absolute left-0 top-0 bottom-0 w-[3px] ${CATEGORY_ACCENT[scenario.category]}`}
+              />
+              <div className="p-5 pl-6">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/55">
+                    {CATEGORY_INFO[scenario.category].label}
                   </span>
-                ))}
-              </div>
-            </div>
+                  <Badge variant={diffBadge}>{scenario.difficulty}</Badge>
+                </div>
 
-            {/* Arrow indicator */}
-            <div className="absolute bottom-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-boon-blue group-hover:text-white transition-all">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        ))}
+                <h3 className="font-display font-bold text-boon-navy text-[17px] leading-tight tracking-[-0.015em] mb-2 group-hover:text-boon-blue transition-colors">
+                  {scenario.title}
+                </h3>
+
+                <p className="text-boon-charcoal/65 text-sm leading-relaxed line-clamp-2 mb-4">
+                  {scenario.description}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {scenario.tags.slice(0, 3).map(tag => (
+                    <span
+                      key={tag}
+                      className="text-[11px] font-semibold text-boon-charcoal/65 bg-boon-offWhite px-2 py-0.5 rounded-pill"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {filteredScenarios.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-400 font-medium">No scenarios found for this category.</p>
+          <p className="text-boon-charcoal/55 font-medium">No scenarios found for this category.</p>
         </div>
       )}
 

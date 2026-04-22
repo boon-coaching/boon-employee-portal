@@ -145,7 +145,7 @@ export default function GrowthStory({ sessions, competencyScores, baseline }: Gr
   }
 
   return (
-    <section className="bg-gradient-to-br from-purple-50 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border border-purple-100">
+    <section className="bg-gradient-to-br from-purple-50 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border border-boon-charcoal/[0.08]">
       <h2 className="text-xl font-extrabold text-boon-text mb-6">Your Growth Story</h2>
       <div className="space-y-5">
         {narratives.map((narrative, i) => (
@@ -153,7 +153,7 @@ export default function GrowthStory({ sessions, competencyScores, baseline }: Gr
             key={i}
             className="flex items-start gap-4 p-5 bg-white/60 backdrop-blur-sm rounded-2xl border border-white"
           >
-            <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+            <div className="w-8 h-8 rounded-full bg-boon-purple/10 text-boon-purple flex items-center justify-center flex-shrink-0 font-bold text-sm">
               {i + 1}
             </div>
             <p className="text-gray-700 leading-relaxed text-[15px] italic">

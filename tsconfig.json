@@ -17,7 +17,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@boon/design-system": ["../boon-design-system/components/index.ts"],
+      "@boon/design-system/*": ["../boon-design-system/*"]
     }
   },
   "include": ["src"],

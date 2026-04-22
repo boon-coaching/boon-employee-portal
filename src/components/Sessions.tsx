@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { toast } from 'sonner';
+import { Headline, Badge } from '../lib/design-system';
 import type { Session } from '../lib/types';
 // CoachingStateData now accessed via usePortalData()
 import { isAlumniState, isPreFirstSession, isUpcomingSession } from '../lib/coachingState';
@@ -12,52 +13,24 @@ function getStatusStyle(status: Session['status']): {
   bgClass: string;
   textClass: string;
   label: string;
+  badge: 'success' | 'warning' | 'error' | 'info' | 'neutral';
+  accentClass: string;
 } {
   switch (status) {
     case 'Completed':
-      return { icon: 'check', bgClass: 'bg-green-50', textClass: 'text-green-600', label: 'Completed' };
+      return { icon: 'check', bgClass: 'bg-boon-success/10', textClass: 'text-boon-success', label: 'Completed', badge: 'success', accentClass: 'bg-boon-success' };
     case 'Late Cancel':
-      return { icon: 'clock', bgClass: 'bg-red-50', textClass: 'text-red-500', label: 'Late Cancel' };
+      return { icon: 'clock', bgClass: 'bg-red-50', textClass: 'text-boon-error', label: 'Late cancel', badge: 'error', accentClass: 'bg-boon-coral' };
     case 'Client No-Show':
-      return { icon: 'x-circle', bgClass: 'bg-red-50', textClass: 'text-red-600', label: 'No-Show' };
     case 'No Show':
-      return { icon: 'x-circle', bgClass: 'bg-red-50', textClass: 'text-red-600', label: 'No Show' };
+      return { icon: 'x-circle', bgClass: 'bg-red-50', textClass: 'text-boon-error', label: 'No show', badge: 'error', accentClass: 'bg-boon-coral' };
     case 'Cancelled':
-      return { icon: 'x', bgClass: 'bg-gray-50', textClass: 'text-gray-500', label: 'Cancelled' };
+      return { icon: 'x', bgClass: 'bg-boon-offWhite', textClass: 'text-boon-charcoal/55', label: 'Cancelled', badge: 'neutral', accentClass: 'bg-boon-charcoal/20' };
     case 'Upcoming':
     case 'Scheduled':
-      return { icon: 'clock', bgClass: 'bg-blue-50', textClass: 'text-blue-600', label: status };
+      return { icon: 'clock', bgClass: 'bg-boon-blue/10', textClass: 'text-boon-blue', label: 'Scheduled', badge: 'info', accentClass: 'bg-boon-blue' };
     default:
-      return { icon: 'clock', bgClass: 'bg-orange-50', textClass: 'text-orange-600', label: status };
-  }
-}
-
-function StatusIcon({ type }: { type: 'check' | 'clock' | 'x-circle' | 'x' }) {
-  switch (type) {
-    case 'check':
-      return (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-        </svg>
-      );
-    case 'clock':
-      return (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
-    case 'x-circle':
-      return (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
-    case 'x':
-      return (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      );
+      return { icon: 'clock', bgClass: 'bg-orange-50', textClass: 'text-orange-600', label: status, badge: 'warning', accentClass: 'bg-boon-warning' };
   }
 }
 
@@ -262,15 +235,15 @@ export default function SessionsPage() {
     return (
       <div className="space-y-8 animate-fade-in">
         <header className="text-center md:text-left">
-          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">My Sessions</h1>
-          <p className="text-gray-500 mt-2 font-medium">Your coaching journey is just beginning.</p>
+          <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">My Sessions</h1>
+          <p className="text-boon-charcoal/55 mt-2 font-medium">Your coaching journey is just beginning.</p>
         </header>
 
         {/* Upcoming First Session Card */}
         {upcomingSession ? (
-          <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-[2.5rem] p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
+          <section className="bg-gradient-to-br from-boon-blue/5 via-white to-boon-lightBlue/20 rounded-card p-8 md:p-10 border-2 border-boon-blue/20 shadow-lg">
             <div className="flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-boon-blue flex items-center justify-center">
+              <div className="w-10 h-10 rounded-btn bg-boon-blue flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -278,14 +251,14 @@ export default function SessionsPage() {
               <span className="text-xs font-bold text-boon-blue uppercase tracking-widest">Your First Session</span>
             </div>
 
-            <p className="text-2xl md:text-3xl font-extrabold text-boon-text mb-2">
+            <p className="text-2xl md:text-3xl font-extrabold text-boon-navy mb-2">
               {new Date(upcomingSession.session_date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
               })}
             </p>
-            <p className="text-gray-500 text-lg">
+            <p className="text-boon-charcoal/55 text-lg">
               {new Date(upcomingSession.session_date).toLocaleTimeString('en-US', {
                 hour: 'numeric',
                 minute: '2-digit',
@@ -293,22 +266,22 @@ export default function SessionsPage() {
             </p>
           </section>
         ) : (
-          <section className="bg-white rounded-[2rem] p-8 border border-gray-100 text-center">
-            <p className="text-gray-500">
+          <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08] text-center">
+            <p className="text-boon-charcoal/55">
               Your first session will appear here once it's scheduled.
             </p>
           </section>
         )}
 
         {/* Intentional Empty State */}
-        <section className="bg-white rounded-[2rem] p-8 md:p-12 border border-gray-100 text-center">
-          <div className="w-16 h-16 mx-auto mb-6 bg-boon-lightBlue/30 rounded-2xl flex items-center justify-center">
+        <section className="bg-white rounded-card p-8 md:p-12 border border-boon-charcoal/[0.08] text-center">
+          <div className="w-16 h-16 mx-auto mb-6 bg-boon-lightBlue/30 rounded-card flex items-center justify-center">
             <svg className="w-8 h-8 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 className="text-xl font-extrabold text-boon-text mb-3">Session Notes & History</h3>
-          <p className="text-gray-500 max-w-md mx-auto leading-relaxed">
+          <h3 className="text-xl font-extrabold text-boon-navy mb-3">Session Notes & History</h3>
+          <p className="text-boon-charcoal/55 max-w-md mx-auto leading-relaxed">
             {upcomingSession
               ? `After your first session with ${coachName.split(' ')[0]}, you'll see notes, reflections, and key themes here.`
               : "After your first session, you'll see notes, reflections, and key themes here."
@@ -319,38 +292,47 @@ export default function SessionsPage() {
     );
   }
 
+  const completedCount = sessions.filter(s => s.status === 'Completed').length;
+  const upcomingCount = sessions.filter(s => isUpcomingSession(s)).length;
+
   return (
     <div className="space-y-8 animate-fade-in">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="text-center md:text-left">
-          <h1 className="text-3xl font-extrabold text-boon-text tracking-tight">
-            {isCompleted ? 'Session Archive' : 'My Sessions'}
-          </h1>
-          <p className="text-gray-500 mt-2 font-medium">
-            {isCompleted
-              ? `${sessions.filter(s => s.status === 'Completed').length} coaching sessions completed`
-              : 'Manage and review your coaching journey.'
-            }
-          </p>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-boon-charcoal/10">
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-6 h-px bg-boon-blue" aria-hidden />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+              {isCompleted ? 'A record of the work' : 'Every conversation'}
+            </span>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/50">
+              · {completedCount} completed{!isCompleted && upcomingCount > 0 ? ` · ${upcomingCount} upcoming` : ''}
+            </span>
+          </div>
+          <Headline as="h1" size="lg">
+            {isCompleted ? 'The archive.' : 'Your sessions.'}
+            <Headline.Kicker block color="blue">
+              {isCompleted ? 'What you built.' : 'Yours to keep.'}
+            </Headline.Kicker>
+          </Headline>
         </div>
-        
-        {/* View Toggle */}
-        <div className="flex bg-white p-1 rounded-2xl border border-gray-100 self-center md:self-end shadow-sm">
-          <button 
+
+        {/* View Toggle — soft segmented control */}
+        <div className="flex bg-white p-1 rounded-pill border border-boon-charcoal/[0.08] self-center md:self-end">
+          <button
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-boon-blue text-white shadow-md' : 'text-gray-400 hover:text-boon-blue'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-pill text-[11px] font-extrabold uppercase tracking-[0.08em] transition-all ${viewMode === 'list' ? 'bg-boon-blue/10 text-boon-darkBlue' : 'text-boon-charcoal/55 hover:text-boon-navy'}`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
             List
           </button>
-          <button 
+          <button
             onClick={() => setViewMode('calendar')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'calendar' ? 'bg-boon-blue text-white shadow-md' : 'text-gray-400 hover:text-boon-blue'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-pill text-[11px] font-extrabold uppercase tracking-[0.08em] transition-all ${viewMode === 'calendar' ? 'bg-boon-blue/10 text-boon-darkBlue' : 'text-boon-charcoal/55 hover:text-boon-navy'}`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             Calendar
           </button>
@@ -361,140 +343,140 @@ export default function SessionsPage() {
         <div className="space-y-8">
           <div className="overflow-x-auto pb-4 -mx-5 px-5 scrollbar-hide">
             <div className="flex flex-wrap items-center gap-4">
-              {/* Status filter */}
-              <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+              {/* Status filter — underline tabs */}
+              <div className="flex items-center gap-1">
                 {(isCompleted
-                  ? [{ id: 'all', label: 'All Sessions' }, { id: 'Completed', label: 'Completed' }]
+                  ? [{ id: 'all', label: 'All' }, { id: 'Completed', label: 'Completed' }]
                   : [
-                      { id: 'all', label: 'All Sessions' },
+                      { id: 'all', label: 'All' },
                       { id: 'Completed', label: 'Completed' },
                       { id: 'Upcoming', label: 'Upcoming' }
                     ]
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setFilter(tab.id as any)}
-                    className={`px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap active:scale-95 ${
-                      filter === tab.id ? 'bg-boon-blue text-white shadow-lg shadow-boon-blue/20' : 'text-gray-400 hover:text-boon-blue'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                ).map((tab) => {
+                  const isActive = filter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFilter(tab.id as any)}
+                      className={`relative px-4 py-2.5 text-sm font-semibold transition-colors whitespace-nowrap ${
+                        isActive ? 'text-boon-navy' : 'text-boon-charcoal/55 hover:text-boon-navy'
+                      }`}
+                    >
+                      {tab.label}
+                      {isActive && (
+                        <span
+                          aria-hidden
+                          className="absolute left-3 right-3 -bottom-px h-[2px] bg-boon-blue rounded-pill"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Theme filter - show top 5 with expand toggle */}
+              {/* Theme filter — badge-style pills */}
               {allThemes.length > 0 && (() => {
                 const MAX_VISIBLE_THEMES = 5;
                 const visibleThemes = showAllThemes ? allThemes : allThemes.slice(0, MAX_VISIBLE_THEMES);
                 const hiddenCount = allThemes.length - MAX_VISIBLE_THEMES;
                 return (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Theme:</span>
-                    <div className="flex flex-wrap bg-white p-1 rounded-xl border border-gray-100 shadow-sm gap-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/45">Theme</span>
+                    <button
+                      onClick={() => setThemeFilter(null)}
+                      className={`px-3 py-1 rounded-pill text-xs font-semibold transition-all ${
+                        themeFilter === null ? 'bg-boon-navy text-white' : 'bg-white text-boon-charcoal/70 border border-boon-charcoal/[0.08] hover:border-boon-blue/30 hover:text-boon-navy'
+                      }`}
+                    >
+                      All
+                    </button>
+                    {visibleThemes.map(theme => (
                       <button
-                        onClick={() => setThemeFilter(null)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          themeFilter === null ? 'bg-gray-100 text-boon-text' : 'text-gray-400 hover:text-boon-blue'
+                        key={theme}
+                        onClick={() => setThemeFilter(theme)}
+                        className={`px-3 py-1 rounded-pill text-xs font-semibold transition-all ${
+                          themeFilter === theme ? 'bg-boon-blue text-white' : 'bg-white text-boon-charcoal/70 border border-boon-charcoal/[0.08] hover:border-boon-blue/30 hover:text-boon-navy'
                         }`}
                       >
-                        All
+                        {theme}
                       </button>
-                      {visibleThemes.map(theme => (
-                        <button
-                          key={theme}
-                          onClick={() => setThemeFilter(theme)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            themeFilter === theme ? 'bg-boon-blue text-white' : 'text-gray-400 hover:text-boon-blue'
-                          }`}
-                        >
-                          {theme}
-                        </button>
-                      ))}
-                      {hiddenCount > 0 && (
-                        <button
-                          onClick={() => setShowAllThemes(!showAllThemes)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-boon-blue hover:bg-blue-50 transition-all"
-                        >
-                          {showAllThemes ? 'Show less' : `+${hiddenCount} more`}
-                        </button>
-                      )}
-                    </div>
+                    ))}
+                    {hiddenCount > 0 && (
+                      <button
+                        onClick={() => setShowAllThemes(!showAllThemes)}
+                        className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors"
+                      >
+                        {showAllThemes ? 'Show less' : `+${hiddenCount} more`}
+                      </button>
+                    )}
                   </div>
                 );
               })()}
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {groupedSessions.length > 0 ? groupedSessions.map((group) => (
               <div key={group.key}>
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">{group.label}</h3>
-                <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-4 px-1">
+                  <span className="w-4 h-px bg-boon-charcoal/30" aria-hidden />
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/55">
+                    {group.label}
+                  </span>
+                </div>
+                <div className="space-y-3">
                   {group.sessions.map((session) => {
                     const isExpanded = expandedSession === session.id;
                     const sessionActionItems = actionItems.filter(a => String(a.session_id) === String(session.id));
                     const hasDetails = session.goals || session.plan || sessionActionItems.length > 0 || session.status === 'Completed';
                     const themes = getSessionThemes(session);
+                    const style = getStatusStyle(session.status);
 
                     return (
                       <div
                         key={session.id}
-                        className={`bg-white rounded-2xl shadow-sm border transition-all ${
-                          isExpanded ? 'border-boon-blue/20' : 'border-gray-100 hover:border-boon-blue/10'
+                        className={`relative bg-white rounded-card border overflow-hidden transition-all ${
+                          isExpanded ? 'border-boon-blue/30' : 'border-boon-charcoal/[0.08] hover:border-boon-blue/20'
                         }`}
                       >
+                        <span aria-hidden className={`absolute left-0 top-0 bottom-0 w-[3px] ${style.accentClass}`} />
                         <div
-                          className="p-6 cursor-pointer"
+                          className="px-6 py-5 pl-7 cursor-pointer"
                           onClick={() => hasDetails && setExpandedSession(isExpanded ? null : session.id)}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              {(() => {
-                                const style = getStatusStyle(session.status);
-                                return (
-                                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${style.bgClass} ${style.textClass}`}>
-                                    <StatusIcon type={style.icon} />
-                                  </div>
-                                );
-                              })()}
-                              <div>
-                                <p className="font-bold text-boon-text">
-                                  {new Date(session.session_date).toLocaleDateString('en-US', {
-                                    weekday: 'long', month: 'long', day: 'numeric'
-                                  })}
-                                </p>
-                                <p className="text-sm text-gray-500">with {session.coach_name}</p>
-                              </div>
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <div className="min-w-0">
+                              <p className="font-display font-bold text-boon-navy text-[18px] leading-tight tracking-[-0.015em]">
+                                {new Date(session.session_date).toLocaleDateString('en-US', {
+                                  weekday: 'long', month: 'long', day: 'numeric'
+                                })}
+                              </p>
+                              <p className="text-sm text-boon-charcoal/55 mt-0.5">
+                                {new Date(session.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} · with {session.coach_name}
+                              </p>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                              {(() => {
-                                const style = getStatusStyle(session.status);
-                                return (
-                                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${style.bgClass} ${style.textClass}`}>
-                                    {style.label}
-                                  </span>
-                                );
-                              })()}
+                            <div className="flex items-center gap-3 shrink-0">
+                              <Badge variant={style.badge}>{style.label}</Badge>
                               {hasDetails && (
                                 <svg
-                                  className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                  className={`w-4 h-4 text-boon-charcoal/45 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
+                                  strokeWidth={2}
                                 >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                 </svg>
                               )}
                             </div>
                           </div>
 
-                          {/* Theme tags - always visible */}
+                          {/* Theme tags — muted pill chips */}
                           {themes.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-4">
+                            <div className="flex flex-wrap gap-1.5 mt-3">
                               {themes.map((theme, i) => (
-                                <span key={i} className="px-3 py-1 bg-boon-bg text-gray-600 text-xs font-medium rounded-full">
+                                <span key={i} className="px-2.5 py-0.5 bg-boon-offWhite text-boon-charcoal/70 text-[11px] font-semibold rounded-pill">
                                   {theme}
                                 </span>
                               ))}
@@ -507,10 +489,10 @@ export default function SessionsPage() {
                           <div className="px-6 pb-6 space-y-4 border-t border-gray-50 pt-4">
                             {themes.length > 0 && (
                               <div>
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Topics Discussed</h4>
+                                <h4 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-2">Topics Discussed</h4>
                                 <div className="flex flex-wrap gap-2">
                                   {themes.map((theme, i) => (
-                                    <span key={i} className="px-3 py-1.5 bg-boon-lightBlue/30 text-boon-blue text-xs font-medium rounded-full">
+                                    <span key={i} className="px-3 py-1.5 bg-boon-lightBlue/30 text-boon-blue text-xs font-medium rounded-pill">
                                       {theme}
                                     </span>
                                   ))}
@@ -519,24 +501,24 @@ export default function SessionsPage() {
                             )}
                             {session.goals && (
                               <div>
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Goals</h4>
-                                <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.goals}</p>
+                                <h4 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-2">Goals</h4>
+                                <p className="text-sm text-boon-charcoal/75 whitespace-pre-line leading-relaxed">{session.goals}</p>
                               </div>
                             )}
                             {session.plan && (
                               <div>
-                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Plan</h4>
-                                <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{session.plan}</p>
+                                <h4 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-2">Plan</h4>
+                                <p className="text-sm text-boon-charcoal/75 whitespace-pre-line leading-relaxed">{session.plan}</p>
                               </div>
                             )}
                             {/* Action Items from this session */}
                             {sessionActionItems.length > 0 && (
                               <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Action Items</p>
+                                <p className="text-xs text-boon-charcoal/55 uppercase tracking-wide mb-2">Action Items</p>
                                 <div className="space-y-1.5">
                                   {sessionActionItems.map(item => (
-                                    <label key={item.id} className={`flex items-start gap-2 py-1 cursor-pointer ${updatingItem === item.id ? 'opacity-50' : ''} ${item.status === 'completed' ? 'text-gray-400' : 'text-gray-700'}`}>
-                                      <input type="checkbox" checked={item.status === 'completed'} onChange={() => handleToggleAction(item.id, item.status)} disabled={updatingItem === item.id} className="mt-0.5 w-4 h-4 rounded border-gray-300 text-boon-blue focus:ring-boon-blue" />
+                                    <label key={item.id} className={`flex items-start gap-2 py-1 cursor-pointer ${updatingItem === item.id ? 'opacity-50' : ''} ${item.status === 'completed' ? 'text-boon-charcoal/55' : 'text-boon-charcoal/75'}`}>
+                                      <input type="checkbox" checked={item.status === 'completed'} onChange={() => handleToggleAction(item.id, item.status)} disabled={updatingItem === item.id} className="mt-0.5 w-4 h-4 rounded border-boon-charcoal/[0.08] text-boon-blue focus:ring-boon-blue" />
                                       <span className={`text-sm ${item.status === 'completed' ? 'line-through' : ''}`}>{item.action_text}</span>
                                     </label>
                                   ))}
@@ -546,13 +528,13 @@ export default function SessionsPage() {
                             {/* Employee Notes */}
                             {session.status === 'Completed' && (
                               <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Your Takeaways</p>
+                                <p className="text-xs text-boon-charcoal/55 uppercase tracking-wide mb-2">Your Takeaways</p>
                                 <textarea
                                   value={sessionNotes[session.id] ?? session.employee_notes ?? ''}
                                   onChange={(e) => setSessionNotes(prev => ({ ...prev, [session.id]: e.target.value }))}
                                   onBlur={() => saveSessionNotes(session.id)}
                                   placeholder="What did you take away from this session?"
-                                  className="w-full p-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
+                                  className="w-full p-3 rounded-btn border border-boon-charcoal/[0.08] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-boon-blue/20 focus:border-boon-blue"
                                   rows={3}
                                 />
                               </div>
@@ -560,7 +542,7 @@ export default function SessionsPage() {
                             {session.status === 'Completed' && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); setFeedbackSession(session); }}
-                                className="px-4 py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-xl hover:bg-boon-lightBlue transition-all"
+                                className="px-4 py-2 text-xs font-bold text-boon-blue bg-boon-lightBlue/30 rounded-btn hover:bg-boon-lightBlue transition-all"
                               >
                                 Give Feedback
                               </button>
@@ -573,12 +555,12 @@ export default function SessionsPage() {
                 </div>
               </div>
             )) : (
-              <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+              <div className="text-center py-12 bg-white rounded-card border border-boon-charcoal/[0.08]">
                 <svg className="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p className="text-gray-500 font-medium mb-1">No upcoming sessions</p>
-                <p className="text-gray-400 text-sm">Your next session will appear here once it's scheduled.</p>
+                <p className="text-boon-charcoal/55 font-medium mb-1">No upcoming sessions</p>
+                <p className="text-boon-charcoal/55 text-sm">Your next session will appear here once it's scheduled.</p>
               </div>
             )}
           </div>
@@ -586,24 +568,24 @@ export default function SessionsPage() {
       ) : (
         /* Calendar View */
         <div className="space-y-6">
-          <div className="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-card p-6 md:p-8 shadow-sm border border-boon-charcoal/[0.08]">
             <div className="flex items-center justify-between mb-8">
               <button 
                 onClick={() => changeMonth(-1)}
-                className="p-2 hover:bg-boon-bg rounded-xl transition-colors"
+                className="p-2 hover:bg-boon-bg rounded-btn transition-colors"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-boon-charcoal/55" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <h3 className="text-xl font-black text-boon-text">
+              <h3 className="text-xl font-black text-boon-navy">
                 {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </h3>
               <button 
                 onClick={() => changeMonth(1)}
-                className="p-2 hover:bg-boon-bg rounded-xl transition-colors"
+                className="p-2 hover:bg-boon-bg rounded-btn transition-colors"
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-boon-charcoal/55" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -611,7 +593,7 @@ export default function SessionsPage() {
 
             <div className="grid grid-cols-7 gap-1 mb-2">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest py-2">
+                <div key={day} className="text-center text-[10px] font-black text-boon-charcoal/55 uppercase tracking-widest py-2">
                   {day}
                 </div>
               ))}
@@ -623,7 +605,7 @@ export default function SessionsPage() {
                   key={idx}
                   onClick={() => dayObj.date && setSelectedCalendarDate(dayObj.date)}
                   disabled={!dayObj.day}
-                  className={`aspect-square p-1 rounded-xl flex flex-col items-center justify-center transition-all ${
+                  className={`aspect-square p-1 rounded-btn flex flex-col items-center justify-center transition-all ${
                     !dayObj.day 
                       ? 'invisible' 
                       : selectedCalendarDate === dayObj.date
@@ -635,7 +617,7 @@ export default function SessionsPage() {
                 >
                   <span className="text-sm font-bold">{dayObj.day}</span>
                   {dayObj.sessions && dayObj.sessions.length > 0 && (
-                    <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                    <div className={`w-1.5 h-1.5 rounded-pill mt-0.5 ${
                       selectedCalendarDate === dayObj.date ? 'bg-white' : 'bg-boon-blue'
                     }`} />
                   )}
@@ -645,8 +627,8 @@ export default function SessionsPage() {
           </div>
 
           {selectedCalendarDate && (
-            <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
-              <h4 className="font-bold text-boon-text mb-4">
+            <div className="bg-white rounded-card p-6 shadow-sm border border-boon-charcoal/[0.08]">
+              <h4 className="font-bold text-boon-navy mb-4">
                 {new Date(selectedCalendarDate + 'T12:00:00').toLocaleDateString('en-US', { 
                   weekday: 'long', month: 'long', day: 'numeric' 
                 })}
@@ -654,7 +636,7 @@ export default function SessionsPage() {
               {selectedDaySessions.length > 0 ? selectedDaySessions.map(session => (
                 <div key={session.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
                   <div>
-                    <p className="font-bold text-boon-text">{session.coach_name}</p>
+                    <p className="font-bold text-boon-navy">{session.coach_name}</p>
                     {(() => {
                       const style = getStatusStyle(session.status);
                       return (
@@ -666,7 +648,7 @@ export default function SessionsPage() {
                   </div>
                 </div>
               )) : (
-                <p className="text-gray-400 text-sm">No sessions on this day.</p>
+                <p className="text-boon-charcoal/55 text-sm">No sessions on this day.</p>
               )}
             </div>
           )}
@@ -681,23 +663,23 @@ export default function SessionsPage() {
             onClick={() => !isSubmitting && setFeedbackSession(null)}
           />
           <div className="relative bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[3rem] shadow-2xl">
-            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 sm:hidden" />
+            <div className="w-12 h-1.5 bg-boon-offWhite rounded-pill mx-auto mt-4 mb-2 sm:hidden" />
             <div className="p-8 sm:p-12">
               {isSuccess ? (
                 <div className="py-12 text-center">
-                  <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
+                  <div className="w-20 h-20 bg-boon-success/10 text-boon-success rounded-pill flex items-center justify-center mx-auto mb-8">
                     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-3xl font-black text-boon-text">Thank You!</h3>
-                  <p className="text-gray-500 mt-3">Your feedback helps us improve.</p>
+                  <h3 className="text-3xl font-black text-boon-navy">Thank You!</h3>
+                  <p className="text-boon-charcoal/55 mt-3">Your feedback helps us improve.</p>
                 </div>
               ) : (
                 <form onSubmit={handleFeedbackSubmit} className="space-y-8">
                   <header className="text-center">
-                    <h3 className="text-2xl font-black text-boon-text">Session Feedback</h3>
-                    <p className="text-gray-500 mt-2">How was your session with {feedbackSession.coach_name}?</p>
+                    <h3 className="text-2xl font-black text-boon-navy">Session Feedback</h3>
+                    <p className="text-boon-charcoal/55 mt-2">How was your session with {feedbackSession.coach_name}?</p>
                   </header>
 
                   <div className="flex justify-center gap-2">
@@ -707,7 +689,7 @@ export default function SessionsPage() {
                         type="button"
                         onClick={() => setFeedbackRating(star)}
                         className={`p-1 transition-all transform hover:scale-110 ${
-                          feedbackRating >= star ? 'text-boon-blue' : 'text-gray-200'
+                          feedbackRating >= star ? 'text-boon-blue' : 'text-boon-charcoal/20'
                         }`}
                       >
                         <svg className="w-10 h-10 fill-current" viewBox="0 0 24 24">
@@ -721,18 +703,18 @@ export default function SessionsPage() {
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     placeholder="Any additional thoughts? (optional)"
-                    className="w-full px-5 py-4 bg-boon-bg border-2 border-transparent rounded-2xl focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
+                    className="w-full px-5 py-4 bg-boon-bg border-2 border-transparent rounded-card focus:bg-white focus:border-boon-blue outline-none resize-none h-32"
                   />
 
                   {feedbackError && (
-                    <p className="text-red-500 text-sm text-center font-medium">{feedbackError}</p>
+                    <p className="text-boon-error text-sm text-center font-medium">{feedbackError}</p>
                   )}
 
                   <div className="flex flex-col gap-3">
                     <button
                       type="submit"
                       disabled={feedbackRating === 0 || isSubmitting}
-                      className="w-full py-4 bg-boon-blue text-white rounded-2xl font-bold uppercase tracking-widest text-xs disabled:bg-gray-200 disabled:text-gray-400 transition-all"
+                      className="w-full py-4 bg-boon-blue text-white rounded-card font-bold uppercase tracking-widest text-xs disabled:bg-boon-offWhite disabled:text-boon-charcoal/55 transition-all"
                     >
                       {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                     </button>
@@ -740,7 +722,7 @@ export default function SessionsPage() {
                       type="button"
                       onClick={() => setFeedbackSession(null)}
                       disabled={isSubmitting}
-                      className="py-3 text-gray-400 font-bold text-xs uppercase tracking-widest"
+                      className="py-3 text-boon-charcoal/55 font-bold text-xs uppercase tracking-widest"
                     >
                       Cancel
                     </button>

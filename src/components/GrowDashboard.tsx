@@ -1,10 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import { Card, Headline, Button, Avatar, Badge } from '../lib/design-system';
 import type { Employee, Session, ActionItem, Coach, BaselineSurvey, WelcomeSurveyScale } from '../lib/types';
-
-const devLog = (...args: unknown[]) => {
-  if (import.meta.env.DEV) console.log(...args);
-};
 import type { CoachingStateData } from '../lib/coachingState';
 import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
 import { PracticePrompt } from './PracticePrompt';
@@ -12,8 +9,36 @@ import type { ProgramInfo, GrowFocusArea } from '../lib/dataFetcher';
 import { fetchCoachByName, fetchCoachById, fetchProgramInfo, fetchGrowFocusAreas, updateActionItemStatus } from '../lib/dataFetcher';
 import CompetencyProgressCard from './CompetencyProgressCard';
 import SessionPrep from './SessionPrep';
-import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
+
+const devLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) console.log(...args);
+};
+
+type EyebrowColor = 'blue' | 'coral' | 'coral-light' | 'muted' | 'charcoal' | 'white';
+const EYEBROW_COLORS: Record<EyebrowColor, string> = {
+  blue: 'text-boon-blue',
+  coral: 'text-boon-coral',
+  'coral-light': 'text-boon-coralLight',
+  muted: 'text-boon-charcoal/55',
+  charcoal: 'text-boon-charcoal',
+  white: 'text-white/80',
+};
+function Eyebrow({
+  color = 'charcoal',
+  className = '',
+  children,
+}: {
+  color?: EyebrowColor;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`text-[11px] font-extrabold uppercase tracking-[0.18em] ${EYEBROW_COLORS[color]} ${className}`}>
+      {children}
+    </div>
+  );
+}
 
 interface GrowDashboardProps {
   profile: Employee | null;
@@ -34,7 +59,6 @@ export default function GrowDashboard({
   coachingState,
   onActionUpdate,
   userEmail,
-  programType,
 }: GrowDashboardProps) {
   const [updatingActionId, setUpdatingActionId] = useState<string | null>(null);
 
@@ -91,7 +115,7 @@ export default function GrowDashboard({
   );
   const sessionCountWithCoach = sessionsWithCoach.length;
 
-  const getCoachPhotoUrl = () => coachProfile?.photo_url || null;
+  const coachPhotoUrl = coachProfile?.photo_url || undefined;
 
   const pendingActions = actionItems.filter(a => a.status === 'pending');
   const recentlyCompletedActions = actionItems.filter(a => {
@@ -100,13 +124,6 @@ export default function GrowDashboard({
     const completedDate = new Date(a.completed_at);
     const daysSinceCompletion = (Date.now() - completedDate.getTime()) / (1000 * 60 * 60 * 24);
     return daysSinceCompletion <= 7;
-  });
-
-  devLog('[GrowDashboard] Action items:', {
-    totalReceived: actionItems.length,
-    pendingCount: pendingActions.length,
-    allItems: actionItems,
-    completedSessionsCount: completedSessions.length
   });
 
   async function handleCompleteAction(itemId: string) {
@@ -124,279 +141,294 @@ export default function GrowDashboard({
   const hasUpcomingSession = !!upcomingSession;
   const [prepExpanded, setPrepExpanded] = useState(false);
 
+  // Editorial hero title + kicker computed from program progress.
+  const completedCount = coachingState.completedSessionCount || 0;
+  const totalExpected = programInfo?.sessions_per_employee || 12;
+  const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const countAsWord = completedCount >= 0 && completedCount < numberWord.length
+    ? numberWord[completedCount]
+    : String(completedCount);
+
+  let heroStatement: string;
+  let heroKicker: string;
+  if (completedCount === 0) {
+    heroStatement = 'Before the first.';
+    heroKicker = 'Where you begin.';
+  } else if (completedCount >= totalExpected - 2) {
+    heroStatement = 'The home stretch.';
+    heroKicker = `${countAsWord.charAt(0).toUpperCase()}${countAsWord.slice(1)} in.`;
+  } else if (completedCount >= Math.ceil(totalExpected / 2)) {
+    heroStatement = `Session ${countAsWord}.`;
+    heroKicker = 'The middle stretch.';
+  } else {
+    heroStatement = `Session ${countAsWord}.`;
+    heroKicker = 'Still building.';
+  }
+
+  const progressPct = Math.min((completedCount / totalExpected) * 100, 100);
+
+  // Next-session navy-card copy. Statement + serif kicker is the signature
+  // Boon treatment. Pull session topic if we have it, otherwise fall back
+  // to a generic statement with the coach's name.
+  const nextSessionTopic = upcomingSession?.goals?.trim() || null;
+  const nextSessionStatement = nextSessionTopic
+    ? nextSessionTopic
+    : hasUpcomingSession
+    ? 'The next conversation.'
+    : 'Not yet scheduled.';
+  const nextSessionKicker = hasUpcomingSession
+    ? `With ${coachFirstName}.`
+    : `Book with ${coachFirstName}.`;
+
+  // Next-session eyebrow is the date + time when upcoming, the prompt otherwise.
+  const nextSessionEyebrow = hasUpcomingSession
+    ? `${new Date(upcomingSession!.session_date)
+        .toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+        .toUpperCase()} · ${new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`
+    : daysSinceLastSession > 21
+    ? `${daysSinceLastSession} DAYS SINCE YOUR LAST`
+    : 'UP NEXT';
+
+  const joinableZoomLink = (() => {
+    if (!hasUpcomingSession || !upcomingSession?.zoom_join_link) return null;
+    const sessionTime = new Date(upcomingSession.session_date).getTime();
+    const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
+    return hoursUntil <= 24 && hoursUntil > -1 ? upcomingSession.zoom_join_link : null;
+  })();
+
+  const actionsDone = recentlyCompletedActions.length;
+  const actionsTotal = pendingActions.length + recentlyCompletedActions.length;
+
+  // Momentum chip wording derived from completed count. This replaces the
+  // dedicated MilestoneCelebration banner — same signal, one row instead of
+  // an extra 80px card.
+  const momentumLabel = (() => {
+    if (completedCount === 0) return 'JUST STARTING';
+    if (completedCount < 3) return 'EARLY STEPS';
+    if (completedCount < Math.ceil(totalExpected / 2)) return 'BUILDING MOMENTUM';
+    if (completedCount < totalExpected - 2) return 'MID-STRETCH';
+    return 'HOME STRETCH';
+  })();
+
+  const [showAllActions, setShowAllActions] = useState(false);
+  const MAX_ACTIONS = 3;
+  const visiblePending = showAllActions ? pendingActions : pendingActions.slice(0, MAX_ACTIONS);
+  const visibleCompleted = showAllActions ? recentlyCompletedActions : [];
+  const hiddenActionCount = (pendingActions.length - visiblePending.length) + recentlyCompletedActions.length;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
-      {/* Header */}
-      <header className="pt-2">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">
-              Hi {profile?.first_name || 'there'}
-            </h1>
-            <p className="text-slate-500 mt-1">Ready for your next growth milestone?</p>
-          </div>
-          <div className="text-right flex-shrink-0">
-            <span className="inline-block bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
-              Session {coachingState.completedSessionCount || 0} of {programInfo?.sessions_per_employee || 12}
-            </span>
-            <div className="w-48 h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
-              <div
-                className="h-full bg-blue-600 rounded-full transition-all"
-                style={{ width: `${Math.min(((coachingState.completedSessionCount || 0) / (programInfo?.sessions_per_employee || 12)) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
+    <div className="max-w-6xl mx-auto animate-fade-in">
+      {/* ─────────────── Compact editorial hero ─────────────── */}
+      <header className="pb-6 mb-6 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <Eyebrow color="blue">Your progress</Eyebrow>
+          <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
+          <Eyebrow color="coral">· {momentumLabel}</Eyebrow>
         </div>
-        <div className="mt-6">
-          <MilestoneCelebration
-            completedSessionCount={completedSessions.length}
-            programType={programType === 'EXEC' ? 'EXEC' : 'GROW'}
-            totalExpected={12}
-            userEmail={userEmail}
-          />
+        <Headline as="h1" size="lg">
+          {heroStatement}{' '}
+          <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
+        </Headline>
+        <div className="mt-5">
+          <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+            <div
+              className="h-full bg-boon-blue rounded-pill transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
       </header>
 
-      {/* Two-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* ── Left column: Where We Left Off ── */}
-        <div className="lg:col-span-3 space-y-8">
-          {hasUpcomingSession ? (
-            <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
-              <button
-                onClick={() => setPrepExpanded(!prepExpanded)}
-                className="w-full flex items-center justify-between p-6 text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-sm">Session with {coachFirstName}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} at {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {upcomingSession?.zoom_join_link && (() => {
-                    const sessionTime = new Date(upcomingSession.session_date).getTime();
-                    const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
-                    return hoursUntil <= 24 && hoursUntil > -1 ? (
-                      <a
-                        href={upcomingSession.zoom_join_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
-                      >
-                        Join
-                      </a>
-                    ) : null;
-                  })()}
-                  <svg className={`w-5 h-5 text-slate-400 transition-transform ${prepExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-              {prepExpanded && (
-                <div className="px-6 pb-6 border-t border-slate-100">
-                  <SessionPrep
-                    sessions={sessions}
-                    actionItems={actionItems}
-                    coachName={coachName}
-                    userEmail={userEmail}
-                    onActionUpdate={onActionUpdate}
-                  />
-                </div>
-              )}
-            </section>
-          ) : completedSessions.length === 0 ? (
-            <CompetencyProgressCard focusAreas={focusAreas} />
-          ) : null}
-
-          {/* Where We Left Off — goal + action items */}
-          {completedSessions.length > 0 && (
-            <section className="bg-[#FFF9F0] rounded-2xl shadow-xl shadow-slate-200/50 p-8">
-              <div className="flex items-center gap-2 text-amber-600 mb-6">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest">Where we left off</span>
+      {/* ─────────────── Row 1: Next Session (navy) + Reflection (coral) ─────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6 mb-8">
+        <Card variant="navy" glow="blue" dots padding="lg">
+          <Eyebrow color="coral-light">{nextSessionEyebrow}</Eyebrow>
+          <h2
+            className="mt-4 font-display font-bold text-white text-[28px] md:text-[32px] leading-[1.15] tracking-[-0.02em]"
+          >
+            {nextSessionStatement}{' '}
+            <span className="font-serif italic font-normal text-boon-coralLight">
+              {nextSessionKicker}
+            </span>
+          </h2>
+          <div className="mt-7 flex items-center gap-4">
+            <Avatar name={coachName} src={coachPhotoUrl} size="lg" />
+            <div>
+              <div className="text-sm font-semibold text-white">{coachName}</div>
+              <div className="text-xs text-white/65">
+                {coachProfile?.headline || 'Your coach'}{coachProfile?.headline ? ' · ' : ''}{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together
               </div>
-
-              {lastSession?.goals && (
-                <div className="mb-6">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Goal</span>
-                  <h2 className="text-2xl font-bold text-slate-900 mt-2 leading-tight">
-                    {lastSession.goals}
-                  </h2>
-                </div>
-              )}
-
-              {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Action Items</span>
-                  <div className="space-y-3 mt-4">
-                    {pendingActions.map((action) => {
-                      const isUpdating = updatingActionId === action.id;
-                      return (
-                        <div
-                          key={action.id}
-                          className={`flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all ${isUpdating ? 'opacity-50' : ''}`}
-                        >
-                          <button
-                            onClick={() => handleCompleteAction(action.id)}
-                            disabled={isUpdating}
-                            className="mt-1 w-5 h-5 rounded-full border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex-shrink-0 flex items-center justify-center group"
-                            title="Mark as complete"
-                          >
-                            <svg className="w-2.5 h-2.5 text-transparent group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
-                          <div className="flex-1">
-                            <p className="text-sm text-slate-700 leading-relaxed">{action.action_text}</p>
-                            <span className="text-[10px] text-slate-400 mt-2 block">
-                              From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {recentlyCompletedActions.map((action) => (
-                      <div
-                        key={action.id}
-                        className="flex items-start gap-4 p-4 bg-green-50/50 rounded-xl border border-green-200/30"
-                      >
-                        <div className="mt-1 w-5 h-5 rounded-full bg-green-500 flex-shrink-0 flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-slate-400 leading-relaxed line-through">{action.action_text}</p>
-                          <span className="text-[10px] text-green-600 mt-2 block">
-                            Completed {action.completed_at ? new Date(action.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : !lastSession?.goals && (
-                <p className="text-slate-500 text-sm italic">
-                  Your goals and action items from coaching sessions will appear here.
-                </p>
-              )}
-            </section>
-          )}
-        </div>
-
-        {/* ── Right column: Session, Coach, Reflection, Practice ── */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Next Session */}
-          <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
-            {hasUpcomingSession ? (
-              <>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <span className="font-semibold text-slate-900">Next Session</span>
-                  </div>
-                  {upcomingSession?.zoom_join_link && (() => {
-                    const sessionTime = new Date(upcomingSession.session_date).getTime();
-                    const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
-                    return hoursUntil <= 24 && hoursUntil > -1 ? (
-                      <a
-                        href={upcomingSession.zoom_join_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-all"
-                      >
-                        Join
-                      </a>
-                    ) : null;
-                  })()}
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl">
-                  <p className="text-sm font-medium text-slate-700">
-                    {new Date(upcomingSession!.session_date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} with {coachFirstName}
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <span className="font-semibold text-slate-900">Next Session</span>
-                  </div>
-                  {profile?.booking_link && (
-                    <a
-                      href={profile.booking_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-all"
-                    >
-                      Book
-                    </a>
-                  )}
-                </div>
-                <div className="p-4 bg-slate-50 rounded-xl text-center">
-                  <p className="text-sm text-slate-500 font-medium">No upcoming session</p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    {daysSinceLastSession > 21
-                      ? `${daysSinceLastSession} days since last session`
-                      : `Schedule your next 1:1 with ${coachFirstName}`}
-                  </p>
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* Coach */}
-          <section className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {getCoachPhotoUrl() ? (
-                  <img src={getCoachPhotoUrl()!} alt={coachName} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center border-2 border-white shadow-sm">
-                    <span className="text-blue-600 text-sm font-bold">{coachName.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
-                  </div>
-                )}
-                <div>
-                  <h4 className="font-bold text-slate-900">{coachName}</h4>
-                  <p className="text-xs text-slate-500">{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</p>
-                </div>
-              </div>
-              <a href="/coach" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">Profile</a>
             </div>
-          </section>
+          </div>
+          <div className="mt-7 flex items-center gap-3 flex-wrap">
+            {joinableZoomLink ? (
+              <Button
+                as="a"
+                href={joinableZoomLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="coral"
+                size="md"
+              >
+                Join session
+              </Button>
+            ) : hasUpcomingSession ? (
+              <Button
+                variant="coral"
+                size="md"
+                onClick={() => setPrepExpanded(!prepExpanded)}
+              >
+                {prepExpanded ? 'Hide prep' : 'Open prep'}
+              </Button>
+            ) : profile?.booking_link ? (
+              <Button
+                as="a"
+                href={profile.booking_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="coral"
+                size="md"
+              >
+                Book your next
+              </Button>
+            ) : null}
+            {hasUpcomingSession && (
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => setPrepExpanded(!prepExpanded)}
+                style={{ color: 'rgba(255,255,255,.85)' }}
+              >
+                {prepExpanded ? 'Hide agenda' : 'View agenda'}
+              </Button>
+            )}
+          </div>
+          {prepExpanded && hasUpcomingSession && (
+            <div className="mt-7 pt-7 border-t border-white/15">
+              <SessionPrep
+                sessions={sessions}
+                actionItems={actionItems}
+                coachName={coachName}
+                userEmail={userEmail}
+                onActionUpdate={onActionUpdate}
+              />
+            </div>
+          )}
+        </Card>
 
-          {/* Weekly Reflection */}
-          <JournalPromptCard compact />
-
-          {/* Recommended Practice */}
-          <PracticePrompt />
-        </div>
+        {/* Weekly reflection — coral-outlined. JournalPromptCard owns the form
+            state + save logic; we only change its framing via compact prop. */}
+        <Card variant="coral-outlined" padding="lg" accent>
+          <Eyebrow color="coral">Weekly reflection</Eyebrow>
+          <div className="mt-3">
+            <JournalPromptCard compact />
+          </div>
+        </Card>
       </div>
+
+      {/* ─────────────── Row 2: Where we left off (full width) ─────────────── */}
+      {completedSessions.length > 0 && (
+        <Card padding="lg" className="mb-8">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-pill bg-boon-coral/12 flex items-center justify-center text-boon-coral">
+                <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </span>
+              <Eyebrow color="coral">Where we left off</Eyebrow>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/45">
+                · From {new Date(lastSession!.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+            {actionsTotal > 0 && actionsDone > 0 && (
+              <Badge variant={actionsDone === actionsTotal ? 'success' : 'neutral'}>
+                {actionsDone} of {actionsTotal} done
+              </Badge>
+            )}
+          </div>
+
+          {lastSession?.goals && (
+            <div className="mb-7">
+              <Eyebrow color="muted" className="mb-3">Current goal</Eyebrow>
+              <Headline as="h3" size="md" statement={lastSession.goals} />
+            </div>
+          )}
+
+          {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) ? (
+            <div>
+              <Eyebrow color="muted" className="mb-3">Action items</Eyebrow>
+              <div className="flex flex-col gap-2.5">
+                {visiblePending.map((action) => {
+                  const isUpdating = updatingActionId === action.id;
+                  return (
+                    <button
+                      key={action.id}
+                      onClick={() => handleCompleteAction(action.id)}
+                      disabled={isUpdating}
+                      className={`flex items-start gap-3.5 p-3.5 rounded-btn bg-white border border-boon-charcoal/[0.08] hover:border-boon-blue/40 hover:shadow-sm transition-all text-left group ${isUpdating ? 'opacity-50' : ''}`}
+                      title="Mark as complete"
+                    >
+                      <span className="w-5 h-5 rounded-md border-[1.5px] border-boon-charcoal/30 group-hover:border-boon-blue group-hover:bg-boon-blue/5 transition-all flex-shrink-0 mt-0.5 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                      <p className="flex-1 text-sm text-boon-charcoal leading-relaxed">{action.action_text}</p>
+                    </button>
+                  );
+                })}
+                {visibleCompleted.map((action) => (
+                  <div
+                    key={action.id}
+                    className="flex items-start gap-3.5 p-3.5 rounded-btn bg-white/50 border border-boon-charcoal/[0.06]"
+                  >
+                    <span className="w-5 h-5 rounded-md bg-boon-blue flex-shrink-0 mt-0.5 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <p className="flex-1 text-sm text-boon-charcoal/50 leading-relaxed line-through">{action.action_text}</p>
+                  </div>
+                ))}
+              </div>
+              {hiddenActionCount > 0 && (
+                <button
+                  onClick={() => setShowAllActions(true)}
+                  className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors"
+                >
+                  + {hiddenActionCount} more
+                </button>
+              )}
+              {showAllActions && (pendingActions.length > MAX_ACTIONS || recentlyCompletedActions.length > 0) && (
+                <button
+                  onClick={() => setShowAllActions(false)}
+                  className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-charcoal/55 hover:text-boon-charcoal transition-colors"
+                >
+                  Show less
+                </button>
+              )}
+            </div>
+          ) : !lastSession?.goals && (
+            <p className="text-sm italic text-boon-charcoal/60">
+              Your goals and action items from coaching sessions will appear here.
+            </p>
+          )}
+        </Card>
+      )}
+
+      {/* ─────────────── Row 3: Competency (optional) + Practice nudge ─────────────── */}
+      {focusAreas.length > 0 && (
+        <div className="mb-6">
+          <CompetencyProgressCard focusAreas={focusAreas} />
+        </div>
+      )}
+
+      <PracticePrompt />
     </div>
   );
 }

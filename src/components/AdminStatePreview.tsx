@@ -130,7 +130,7 @@ export default function AdminStatePreview({
 
           {/* Current State Info */}
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.18em] mb-1">
               Actual State
             </p>
             <div className="flex items-center gap-2">

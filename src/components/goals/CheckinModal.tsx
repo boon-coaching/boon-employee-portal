@@ -50,13 +50,13 @@ export function CheckinModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-[2rem] p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto animate-fade-in">
+      <div className="bg-white rounded-card p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-extrabold text-boon-text">{title}</h2>
+          <h2 className="text-xl font-extrabold text-boon-navy">{title}</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all"
+            className="w-8 h-8 rounded-pill flex items-center justify-center text-boon-charcoal/40 hover:text-boon-charcoal/55 hover:bg-boon-offWhite transition-all"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -65,18 +65,18 @@ export function CheckinModal({
         </div>
 
         {/* Commitment reminder */}
-        <div className="mb-6 p-4 rounded-2xl bg-boon-bg border border-gray-100">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">
+        <div className="mb-6 p-4 rounded-card bg-boon-bg border border-boon-charcoal/[0.08]">
+          <p className="text-xs font-bold text-boon-charcoal/55 uppercase tracking-wide mb-1">
             Your commitment
           </p>
-          <p className="text-boon-text text-sm leading-relaxed">
+          <p className="text-boon-navy text-sm leading-relaxed">
             {commitmentText}
           </p>
         </div>
 
         {/* Progress rating */}
         <div className="mb-6">
-          <p className="text-sm font-bold text-boon-text mb-3">
+          <p className="text-sm font-bold text-boon-navy mb-3">
             How did it go?
           </p>
           <div className="flex items-center justify-between gap-2">
@@ -87,10 +87,10 @@ export function CheckinModal({
                 className="flex flex-col items-center gap-1.5 group flex-1"
               >
                 <span
-                  className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all ${
+                  className={`w-10 h-10 rounded-pill border-2 flex items-center justify-center text-sm font-bold transition-all ${
                     rating === value
                       ? 'bg-boon-blue border-boon-blue text-white scale-110'
-                      : 'border-gray-200 text-gray-400 group-hover:border-boon-blue group-hover:text-boon-blue'
+                      : 'border-boon-charcoal/[0.08] text-boon-charcoal/55 group-hover:border-boon-blue group-hover:text-boon-blue'
                   }`}
                 >
                   {value}
@@ -99,7 +99,7 @@ export function CheckinModal({
                   className={`text-[10px] leading-tight text-center transition-colors ${
                     rating === value
                       ? 'text-boon-blue font-bold'
-                      : 'text-gray-300'
+                      : 'text-boon-charcoal/40'
                   }`}
                 >
                   {RATING_LABELS[value - 1]}
@@ -111,32 +111,32 @@ export function CheckinModal({
 
         {/* Reflection */}
         <div className="mb-5">
-          <label className="block text-sm font-bold text-boon-text mb-2">
+          <label className="block text-sm font-bold text-boon-navy mb-2">
             What happened?
-            <span className="text-gray-300 font-normal ml-1">Optional</span>
+            <span className="text-boon-charcoal/40 font-normal ml-1">Optional</span>
           </label>
           <textarea
             value={reflectionText}
             onChange={e => setReflectionText(e.target.value)}
             placeholder="Share what went well, what you learned, or what surprised you..."
             rows={3}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-boon-text text-sm placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-boon-blue/30 focus:border-boon-blue transition-all resize-none"
+            className="w-full px-4 py-3 rounded-btn border border-boon-charcoal/[0.08] text-boon-navy text-sm placeholder:text-boon-charcoal/40 focus:outline-none focus:ring-2 focus:ring-boon-blue/30 focus:border-boon-blue transition-all resize-none"
           />
         </div>
 
         {/* Blockers (midweek only) */}
         {checkinType === 'midweek' && (
           <div className="mb-6">
-            <label className="block text-sm font-bold text-boon-text mb-2">
+            <label className="block text-sm font-bold text-boon-navy mb-2">
               Anything getting in the way?
-              <span className="text-gray-300 font-normal ml-1">Optional</span>
+              <span className="text-boon-charcoal/40 font-normal ml-1">Optional</span>
             </label>
             <textarea
               value={blockers}
               onChange={e => setBlockers(e.target.value)}
               placeholder="Challenges, time constraints, unclear expectations..."
               rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-boon-text text-sm placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-boon-blue/30 focus:border-boon-blue transition-all resize-none"
+              className="w-full px-4 py-3 rounded-btn border border-boon-charcoal/[0.08] text-boon-navy text-sm placeholder:text-boon-charcoal/40 focus:outline-none focus:ring-2 focus:ring-boon-blue/30 focus:border-boon-blue transition-all resize-none"
             />
           </div>
         )}
@@ -145,14 +145,14 @@ export function CheckinModal({
         <div className="flex items-center gap-3 justify-end pt-2">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-gray-400 font-bold text-sm hover:text-gray-600 transition-colors rounded-xl"
+            className="px-5 py-2.5 text-boon-charcoal/55 font-bold text-sm hover:text-boon-charcoal/75 transition-colors rounded-btn"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={rating === null || submitting}
-            className="px-6 py-2.5 bg-boon-blue text-white rounded-xl font-bold text-sm hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2.5 bg-boon-blue text-white rounded-btn font-bold text-sm hover:bg-boon-darkBlue transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {submitting && (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

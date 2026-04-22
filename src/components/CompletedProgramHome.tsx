@@ -35,39 +35,39 @@ export function CompletedProgramHome() {
 
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-2">
         <div className="text-center sm:text-left">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-boon-text tracking-tight">
+          <h1 className="font-display font-bold text-boon-navy text-[36px] md:text-[52px] leading-[1.05] tracking-[-0.025em]">
             Hi {profile?.first_name || 'there'}
           </h1>
-          <p className="text-gray-500 mt-2 text-lg font-medium">
+          <p className="text-boon-charcoal/55 mt-2 text-lg font-medium">
             Your leadership journey with Boon
           </p>
         </div>
       </header>
 
       {/* Program Summary */}
-      <section className="bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-gray-100">
-        <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-8">
+      <section className="bg-white rounded-card p-7 md:p-10 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-boon-charcoal/[0.08]">
+        <h2 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-8">
           Program Summary
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <p className="text-lg font-black text-boon-text tracking-tight truncate">
+            <p className="text-lg font-black text-boon-navy tracking-tight truncate">
               {lastSession?.coach_name?.split(' ')[0] || '\u2014'}
             </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
+            <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-widest">Coach</p>
           </div>
           <div>
             <p className="text-lg font-black text-boon-blue tracking-tight">{programType || 'Boon'}</p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Program</p>
+            <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-widest">Program</p>
           </div>
           <div>
-            <p className="text-lg font-black text-green-600 tracking-tight">
+            <p className="text-lg font-black text-boon-success tracking-tight">
               {completedSessions.length}
             </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Total Sessions</p>
+            <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-widest">Total Sessions</p>
           </div>
           <div>
-            <p className="text-lg font-black text-boon-text tracking-tight">
+            <p className="text-lg font-black text-boon-navy tracking-tight">
               {(() => {
                 const first = completedSessions[completedSessions.length - 1];
                 const last = completedSessions[0];
@@ -79,7 +79,7 @@ export function CompletedProgramHome() {
                 return `${startMonth} \u2013 ${endMonth}`;
               })()}
             </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Duration</p>
+            <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-widest">Duration</p>
           </div>
         </div>
       </section>
@@ -93,17 +93,17 @@ export function CompletedProgramHome() {
 
       {/* Your Goals - from most recent session */}
       {lastSession?.goals && (
-        <section className="bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 rounded-[2rem] p-8 border border-boon-blue/10">
+        <section className="bg-gradient-to-br from-boon-blue/5 to-boon-lightBlue/20 rounded-card p-8 border border-boon-blue/10">
           <div className="flex items-start justify-between mb-4">
-            <h2 className="text-xl font-extrabold text-boon-text">
+            <h2 className="text-xl font-extrabold text-boon-navy">
               Your Leadership Goals
             </h2>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">
               From {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>
           <div className="prose prose-sm max-w-none">
-            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+            <div className="text-boon-charcoal/75 leading-relaxed whitespace-pre-line">
               {lastSession.goals}
             </div>
           </div>
@@ -113,24 +113,24 @@ export function CompletedProgramHome() {
       {/* Areas of Growth */}
       {focusAreas.length > 0 && (
         <section className="space-y-5">
-          <h2 className="text-xl font-extrabold text-boon-text">
+          <h2 className="text-xl font-extrabold text-boon-navy">
             Areas of Growth
           </h2>
           <div className="space-y-3">
             {focusAreas.map((area, i) => (
               <div
                 key={i}
-                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:border-boon-blue/20 transition-all cursor-pointer group active:scale-[0.98]"
+                className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] shadow-sm hover:border-boon-blue/20 transition-all cursor-pointer group active:scale-[0.98]"
               >
-                <h3 className="font-bold text-boon-text group-hover:text-boon-blue transition-colors leading-snug">
+                <h3 className="font-bold text-boon-navy group-hover:text-boon-blue transition-colors leading-snug">
                   {area!.label}
                 </h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-wider">
                     {area!.count} {area!.count === 1 ? 'session' : 'sessions'}
                   </span>
                   <span className="text-gray-200">&bull;</span>
-                  <span className="text-[11px] font-medium text-gray-400">
+                  <span className="text-[11px] font-medium text-boon-charcoal/55">
                     Explored {new Date(area!.firstDiscussed).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
                 </div>
@@ -145,8 +145,8 @@ export function CompletedProgramHome() {
 
       {/* What's Next */}
       <div className="space-y-8 pb-8">
-        <section className="bg-gradient-to-br from-boon-bg via-white to-purple-50/30 rounded-[2rem] p-8 border border-gray-100">
-          <p className="text-gray-500 text-sm mb-4">
+        <section className="bg-boon-offWhite rounded-card p-8 border border-boon-charcoal/[0.08]">
+          <p className="text-boon-charcoal/55 text-sm mb-4">
             When hard moments come up, your practice space is still here.
           </p>
           <button
@@ -161,13 +161,13 @@ export function CompletedProgramHome() {
         </section>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <section className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
+          <section className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm">
             <div className="flex flex-col h-full justify-between">
               <div>
-                <p className="text-[11px] font-black text-green-600 uppercase tracking-widest mb-2">
+                <p className="text-[11px] font-black text-boon-success uppercase tracking-[0.18em] mb-2">
                   Leadership Profile
                 </p>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-boon-charcoal/75 text-sm leading-relaxed">
                   See your complete competency profile and how you grew through your program.
                 </p>
               </div>
@@ -180,13 +180,13 @@ export function CompletedProgramHome() {
             </div>
           </section>
 
-          <section className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
+          <section className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm">
             <div className="flex flex-col h-full justify-between">
               <div>
-                <p className="text-[11px] font-black text-purple-600 uppercase tracking-widest mb-2">
+                <p className="text-[11px] font-black text-boon-purple uppercase tracking-[0.18em] mb-2">
                   Session Archive
                 </p>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-boon-charcoal/75 text-sm leading-relaxed">
                   Revisit your complete coaching history and session notes.
                 </p>
               </div>
@@ -202,11 +202,11 @@ export function CompletedProgramHome() {
 
         {programType !== 'SCALE' && (
           <section className="text-center py-4">
-            <p className="text-gray-400 text-sm">
+            <p className="text-boon-charcoal/55 text-sm">
               Some people continue with ongoing 1:1 coaching.{' '}
               <a
                 href="mailto:hello@boon-health.com?subject=Interest%20in%20SCALE%20Program"
-                className="text-gray-500 hover:text-boon-blue underline underline-offset-2"
+                className="text-boon-charcoal/55 hover:text-boon-blue underline underline-offset-2"
               >
                 Learn about SCALE &rarr;
               </a>
