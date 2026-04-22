@@ -1,12 +1,39 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { toast } from 'sonner';
+import { Card, Headline, Button, Avatar, Badge } from '../lib/design-system';
 import type { Employee, Session, ActionItem, BaselineSurvey, Coach } from '../lib/types';
 import type { CoachingStateData } from '../lib/coachingState';
-import { isUpcomingSession } from '../lib/coachingState';
+import { COUNTED_SESSION_STATUSES, isUpcomingSession } from '../lib/coachingState';
 import { supabase } from '../lib/supabase';
-import { fetchCoachByName } from '../lib/dataFetcher';
+import { fetchCoachByName, updateActionItemStatus } from '../lib/dataFetcher';
 import { PracticePrompt } from './PracticePrompt';
-import { MilestoneCelebration } from './MilestoneCelebration';
 import { JournalPromptCard } from './journal/JournalPromptCard';
+import SessionPrep from './SessionPrep';
+
+type EyebrowColor = 'blue' | 'coral' | 'coral-light' | 'muted' | 'charcoal' | 'white';
+const EYEBROW_COLORS: Record<EyebrowColor, string> = {
+  blue: 'text-boon-blue',
+  coral: 'text-boon-coral',
+  'coral-light': 'text-boon-coralLight',
+  muted: 'text-boon-charcoal/55',
+  charcoal: 'text-boon-charcoal',
+  white: 'text-white/80',
+};
+function Eyebrow({
+  color = 'charcoal',
+  className = '',
+  children,
+}: {
+  color?: EyebrowColor;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`text-[11px] font-extrabold uppercase tracking-[0.18em] ${EYEBROW_COLORS[color]} ${className}`}>
+      {children}
+    </div>
+  );
+}
 
 interface ActiveGrowHomeProps {
   profile: Employee | null;
@@ -23,130 +50,135 @@ export default function ActiveGrowHome({
   sessions,
   actionItems,
   coachingState,
-  onActionUpdate: _onActionUpdate,
+  onActionUpdate,
   userEmail,
 }: ActiveGrowHomeProps) {
-  void _onActionUpdate; // Reserved for future action item updates
-
-  // Sort sessions by date descending to get most recent first
-  const sortedSessions = [...sessions].sort((a, b) =>
-    new Date(b.session_date).getTime() - new Date(a.session_date).getTime()
-  );
-  const completedSessions = sortedSessions.filter(s => s.status === 'Completed');
-  const upcomingSession = sortedSessions.find(isUpcomingSession);
-  const lastSession = completedSessions.length > 0 ? completedSessions[0] : null;
-
-  const coachName = lastSession?.coach_name || upcomingSession?.coach_name || 'Your Coach';
-  const coachFirstName = coachName.split(' ')[0];
-
-  // Coach profile state
+  const [updatingActionId, setUpdatingActionId] = useState<string | null>(null);
   const [coachProfile, setCoachProfile] = useState<Coach | null>(null);
-  const [isLoadingCoach, setIsLoadingCoach] = useState(true);
+  const [prepExpanded, setPrepExpanded] = useState(false);
 
-  // Fetch coach profile from coaches table
-  useEffect(() => {
-    const loadCoachProfile = async () => {
-      setIsLoadingCoach(true);
-      if (!coachName || coachName === 'Your Coach') {
-        setIsLoadingCoach(false);
-        return;
-      }
+  const completedSessions = sessions
+    .filter(s => s.status === 'Completed')
+    .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+  const upcomingSession = sessions
+    .filter(isUpcomingSession)
+    .sort((a, b) => new Date(a.session_date).getTime() - new Date(b.session_date).getTime())[0] || null;
+  const lastSession = completedSessions[0] ?? null;
 
-      const coach = await fetchCoachByName(coachName);
-      if (coach) {
-        setCoachProfile(coach as Coach);
-      }
-      setIsLoadingCoach(false);
-    };
-
-    loadCoachProfile();
-  }, [coachName]);
-
-  // Count sessions with this specific coach
-  const sessionsWithCoach = completedSessions.filter(s => s.coach_name === coachName);
-  const sessionCountWithCoach = sessionsWithCoach.length;
-
-  // Helper: Get coach photo URL or generate initials placeholder
-  const getCoachPhotoUrl = (size: number = 100) => {
-    if (coachProfile?.photo_url) {
-      return coachProfile.photo_url;
-    }
-    // Fallback to initials-based placeholder
-    const initials = coachName
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-    // Use a simple SVG data URL for initials
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect fill="%23466FF6" width="${size}" height="${size}"/><text x="50%" y="50%" dy=".35em" fill="white" font-family="system-ui" font-size="${size * 0.4}" font-weight="600" text-anchor="middle">${initials}</text></svg>`;
-    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  };
-
-  // Action items for "Things You're Working On" - from action_items table
-  const pendingActions = actionItems.filter(a => a.status === 'pending');
-
-  // State for notes on action items
-  const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
-  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
-  const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
-
-  // Load existing notes from localStorage
-  useEffect(() => {
-    if (!userEmail) return;
-    const savedNotes = localStorage.getItem(`action_notes_${userEmail}`);
-    if (savedNotes) {
-      try {
-        setActionNotes(JSON.parse(savedNotes));
-      } catch {
-        // Invalid JSON, ignore
-      }
-    }
-  }, [userEmail]);
-
-  // Save note for an action item
-  const saveNote = async (actionId: string, note: string) => {
-    setSavingNoteId(actionId);
-    const updatedNotes = { ...actionNotes, [actionId]: note };
-    setActionNotes(updatedNotes);
-    localStorage.setItem(`action_notes_${userEmail}`, JSON.stringify(updatedNotes));
-
-    // Optionally save to Supabase
-    try {
-      await supabase
-        .from('action_item_notes')
-        .upsert({
-          email: userEmail.toLowerCase(),
-          action_id: actionId,
-          note: note,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email,action_id' });
-    } catch {
-      // localStorage saved as fallback
-    }
-
-    setSavingNoteId(null);
-    setExpandedNoteId(null);
-  };
-
-  // Determine sub-state
-  const hasUpcomingSession = !!upcomingSession;
-
-  // Calculate days since last session (for time-aware messaging)
   const daysSinceLastSession = lastSession
     ? Math.floor((Date.now() - new Date(lastSession.session_date).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
-  // Session prep reflection state
-  const [reflection, setReflection] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const coachName = lastSession?.coach_name || upcomingSession?.coach_name || 'Your Coach';
+  const coachFirstName = coachName.split(' ')[0];
 
-  // Load existing reflection for upcoming session
+  useEffect(() => {
+    if (coachName && coachName !== 'Your Coach') {
+      fetchCoachByName(coachName).then(c => setCoachProfile(c as Coach | null));
+    }
+  }, [coachName]);
+  const coachPhotoUrl = coachProfile?.photo_url || undefined;
+
+  const sessionCountWithCoach = sessions.filter(
+    s => COUNTED_SESSION_STATUSES.includes(s.status) && s.coach_name === coachName
+  ).length;
+
+  const pendingActions = actionItems.filter(a => a.status === 'pending');
+  const recentlyCompletedActions = actionItems.filter(a => {
+    if (a.status !== 'completed') return false;
+    if (!a.completed_at) return false;
+    const daysSinceCompletion = (Date.now() - new Date(a.completed_at).getTime()) / (1000 * 60 * 60 * 24);
+    return daysSinceCompletion <= 7;
+  });
+
+  async function handleCompleteAction(itemId: string) {
+    setUpdatingActionId(itemId);
+    const success = await updateActionItemStatus(itemId, 'completed');
+    if (success) {
+      toast.success('Action item completed');
+      onActionUpdate();
+    } else {
+      toast.error('Could not update action item');
+    }
+    setUpdatingActionId(null);
+  }
+
+  // Editorial hero. EXEC + GROW share the cohort arc, so copy mirrors
+  // GrowDashboard's progress-aware kickers.
+  const completedCount = coachingState.completedSessionCount || 0;
+  const totalExpected = coachingState.totalExpectedSessions || 12;
+  const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  const countAsWord = completedCount >= 0 && completedCount < numberWord.length
+    ? numberWord[completedCount]
+    : String(completedCount);
+  const capitalize = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
+
+  let heroStatement: string;
+  let heroKicker: string;
+  if (completedCount === 0) {
+    heroStatement = 'Before the first.';
+    heroKicker = 'Where you begin.';
+  } else if (completedCount >= totalExpected - 2) {
+    heroStatement = 'The home stretch.';
+    heroKicker = `${capitalize(countAsWord)} in.`;
+  } else if (completedCount >= Math.ceil(totalExpected / 2)) {
+    heroStatement = `Session ${countAsWord}.`;
+    heroKicker = 'The middle stretch.';
+  } else {
+    heroStatement = `Session ${countAsWord}.`;
+    heroKicker = 'Still building.';
+  }
+
+  const momentumLabel = (() => {
+    if (completedCount === 0) return 'JUST STARTING';
+    if (completedCount < 3) return 'EARLY STEPS';
+    if (completedCount < Math.ceil(totalExpected / 2)) return 'BUILDING MOMENTUM';
+    if (completedCount < totalExpected - 2) return 'MID-STRETCH';
+    return 'HOME STRETCH';
+  })();
+
+  const progressPct = Math.min((completedCount / totalExpected) * 100, 100);
+
+  const hasUpcomingSession = !!upcomingSession;
+
+  const nextSessionTopic = upcomingSession?.goals?.trim() || null;
+  const nextSessionStatement = nextSessionTopic
+    ? nextSessionTopic
+    : hasUpcomingSession
+    ? 'The next conversation.'
+    : 'Not yet scheduled.';
+  const nextSessionKicker = hasUpcomingSession
+    ? `With ${coachFirstName}.`
+    : `Book with ${coachFirstName}.`;
+
+  const nextSessionEyebrow = hasUpcomingSession
+    ? `${new Date(upcomingSession!.session_date)
+        .toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+        .toUpperCase()} · ${new Date(upcomingSession!.session_date).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`
+    : daysSinceLastSession > 21
+    ? `${daysSinceLastSession} DAYS SINCE YOUR LAST`
+    : 'UP NEXT';
+
+  const joinableZoomLink = (() => {
+    if (!hasUpcomingSession || !upcomingSession?.zoom_join_link) return null;
+    const sessionTime = new Date(upcomingSession.session_date).getTime();
+    const hoursUntil = (sessionTime - Date.now()) / (1000 * 60 * 60);
+    return hoursUntil <= 24 && hoursUntil > -1 ? upcomingSession.zoom_join_link : null;
+  })();
+
+  // Pre-session reflection. Auto-saves to session_prep so the coach can read
+  // intent before the call; unique to this Home variant (Grow uses the
+  // weekly journal in this slot).
+  const [reflection, setReflection] = useState('');
+  const [isSavingReflection, setIsSavingReflection] = useState(false);
+  const [reflectionSavedAt, setReflectionSavedAt] = useState<Date | null>(null);
+
   useEffect(() => {
     const loadReflection = async () => {
       if (!upcomingSession || !userEmail) return;
-
       try {
         const { data, error } = await supabase
           .from('session_prep')
@@ -154,44 +186,38 @@ export default function ActiveGrowHome({
           .eq('email', userEmail.toLowerCase())
           .eq('session_id', upcomingSession.id)
           .single();
-
-        if (!error && data) {
-          setReflection(data.intention || '');
-        }
+        if (!error && data) setReflection(data.intention || '');
       } catch {
         const key = `session_prep_${userEmail}_${upcomingSession.id}`;
         const saved = localStorage.getItem(key);
         if (saved) setReflection(saved);
       }
     };
-
     loadReflection();
   }, [upcomingSession, userEmail]);
 
-  // Auto-save reflection with debounce
   const saveReflection = useCallback(async (text: string) => {
     if (!upcomingSession || !userEmail) return;
-
-    setIsSaving(true);
+    setIsSavingReflection(true);
     const key = `session_prep_${userEmail}_${upcomingSession.id}`;
     localStorage.setItem(key, text);
-
     try {
       const { error } = await supabase
         .from('session_prep')
-        .upsert({
-          email: userEmail.toLowerCase(),
-          session_id: upcomingSession.id,
-          intention: text,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'email,session_id' });
-
-      if (!error) setLastSaved(new Date());
+        .upsert(
+          {
+            email: userEmail.toLowerCase(),
+            session_id: upcomingSession.id,
+            intention: text,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'email,session_id' }
+        );
+      if (!error) setReflectionSavedAt(new Date());
     } catch {
-      // localStorage saved as fallback
+      // localStorage already updated; silent fallback
     }
-
-    setIsSaving(false);
+    setIsSavingReflection(false);
   }, [upcomingSession, userEmail]);
 
   useEffect(() => {
@@ -200,589 +226,215 @@ export default function ActiveGrowHome({
     return () => clearTimeout(timer);
   }, [reflection, saveReflection]);
 
-  // Check if session is within 2 days (joinable window for prominent display)
-  const isSessionSoon = (session: Session) => {
-    const sessionDate = new Date(session.session_date);
-    const now = new Date();
-    const diffDays = (sessionDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 2 && diffDays >= -0.5; // 2 days before to 12 hours after
-  };
-
-  const showJoinButton = upcomingSession?.zoom_join_link && isSessionSoon(upcomingSession);
-
-  // Time-aware messaging for no session state
-  const getBookingMessage = () => {
-    if (daysSinceLastSession <= 14) {
-      return {
-        title: "Ready for your next session?",
-        subtitle: `Continue your coaching journey with ${coachFirstName}.`,
-      };
-    } else if (daysSinceLastSession <= 28) {
-      return {
-        title: "It's been a few weeks",
-        subtitle: `Your last session was ${lastSession ? new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'a while ago'}. Ready to continue with ${coachFirstName}?`,
-      };
-    } else {
-      return {
-        title: "Pick up where you left off",
-        subtitle: `It's been a while since you met with ${coachFirstName}. Your coaching thread is still here when you're ready.`,
-      };
-    }
-  };
-
-  // Coaching themes from sessions - these become "Current Focus"
-  const themes = [
-    { key: 'leadership_management_skills', label: 'Leading with empathy and clarity' },
-    { key: 'communication_skills', label: 'Communicating with impact and intention' },
-    { key: 'mental_well_being', label: 'Cultivating sustainable mental energy' },
-  ];
-
-  const focusAreas = themes.map(theme => {
-    const sessionsWithTheme = completedSessions.filter(s => (s as unknown as Record<string, unknown>)[theme.key]);
-    if (sessionsWithTheme.length === 0) return null;
-    const firstDiscussed = sessionsWithTheme.reduce((earliest, current) => {
-      return new Date(current.session_date) < new Date(earliest) ? current.session_date : earliest;
-    }, sessionsWithTheme[0].session_date);
-    return { label: theme.label, firstDiscussed, count: sessionsWithTheme.length };
-  }).filter(Boolean);
-
-  // Hero title + kicker computed from program progress.
-  // Keeps copy editorial and specific to the user's actual stage rather
-  // than a generic "Hi {name}" greeting.
-  const completedCount = coachingState.completedSessionCount;
-  const totalExpected = coachingState.totalExpectedSessions;
-  const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
-  const countAsWord = completedCount >= 0 && completedCount < numberWord.length
-    ? numberWord[completedCount]
-    : String(completedCount);
-
-  let heroTitle: string;
-  let heroKicker: string;
-  if (completedCount === 0) {
-    heroTitle = 'Before the first.';
-    heroKicker = 'Where you begin.';
-  } else if (totalExpected && completedCount >= totalExpected - 2) {
-    heroTitle = 'The home stretch.';
-    heroKicker = `${countAsWord.charAt(0).toUpperCase()}${countAsWord.slice(1)} in.`;
-  } else if (totalExpected && completedCount >= Math.ceil(totalExpected / 2)) {
-    heroTitle = `Session ${countAsWord}.`;
-    heroKicker = 'The middle stretch.';
-  } else {
-    heroTitle = `Session ${countAsWord}.`;
-    heroKicker = 'Still building.';
-  }
-
-  const heroMetaLabel = totalExpected
-    ? `${completedCount} of ${totalExpected} with ${coachFirstName}`
-    : `with ${coachFirstName}`;
+  const actionsDone = recentlyCompletedActions.length;
+  const actionsTotal = pendingActions.length + recentlyCompletedActions.length;
+  const [showAllActions, setShowAllActions] = useState(false);
+  const MAX_ACTIONS = 3;
+  const visiblePending = showAllActions ? pendingActions : pendingActions.slice(0, MAX_ACTIONS);
+  const visibleCompleted = showAllActions ? recentlyCompletedActions : [];
+  const hiddenActionCount = (pendingActions.length - visiblePending.length) + recentlyCompletedActions.length;
 
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in">
-      {/* Hero header */}
-      <header className="pb-10 mb-10 border-b border-boon-charcoal/10">
-        <div className="flex items-center gap-3 mb-7">
+    <div className="max-w-6xl mx-auto animate-fade-in">
+      {/* ─────────────── Editorial hero ─────────────── */}
+      <header className="pb-6 mb-6 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="w-6 h-px bg-boon-blue" aria-hidden />
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
-            Your progress
-          </span>
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/50">
-            · {heroMetaLabel}
-          </span>
+          <Eyebrow color="blue">Your progress</Eyebrow>
+          <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
+          <Eyebrow color="coral">· {momentumLabel}</Eyebrow>
         </div>
-        <h1 className="font-display font-bold text-boon-navy text-[52px] md:text-[74px] leading-[0.98] tracking-[-0.03em]">
-          {heroTitle}
-          <span className="block font-serif italic font-normal text-boon-blue mt-1">
-            {heroKicker}
-          </span>
-        </h1>
-        {profile?.booking_link && (
-          <div className="mt-8">
-            <a
-              href={profile.booking_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center gap-2.5 px-5 py-3 text-[13px] font-display font-medium rounded-btn transition-colors ${
-                hasUpcomingSession
-                  ? 'bg-white text-boon-coral border-[1.5px] border-boon-coral hover:bg-boon-coral hover:text-white'
-                  : 'bg-boon-coral text-white hover:bg-boon-coralLight'
-              }`}
-            >
-              {hasUpcomingSession ? 'Book another' : 'Open calendar'}
-              <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </a>
+        <Headline as="h1" size="lg">
+          {heroStatement}{' '}
+          <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
+        </Headline>
+        <div className="mt-5 flex items-center gap-3">
+          <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+            <div
+              className="h-full bg-boon-blue rounded-pill transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
-        )}
+          <Eyebrow color="muted">{Math.round(progressPct)}% complete</Eyebrow>
+        </div>
       </header>
 
-      <div className="space-y-8 md:space-y-10">
-
-      {/* Session Milestone Celebration */}
-      <MilestoneCelebration
-        completedSessionCount={completedSessions.length}
-        programType="GROW"
-        totalExpected={12}
-        userEmail={userEmail}
-      />
-
-      {/* GoalHomeCard removed: action items were duplicated */}
-
-      {/* Current Focus — navy authority surface with coral kicker.
-          Replaces the amber/Georgia journal styling with the Boon
-          Product-mode focus-card treatment from the Home prototype. */}
-      {focusAreas.length > 0 && (
-        <section className="relative overflow-hidden rounded-card bg-boon-navy text-white p-8 md:p-11">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute -bottom-40 -right-32 h-80 w-80 rounded-full"
-            style={{ background: 'radial-gradient(circle, rgba(255, 109, 106, 0.22) 0%, transparent 65%)' }}
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute top-4 right-4 h-10 w-10"
-            style={{
-              backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.22) 1px, transparent 1.2px)',
-              backgroundSize: '6px 6px',
-            }}
-          />
-          <div className="relative">
-            <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-boon-coral mb-6">
-              Your current focus
-            </div>
-            <div className="space-y-7">
-              {focusAreas.map((area, i) => (
-                <div
-                  key={i}
-                  className={i > 0 ? 'pt-7 border-t border-white/10' : ''}
-                >
-                  <h3 className="font-display font-bold text-2xl md:text-[28px] leading-[1.2] tracking-[-0.015em] max-w-xl">
-                    {area!.label}
-                  </h3>
-                  <div className="mt-3 flex items-center gap-3 text-[11px] uppercase tracking-[0.06em]">
-                    <span className="w-4 h-px bg-boon-coral" aria-hidden />
-                    <span className="text-boon-coral font-semibold">
-                      {area!.count} {area!.count === 1 ? 'session' : 'sessions'}
-                    </span>
-                    <span className="text-white/30">·</span>
-                    <span className="text-white/55">
-                      since {new Date(area!.firstDiscussed).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          SUB-STATE A: Session Scheduled
-          ═══════════════════════════════════════════════════════════════════ */}
-      {hasUpcomingSession && (
-        <>
-          {/* Your Next Session Card - Secondary positioning but contextually prominent when soon */}
-          <section className={`rounded-[2rem] p-8 border-2 transition-all ${
-            showJoinButton
-              ? 'bg-gradient-to-br from-boon-blue/10 via-white to-boon-lightBlue/30 border-boon-blue/40 shadow-xl'
-              : 'bg-white border-gray-100 shadow-sm'
-          }`}>
-            <div className="flex items-center gap-2 mb-5">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Your Next Session</span>
-            </div>
-
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div>
-                <p className="text-2xl font-bold text-boon-text">
-                  {new Date(upcomingSession.session_date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-                <p className="text-gray-500 mt-1">
-                  {new Date(upcomingSession.session_date).toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })} with {coachName}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <img
-                  src={getCoachPhotoUrl(100)}
-                  alt={coachName}
-                  className="w-14 h-14 rounded-xl object-cover object-[center_15%] ring-2 ring-gray-100"
-                />
-              </div>
-            </div>
-
-            {upcomingSession.zoom_join_link && (
-              <div className="mt-6 pt-5 border-t border-gray-100">
-                <a
-                  href={upcomingSession.zoom_join_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all ${
-                    showJoinButton
-                      ? 'text-white bg-green-600 hover:bg-green-700 shadow-lg'
-                      : 'text-boon-blue bg-boon-lightBlue hover:bg-boon-lightBlue/80'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  {showJoinButton ? 'Join Session' : 'Join Link'}
-                </a>
-              </div>
-            )}
-          </section>
-
-          {/* ═══════════════════════════════════════════════════════════════════
-              BEFORE YOU MEET - Reflection card with last session context
-              Uses Georgia for prompts, amber accents
-              ═══════════════════════════════════════════════════════════════════ */}
-          <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-              <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Before you meet with {coachFirstName}</h2>
-            </div>
-
-            {/* Last session context */}
-            {lastSession?.plan && (
-              <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-2">Last time, you were working on:</p>
-                <p className="font-serif text-gray-700 leading-relaxed italic">"{lastSession.plan}"</p>
-              </div>
-            )}
-            {!lastSession?.plan && lastSession?.goals && (
-              <div className="mb-6 p-5 bg-white/60 rounded-xl border border-boon-amber/10">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-2">Last time, you were working on:</p>
-                <p className="font-serif text-gray-700 leading-relaxed italic">"{lastSession.goals}"</p>
-              </div>
-            )}
-
-            {/* Reflection prompt */}
-            <div className="space-y-3">
-              <label className="block">
-                <span className="font-serif text-lg text-boon-text">
-                  How's it going?
-                </span>
-              </label>
-              <div className="relative">
-                <textarea
-                  value={reflection}
-                  onChange={(e) => setReflection(e.target.value)}
-                  placeholder="Share what's on your mind..."
-                  className="w-full p-5 rounded-xl border border-boon-amber/20 focus:border-boon-amber focus:ring-0 focus:outline-none font-serif text-base min-h-[120px] resize-none bg-white placeholder-gray-400 transition-all"
-                />
-                <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                  {isSaving && (
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Saving...
-                    </span>
-                  )}
-                  {!isSaving && lastSaved && (
-                    <span className="text-xs text-boon-amber flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Saved
-                    </span>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 flex items-center gap-2">
-                <svg className="w-4 h-4 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                {coachFirstName} will see this before your session
-              </p>
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          SUB-STATE B: No Session Scheduled - Booking is HERO
-          ═══════════════════════════════════════════════════════════════════ */}
-      {!hasUpcomingSession && (
-        <>
-          {/* Book a Session Card */}
-          <section className="bg-gradient-to-br from-boon-blue/10 via-white to-boon-lightBlue/20 rounded-[2rem] p-8 border-2 border-boon-blue/30 shadow-lg">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-boon-blue flex items-center justify-center shadow-lg shadow-boon-blue/30">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-boon-text">{getBookingMessage().title}</h2>
-                <p className="text-gray-500 mt-1 text-sm">{getBookingMessage().subtitle}</p>
-              </div>
-            </div>
-
-            {daysSinceLastSession > 21 && (
-              <p className="text-amber-600 text-sm font-medium mb-3">
-                It's been {daysSinceLastSession} days since your last session. Book your next one to keep your momentum going.
-              </p>
-            )}
-            {profile?.booking_link && (
-              <a
-                href={profile.booking_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 px-8 py-4 bg-boon-blue text-white font-bold text-base rounded-xl hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/30 active:scale-95"
-              >
-                Book a Session
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
-            )}
-          </section>
-
-          {/* Where You Left Off */}
-          {lastSession?.goals && (
-            <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Where You Left Off</h2>
-                <span className="text-xs font-medium text-gray-400">
-                  {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
-              </div>
-              <p className="font-serif text-gray-700 leading-relaxed">{lastSession.goals}</p>
-            </section>
-          )}
-
-          {/* Your Coach - More prominent when no session scheduled */}
-          <section className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-6">Your Coach</h2>
-            {isLoadingCoach ? (
-              /* Loading skeleton */
-              <div className="animate-pulse flex flex-col sm:flex-row gap-6">
-                <div className="w-24 h-24 rounded-2xl bg-gray-200 mx-auto sm:mx-0" />
-                <div className="flex-1 text-center sm:text-left space-y-3">
-                  <div className="h-6 bg-gray-200 rounded w-40 mx-auto sm:mx-0" />
-                  <div className="h-4 bg-gray-200 rounded w-32 mx-auto sm:mx-0" />
-                  <div className="h-4 bg-gray-200 rounded w-full mt-4" />
-                  <div className="h-4 bg-gray-200 rounded w-5/6" />
-                  <div className="h-4 bg-gray-200 rounded w-28 mx-auto sm:mx-0 mt-3" />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-6">
-                <img
-                  src={getCoachPhotoUrl(200)}
-                  alt={coachName}
-                  className="w-24 h-24 rounded-2xl object-cover object-[center_15%] ring-4 ring-boon-bg shadow-lg mx-auto sm:mx-0"
-                />
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-xl font-bold text-boon-text">{coachName}</h3>
-                  <p className="text-sm font-bold text-boon-blue uppercase tracking-widest mt-1">{coachProfile?.headline || 'Leadership Coach'}</p>
-                  {coachProfile?.bio ? (
-                    <p className="text-sm text-gray-600 mt-4 leading-relaxed">{coachProfile.bio}</p>
-                  ) : (
-                    <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-                      {coachFirstName} specializes in leadership development and emotional intelligence,
-                      helping professionals unlock their full potential through personalized coaching.
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-500 mt-3">
-                    <span className="font-semibold text-boon-text">{sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'}</span> together
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
-        </>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          THINGS YOU'RE WORKING ON - From action_items table
-          Uses Georgia, amber accents, no strikethrough, with "Add note" option
-          ═══════════════════════════════════════════════════════════════════ */}
-      {pendingActions.length > 0 && (
-        <section className="bg-gradient-to-br from-boon-amberLight/30 to-white rounded-[2rem] p-8 border border-boon-amber/20">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-boon-amber/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-boon-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h2 className="text-sm font-bold text-boon-amber uppercase tracking-widest">Things You're Working On</h2>
-          </div>
-          <div className="space-y-4">
-            {pendingActions.map((action) => (
-              <div
-                key={action.id}
-                className="p-5 bg-white/60 rounded-xl border border-boon-amber/10 hover:border-boon-amber/30 transition-all"
-              >
-                <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-gray-700 leading-relaxed">{action.action_text}</p>
-
-                {/* Existing note display */}
-                {actionNotes[action.id] && expandedNoteId !== action.id && (
-                  <div className="mt-3 p-3 bg-boon-amberLight/30 rounded-btn border border-boon-amber/10">
-                    <p className="text-xs font-bold text-boon-amber uppercase tracking-[0.18em] mb-1">Your note</p>
-                    <p style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }} className="text-sm text-gray-600 italic">{actionNotes[action.id]}</p>
-                  </div>
-                )}
-
-                {/* Add/Edit note form */}
-                {expandedNoteId === action.id ? (
-                  <div className="mt-4 space-y-3">
-                    <textarea
-                      defaultValue={actionNotes[action.id] || ''}
-                      placeholder="How's this going? Any progress to note..."
-                      style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", serif' }}
-                      className="w-full p-3 rounded-btn border border-boon-amber/20 focus:border-boon-amber focus:ring-0 focus:outline-none text-sm min-h-[80px] resize-none bg-white placeholder-gray-400"
-                      id={`note-${action.id}`}
-                    />
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          const textarea = document.getElementById(`note-${action.id}`) as HTMLTextAreaElement;
-                          saveNote(action.id, textarea.value);
-                        }}
-                        disabled={savingNoteId === action.id}
-                        className="px-4 py-2 text-xs font-bold text-white bg-boon-amber rounded-btn hover:bg-boon-amberDark transition-colors disabled:opacity-50"
-                      >
-                        {savingNoteId === action.id ? 'Saving...' : 'Save note'}
-                      </button>
-                      <button
-                        onClick={() => setExpandedNoteId(null)}
-                        className="px-4 py-2 text-xs font-medium text-gray-500 hover:text-gray-700"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="text-xs text-gray-400">
-                      From {new Date(action.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                    <button
-                      onClick={() => setExpandedNoteId(action.id)}
-                      className="ml-auto text-xs text-boon-amber font-medium hover:underline flex items-center gap-1"
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      {actionNotes[action.id] ? 'Edit note' : 'Add note'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Coaching at a Glance - Progress indicator */}
-      <section className="bg-white rounded-[2rem] p-7 md:p-8 shadow-sm border border-gray-100">
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.18em] mb-6">
-          Coaching at a Glance
-        </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Coach */}
-          <div className="flex items-center gap-3">
-            <img
-              src={getCoachPhotoUrl(100)}
-              alt="Coach"
-              className="w-10 h-10 rounded-full object-cover object-[center_15%] ring-2 ring-gray-100"
-            />
+      {/* ─────────────── Row 1: Next Session (navy) + Reflection (coral) ─────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6 mb-8">
+        <Card variant="navy" glow="blue" dots padding="lg">
+          <Eyebrow color="coral-light">{nextSessionEyebrow}</Eyebrow>
+          <h2 className="mt-4 font-display font-bold text-white text-[28px] md:text-[32px] leading-[1.15] tracking-[-0.02em]">
+            {nextSessionStatement}{' '}
+            <span className="font-serif italic font-normal text-boon-coralLight">
+              {nextSessionKicker}
+            </span>
+          </h2>
+          <div className="mt-7 flex items-center gap-4">
+            <Avatar name={coachName} src={coachPhotoUrl} size="lg" />
             <div>
-              <p className="text-lg font-bold text-boon-text truncate">
-                {coachFirstName}
-              </p>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Coach</p>
-            </div>
-          </div>
-
-          {/* Progress */}
-          <div>
-            <p className="text-lg font-bold text-boon-text">
-              {coachingState.completedSessionCount} of {coachingState.totalExpectedSessions}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Sessions</p>
-            <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-boon-blue rounded-full transition-all"
-                style={{ width: `${coachingState.programProgress}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Next Session */}
-          <div>
-            <p className="text-lg font-bold text-boon-blue">
-              {upcomingSession
-                ? new Date(upcomingSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                : '—'}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Next session</p>
-          </div>
-
-          {/* Last Session */}
-          <div>
-            <p className="text-lg font-medium text-gray-500">
-              {lastSession
-                ? new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                : '—'}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest">Last session</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Your Coach - Compact version for session scheduled state */}
-      {hasUpcomingSession && (
-        <section className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-sm">
-          {isLoadingCoach ? (
-            /* Loading skeleton */
-            <div className="animate-pulse flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gray-200" />
-              <div className="flex-1 space-y-2">
-                <div className="h-5 bg-gray-200 rounded w-32" />
-                <div className="h-3 bg-gray-200 rounded w-24" />
+              <div className="text-sm font-semibold text-white">{coachName}</div>
+              <div className="text-xs text-white/65">
+                {coachProfile?.headline || 'Your coach'} · {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together
               </div>
-              <div className="w-20 h-9 bg-gray-200 rounded-xl" />
             </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <img
-                src={getCoachPhotoUrl(100)}
-                alt={coachName}
-                className="w-14 h-14 rounded-xl object-cover object-[center_15%] ring-2 ring-boon-bg shadow-sm"
+          </div>
+          <div className="mt-7 flex items-center gap-3 flex-wrap">
+            {joinableZoomLink ? (
+              <Button as="a" href={joinableZoomLink} target="_blank" rel="noopener noreferrer" variant="coral" size="md">
+                Join session
+              </Button>
+            ) : hasUpcomingSession ? (
+              <Button variant="coral" size="md" onClick={() => setPrepExpanded(!prepExpanded)}>
+                {prepExpanded ? 'Hide prep' : 'Open prep'}
+              </Button>
+            ) : profile?.booking_link ? (
+              <Button as="a" href={profile.booking_link} target="_blank" rel="noopener noreferrer" variant="coral" size="md">
+                Book your next
+              </Button>
+            ) : null}
+            {hasUpcomingSession && (
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => setPrepExpanded(!prepExpanded)}
+                style={{ color: 'rgba(255,255,255,.85)' }}
+              >
+                {prepExpanded ? 'Hide agenda' : 'View agenda'}
+              </Button>
+            )}
+          </div>
+          {prepExpanded && hasUpcomingSession && (
+            <div className="mt-7 pt-7 border-t border-white/15">
+              <SessionPrep
+                sessions={sessions}
+                actionItems={actionItems}
+                coachName={coachName}
+                userEmail={userEmail}
+                onActionUpdate={onActionUpdate}
               />
-              <div className="flex-1">
-                <h3 className="font-bold text-boon-text">{coachName}</h3>
-                <p className="text-xs text-gray-500">{sessionCountWithCoach} {sessionCountWithCoach === 1 ? 'session' : 'sessions'} together</p>
-              </div>
-              <button className="px-4 py-2 text-sm font-bold text-boon-blue border border-boon-blue/30 rounded-xl hover:bg-boon-blue/5 transition-colors">
-                Message
-              </button>
             </div>
           )}
-        </section>
+        </Card>
+
+        {hasUpcomingSession ? (
+          <Card variant="coral-outlined" padding="lg" accent>
+            <Eyebrow color="coral">Before you meet</Eyebrow>
+            <p className="mt-3 font-serif italic text-boon-charcoal text-[15px] leading-relaxed">
+              How's it going?
+            </p>
+            <textarea
+              value={reflection}
+              onChange={e => setReflection(e.target.value)}
+              placeholder={`Share what's on your mind. ${coachFirstName} will see this before your session.`}
+              className="mt-3 w-full p-3 rounded-btn bg-white border border-boon-charcoal/[0.12] focus:border-boon-coral focus:outline-none text-sm leading-relaxed min-h-[120px] resize-none placeholder:text-boon-charcoal/40"
+            />
+            <div className="mt-2 h-4 flex items-center text-[11px] font-extrabold uppercase tracking-[0.14em]">
+              {isSavingReflection && <span className="text-boon-charcoal/45">Saving...</span>}
+              {!isSavingReflection && reflectionSavedAt && (
+                <span className="text-boon-coral">Saved</span>
+              )}
+            </div>
+          </Card>
+        ) : (
+          <Card variant="coral-outlined" padding="lg" accent>
+            <Eyebrow color="coral">Weekly reflection</Eyebrow>
+            <div className="mt-3">
+              <JournalPromptCard compact />
+            </div>
+          </Card>
+        )}
+      </div>
+
+      {/* ─────────────── Row 2: Where we left off ─────────────── */}
+      {(lastSession?.goals || pendingActions.length > 0 || recentlyCompletedActions.length > 0) && (
+        <Card padding="lg" className="mb-8">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="w-7 h-7 rounded-pill bg-boon-coral/12 flex items-center justify-center text-boon-coral">
+                <svg className="w-[15px] h-[15px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </span>
+              <Eyebrow color="coral">Where we left off</Eyebrow>
+              {lastSession && (
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/45">
+                  · From {new Date(lastSession.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              )}
+            </div>
+            {actionsTotal > 0 && actionsDone > 0 && (
+              <Badge variant={actionsDone === actionsTotal ? 'success' : 'neutral'}>
+                {actionsDone} of {actionsTotal} done
+              </Badge>
+            )}
+          </div>
+
+          {lastSession?.goals && (
+            <div className="mb-7">
+              <Eyebrow color="muted" className="mb-3">Current goal</Eyebrow>
+              <Headline as="h3" size="md" statement={lastSession.goals} />
+            </div>
+          )}
+
+          {(pendingActions.length > 0 || recentlyCompletedActions.length > 0) && (
+            <div>
+              <Eyebrow color="muted" className="mb-3">Action items</Eyebrow>
+              <div className="flex flex-col gap-2.5">
+                {visiblePending.map(action => {
+                  const isUpdating = updatingActionId === action.id;
+                  return (
+                    <button
+                      key={action.id}
+                      onClick={() => handleCompleteAction(action.id)}
+                      disabled={isUpdating}
+                      className={`flex items-start gap-3.5 p-3.5 rounded-btn bg-white border border-boon-charcoal/[0.08] hover:border-boon-blue/40 hover:shadow-sm transition-all text-left group ${isUpdating ? 'opacity-50' : ''}`}
+                      title="Mark as complete"
+                    >
+                      <span className="w-5 h-5 rounded-md border-[1.5px] border-boon-charcoal/30 group-hover:border-boon-blue group-hover:bg-boon-blue/5 transition-all flex-shrink-0 mt-0.5 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-transparent group-hover:text-boon-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                      <p className="flex-1 text-sm text-boon-charcoal leading-relaxed">{action.action_text}</p>
+                    </button>
+                  );
+                })}
+                {visibleCompleted.map(action => (
+                  <div
+                    key={action.id}
+                    className="flex items-start gap-3.5 p-3.5 rounded-btn bg-white/50 border border-boon-charcoal/[0.06]"
+                  >
+                    <span className="w-5 h-5 rounded-md bg-boon-blue flex-shrink-0 mt-0.5 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                    <p className="flex-1 text-sm text-boon-charcoal/50 leading-relaxed line-through">{action.action_text}</p>
+                  </div>
+                ))}
+              </div>
+              {hiddenActionCount > 0 && (
+                <button
+                  onClick={() => setShowAllActions(true)}
+                  className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-blue hover:text-boon-darkBlue transition-colors"
+                >
+                  + {hiddenActionCount} more
+                </button>
+              )}
+              {showAllActions && (pendingActions.length > MAX_ACTIONS || recentlyCompletedActions.length > 0) && (
+                <button
+                  onClick={() => setShowAllActions(false)}
+                  className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-boon-charcoal/55 hover:text-boon-charcoal transition-colors"
+                >
+                  Show less
+                </button>
+              )}
+            </div>
+          )}
+        </Card>
       )}
 
-
-      {/* Journal Prompt */}
-      <JournalPromptCard compact />
-
-      {/* Practice Prompt */}
       <PracticePrompt />
-      </div>
     </div>
   );
 }
