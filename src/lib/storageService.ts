@@ -127,7 +127,20 @@ export async function getSavedPlans(email: string): Promise<SavedPlan[]> {
     return [];
   }
 
-  return data || [];
+  if (!data) return [];
+
+  // Collapse to one entry per (scenario, target person). Re-saving the same
+  // scenario writes a new row; the playbook should surface the latest revision
+  // rather than every prior draft.
+  const seen = new Set<string>();
+  const deduped: SavedPlan[] = [];
+  for (const plan of data) {
+    const key = `${plan.scenario_id ?? plan.scenario_title}::${plan.team_member_id ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(plan);
+  }
+  return deduped;
 }
 
 export async function savePlan(
