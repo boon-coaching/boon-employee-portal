@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Headline, Badge } from '../lib/design-system';
+import { Card, Headline, Badge, Button } from '../lib/design-system';
 import type { SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CoachingWin } from '../lib/types';
 
 const devLog = (...args: unknown[]) => {
@@ -69,10 +69,10 @@ function mapCompetencyName(name: string): string {
 
 // Get bar color based on score
 function getBarColor(score: number): string {
-  if (score >= 4) return '#10B981'; // green
-  if (score >= 3) return '#3B82F6'; // blue
-  if (score >= 2) return '#F59E0B'; // amber
-  return '#EF4444'; // red
+  if (score >= 4) return '#6CD893'; // boon-success — excelling/mastering
+  if (score >= 3) return '#466FF6'; // boon-blue — applying
+  if (score >= 2) return '#F59E0B'; // boon-warning — developing
+  return '#FF6D6A'; // boon-coral — early
 }
 
 // Boon benchmark averages for SCALE users (1-10 scale)
@@ -1775,93 +1775,112 @@ export default function ProgressPage() {
             </div>
           </section>
 
-          {/* Charts side-by-side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Radar Chart */}
+          {/* ─────────────── Charts: Profile (radar) + Rankings (bars) ─────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Competency Profile — radar */}
             {(baseline || competencyScores.length > 0) && (
-              <section className="bg-white rounded-card overflow-hidden">
-                <div className="border-b border-boon-charcoal/[0.08] bg-boon-offWhite/50 p-6">
-                  <h2 className="text-lg font-bold text-boon-navy">Competency Profile</h2>
+              <Card padding="lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-6 h-px bg-boon-blue" aria-hidden />
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+                    The shape of you
+                  </span>
                 </div>
-                <div className="p-8">
-                  <div className="h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
-                        <PolarGrid stroke="#e5e7eb" />
-                        <PolarAngleAxis
-                          dataKey="competency"
-                          tick={{ fill: '#374151', fontSize: 9, fontWeight: 600 }}
-                        />
-                        <PolarRadiusAxis
-                          angle={30}
-                          domain={[0, 5]}
-                          tick={{ fill: '#9ca3af', fontSize: 10 }}
-                        />
+                <Headline as="h2" size="md">
+                  Competency profile.{' '}
+                  <Headline.Kicker color="blue">Where it bends.</Headline.Kicker>
+                </Headline>
+                <div className="mt-6 h-[420px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                      <PolarGrid stroke="#E2E5EA" />
+                      <PolarAngleAxis
+                        dataKey="competency"
+                        tick={{ fill: '#2E353D', fontSize: 10, fontWeight: 600 }}
+                      />
+                      <PolarRadiusAxis
+                        angle={30}
+                        domain={[0, 5]}
+                        tick={{ fill: '#A0A8B0', fontSize: 10 }}
+                      />
+                      <Radar
+                        name="Baseline"
+                        dataKey="baseline"
+                        stroke="#A0A8B0"
+                        fill="#A0A8B0"
+                        fillOpacity={0.22}
+                        strokeWidth={1.5}
+                      />
+                      {hasActualCurrentScores && (
                         <Radar
-                          name="Baseline"
-                          dataKey="baseline"
-                          stroke="#9ca3af"
-                          fill="#9ca3af"
-                          fillOpacity={0.3}
+                          name="Current"
+                          dataKey="current"
+                          stroke="#466FF6"
+                          fill="#466FF6"
+                          fillOpacity={0.32}
                           strokeWidth={2}
                         />
-                        {/* Only show Current layer if we have actual assessment data */}
-                        {hasActualCurrentScores && (
-                          <Radar
-                            name="Current"
-                            dataKey="current"
-                            stroke="#2563eb"
-                            fill="#2563eb"
-                            fillOpacity={0.4}
-                            strokeWidth={2}
-                          />
-                        )}
-                        {hasActualCurrentScores && (
-                          <Legend
-                            wrapperStyle={{ paddingTop: 20 }}
-                            formatter={(value) => (
-                              <span className="text-sm font-semibold text-boon-charcoal/75">{value}</span>
-                            )}
-                          />
-                        )}
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
+                      )}
+                      {hasActualCurrentScores && (
+                        <Legend
+                          wrapperStyle={{ paddingTop: 16 }}
+                          formatter={(value) => (
+                            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-boon-charcoal/70">
+                              {value}
+                            </span>
+                          )}
+                        />
+                      )}
+                    </RadarChart>
+                  </ResponsiveContainer>
                 </div>
-              </section>
+              </Card>
             )}
 
-            {/* Bar Chart */}
+            {/* Competency Rankings — horizontal bars */}
             {competencyScores.length > 0 && (
-              <section className="bg-white rounded-card overflow-hidden">
-                <div className="border-b border-boon-charcoal/[0.08] bg-boon-offWhite/50 p-6">
-                  <h2 className="text-lg font-bold text-boon-navy">Competency Rankings</h2>
+              <Card padding="lg">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="w-6 h-px bg-boon-coral" aria-hidden />
+                  <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">
+                    Strongest to softest
+                  </span>
                 </div>
-                <div className="p-6">
-                  <div style={{ height: Math.max(barChartData.length * 40, 300) }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                        <XAxis type="number" domain={[0, 5]} hide />
-                        <YAxis type="category" dataKey="name" tick={{ fill: '#64748b', fontSize: 12 }} width={110} axisLine={false} tickLine={false} />
-                        <Tooltip
-                          cursor={{ fill: '#f8fafc' }}
-                          contentStyle={{
-                            borderRadius: '12px',
-                            border: 'none',
-                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                          }}
-                        />
-                        <Bar dataKey="score" radius={[0, 6, 6, 0]} barSize={20}>
-                          {barChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={getBarColor(entry.score)} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                <Headline as="h2" size="md">
+                  Competency rankings.{' '}
+                  <Headline.Kicker color="blue">In order.</Headline.Kicker>
+                </Headline>
+                <div className="mt-6" style={{ height: Math.max(barChartData.length * 40, 300) }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={barChartData} layout="vertical" margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#EEF1F5" />
+                      <XAxis type="number" domain={[0, 5]} hide />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fill: '#2E353D', fontSize: 12, fontWeight: 500 }}
+                        width={120}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(70, 111, 246, 0.06)' }}
+                        contentStyle={{
+                          borderRadius: '10px',
+                          border: '1px solid rgba(46, 53, 61, 0.1)',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Bar dataKey="score" radius={[0, 6, 6, 0]} barSize={20}>
+                        {barChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={getBarColor(entry.score)} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              </section>
+              </Card>
             )}
           </div>
 
@@ -1939,248 +1958,280 @@ export default function ProgressPage() {
       )}
 
 
-      {/* Your Wins - Show for GROW/Exec */}
+      {/* ─────────────── Your Wins (GROW/EXEC, in-program) ─────────────── */}
       {isGrowOrExec && !isCompleted && (
-        <section className="bg-white rounded-card p-8 border border-boon-charcoal/[0.08]">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-extrabold text-boon-navy">Your Wins</h2>
-            {(
-              <button
-                onClick={() => setShowAddWinModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-boon-blue hover:bg-boon-lightBlue/30 rounded-btn transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add a win
-              </button>
-            )}
+        <Card padding="lg">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <span className="w-6 h-px bg-boon-coral" aria-hidden />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">
+                Your wins
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setShowAddWinModal(true)}>
+              + Add a win
+            </Button>
           </div>
+          <Headline as="h2" size="md">
+            What you've built.{' '}
+            <Headline.Kicker color="blue">Worth marking.</Headline.Kicker>
+          </Headline>
 
           {coachingWins.length > 0 ? (
-            <div className="space-y-4">
+            <div className="mt-6 flex flex-col gap-3">
               {coachingWins.map((win) => (
-                <div key={win.id} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-card border border-amber-100/50 group relative">
+                <div
+                  key={win.id}
+                  className="relative p-5 rounded-btn bg-white border border-boon-charcoal/[0.08] hover:border-boon-coral/40 transition-colors group"
+                >
+                  <span aria-hidden className="absolute left-0 top-4 bottom-4 w-[2px] bg-boon-coral/60 rounded-pill" />
                   {editingWinId === win.id ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3 pl-3">
                       <textarea
                         value={editWinText}
                         onChange={(e) => setEditWinText(e.target.value)}
-                        className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        className="w-full p-3 border border-boon-charcoal/[0.12] rounded-btn text-sm resize-none focus:outline-none focus:border-boon-coral"
                         rows={3}
                       />
                       <div className="flex gap-2">
-                        <button
-                          onClick={handleSaveEdit}
-                          className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-btn hover:bg-orange-500"
-                        >
+                        <Button variant="coral" size="sm" onClick={handleSaveEdit}>
                           Save
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="px-3 py-1.5 bg-boon-offWhite text-boon-charcoal/75 text-xs font-bold rounded-btn hover:bg-boon-charcoal/20"
-                        >
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={handleCancelEdit}>
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-3">
-                      <span className="text-xl">🏆</span>
-                      <div className="flex-1 pr-12">
-                        <p className="text-boon-navy leading-relaxed">"{win.win_text}"</p>
-                        <p className="text-xs text-boon-charcoal/55 mt-2">
-                          {win.session_number && `Session ${win.session_number} · `}
-                          {new Date(win.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
+                    <div className="pl-3 pr-16">
+                      <p className="font-serif italic text-boon-navy text-[15px] leading-relaxed">
+                        "{win.win_text}"
+                      </p>
+                      <p className="mt-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-boon-charcoal/55">
+                        {win.session_number && `Session ${win.session_number} · `}
+                        {new Date(win.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <button
+                          onClick={() => handleStartEdit(win)}
+                          className="p-1.5 text-boon-charcoal/45 hover:text-boon-charcoal/80 transition-colors"
+                          title="Edit"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteWin(win.id)}
+                          disabled={deletingWinId === win.id}
+                          className="p-1.5 text-boon-charcoal/45 hover:text-boon-coral transition-colors disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
-                      {/* Edit/Delete buttons */}
-                      {(
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          {(
-                            <button
-                              onClick={() => handleStartEdit(win)}
-                              className="p-1.5 text-boon-charcoal/55 hover:text-boon-charcoal/75 hover:bg-white rounded"
-                              title="Edit"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                          )}
-                          {(
-                            <button
-                              onClick={() => handleDeleteWin(win.id)}
-                              disabled={deletingWinId === win.id}
-                              className="p-1.5 text-boon-charcoal/55 hover:text-boon-error hover:bg-white rounded disabled:opacity-50"
-                              title="Delete"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-card p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-btn bg-boon-warning/12 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-boon-navy mb-1">What counts as a win?</h3>
-                  <p className="text-sm text-boon-charcoal/75 leading-relaxed mb-3">
-                    A difficult conversation you handled well. Feedback you gave or received. A new habit that stuck. A boundary you set. No win is too small.
-                  </p>
-                  {(
-                    <button
-                      onClick={() => setShowAddWinModal(true)}
-                      className="text-sm font-bold text-boon-warning hover:text-amber-800 transition-colors"
-                    >
-                      + Add your first win
-                    </button>
-                  )}
-                </div>
+            <div className="mt-6 p-6 rounded-btn bg-boon-offWhite border border-boon-charcoal/[0.06]">
+              <p className="font-serif italic text-boon-navy text-[15px] leading-relaxed">
+                "A hard conversation that landed. Feedback you finally gave. A boundary you held. A habit that stuck."
+              </p>
+              <p className="mt-3 text-sm text-boon-charcoal/70 leading-relaxed">
+                No win is too small. The point is noticing them.
+              </p>
+              <div className="mt-4">
+                <Button variant="coral" size="sm" onClick={() => setShowAddWinModal(true)}>
+                  Add your first win
+                </Button>
               </div>
             </div>
           )}
-        </section>
+        </Card>
       )}
 
-      {/* Insights Section - Reframed for completed users */}
-      <section className="bg-boon-offWhite p-8 rounded-card border border-boon-charcoal/[0.08]">
-        <h2 className="text-lg font-extrabold text-boon-navy mb-6">Insights</h2>
-        <div className="grid sm:grid-cols-3 gap-6">
-          {(isCompleted ? [
-            {
-              icon: '📈',
-              title: 'Growth',
-              desc: competencyScores.length > 0
-                ? `You grew in ${competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length} of ${COMPETENCIES.length} competencies.`
-                : 'Your growth is reflected across your leadership profile.'
-            },
-            {
-              icon: '⭐',
-              title: 'Strongest Area',
-              desc: competencyScores.length > 0
+      {/* ─────────────── Insights ─────────────── */}
+      {(() => {
+        const insightCards = isCompleted ? [
+          {
+            eyebrow: 'Growth',
+            title: competencyScores.length > 0
+              ? `You grew in ${competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length} of ${COMPETENCIES.length}.`
+              : 'Reflected across your profile.',
+            body: competencyScores.length > 0
+              ? 'Across the competencies tracked through your program.'
+              : 'Your growth shows up in how you lead, even when the numbers do not capture it.',
+          },
+          {
+            eyebrow: 'Strongest area',
+            title: competencyScores.length > 0
+              ? (() => {
+                  const highest = competencyData.filter(c => c.current > 0).sort((a, b) => b.current - a.current)[0];
+                  return highest ? `${highest.label}.` : 'Strong across the board.';
+                })()
+              : 'Your strengths define the work.',
+            body: competencyScores.length > 0
+              ? 'Where you showed the most development.'
+              : 'They show up in every conversation, every decision.',
+          },
+          {
+            eyebrow: 'Continued growth',
+            title: competencyScores.length > 0
+              ? (() => {
+                  const lowest = competencyData.filter(c => c.current > 0).sort((a, b) => a.current - b.current)[0];
+                  return lowest ? `${lowest.label}.` : 'Keep practicing.';
+                })()
+              : 'Practice space is open.',
+            body: competencyScores.length > 0
+              ? 'A natural next focus if you want to keep building.'
+              : 'When real challenges arrive, that is where to rehearse.',
+          },
+        ] : [
+          {
+            eyebrow: 'Growth',
+            title: competencyScores.length > 0
+              ? `${competencyScores.filter(c => c.score >= 4).length} at level 4 or higher.`
+              : isGrowOrExec && completedSessions.length > 0
+                ? `${completedSessions.length} session${completedSessions.length > 1 ? 's' : ''} in.`
+                : baseline
+                  ? 'Building on your baseline.'
+                  : 'Insights start with your first assessment.',
+            body: competencyScores.length > 0
+              ? 'Out of the competencies tracked.'
+              : isGrowOrExec && completedSessions.length > 0
+                ? 'Updated scores arrive after your midpoint check-in.'
+                : baseline
+                  ? 'Growth scores arrive after the midpoint assessment.'
+                  : 'Once your baseline is in, this view fills out.',
+          },
+          {
+            eyebrow: 'Focus area',
+            title: competencyScores.length > 0
+              ? (() => {
+                  const lowest = competencyData.filter(c => c.current > 0).sort((a, b) => a.current - b.current)[0];
+                  return lowest ? `${lowest.label}.` : 'Strong balance.';
+                })()
+              : isGrowOrExec && baseline
                 ? (() => {
-                    const highest = competencyData.filter(c => c.current > 0).sort((a, b) => b.current - a.current)[0];
-                    return highest ? `${highest.label} is where you showed the most development.` : 'Strong growth across all areas!';
+                    const lowestBaseline = competencyData.filter(c => c.baseline > 0).sort((a, b) => a.baseline - b.baseline)[0];
+                    return lowestBaseline ? `${lowestBaseline.label}.` : 'Set in session.';
                   })()
-                : 'Your strengths define your leadership profile.'
-            },
-            {
-              icon: '🌱',
-              title: 'Continued Growth',
-              desc: competencyScores.length > 0
-                ? (() => {
-                    const lowest = competencyData.filter(c => c.current > 0).sort((a, b) => a.current - b.current)[0];
-                    return lowest ? `If you want to keep building, ${lowest.label} could be a focus area.` : 'Continue practicing to maintain growth!';
-                  })()
-                : 'Your Practice Space is always available when challenges arise.'
-            }
-          ] : [
-            {
-              icon: '📈',
-              title: 'Growth',
-              desc: competencyScores.length > 0
-                ? `You have ${competencyScores.filter(c => c.score >= 4).length} competencies at level 4 or above.`
-                : isGrowOrExec && completedSessions.length > 0
-                  ? `${completedSessions.length} session${completedSessions.length > 1 ? 's' : ''} completed. Updated scores after your midpoint check-in.`
-                  : baseline
-                    ? 'Building on your baseline. Growth scores after midpoint assessment.'
-                    : 'Your growth insights will appear as you complete assessments.'
-            },
-            {
-              icon: '🎯',
-              title: 'Focus Area',
-              desc: competencyScores.length > 0
-                ? (() => {
-                    const lowest = competencyData.filter(c => c.current > 0).sort((a, b) => a.current - b.current)[0];
-                    return lowest ? `Consider focusing on ${lowest.label} for development.` : 'Great balance across competencies!';
-                  })()
-                : isGrowOrExec && baseline
-                  ? (() => {
-                      // Find lowest baseline scores as focus areas
-                      const lowestBaseline = competencyData.filter(c => c.baseline > 0).sort((a, b) => a.baseline - b.baseline)[0];
-                      return lowestBaseline
-                        ? `Working on ${lowestBaseline.label} based on your baseline.`
-                        : 'Focus areas set during your coaching sessions.';
-                    })()
-                  : 'Focus areas will be identified after your baseline assessment.'
-            },
-            {
-              icon: '💡',
-              title: 'Next Step',
-              desc: completedSessions.length === 0
-                ? 'Book your first coaching session to start your journey.'
-                : isGrowOrExec && completedSessions.length > 0
-                  ? 'Continue building momentum with regular coaching sessions.'
-                  : completedSessions.length < 3
-                    ? 'Continue building momentum with regular coaching sessions.'
-                    : 'Keep up the great work! Consider setting stretch goals.'
-            }
-          ]).map((card, i) => (
-            <div
-              key={i}
-              className="p-6 bg-white/60 rounded-card border border-white hover:bg-white hover:shadow-lg transition-all"
-            >
-              <div className="text-3xl mb-4">{card.icon}</div>
-              <h4 className="font-bold text-boon-navy mb-2 uppercase tracking-widest text-xs">{card.title}</h4>
-              <p className="text-sm text-boon-charcoal/75 leading-relaxed">{card.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+                : 'Surfaces after baseline.',
+            body: competencyScores.length > 0
+              ? 'A natural place to spend coaching attention.'
+              : isGrowOrExec && baseline
+                ? 'Pulled from where your baseline came in lowest.'
+                : 'Your baseline assessment will name it.',
+          },
+          {
+            eyebrow: 'Next step',
+            title: completedSessions.length === 0
+              ? 'Book your first.'
+              : completedSessions.length < 3
+                ? 'Build cadence.'
+                : 'Stretch the goals.',
+            body: completedSessions.length === 0
+              ? 'The work begins in the first conversation.'
+              : completedSessions.length < 3
+                ? 'Momentum compounds. Keep the rhythm regular.'
+                : 'You have the practice in. Try setting something harder.',
+          },
+        ];
 
-      {/* Add Win Modal */}
-      {showAddWinModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-card p-6 w-full max-w-md shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-2xl">🏆</span>
-              <h3 className="text-lg font-extrabold text-boon-navy">Add a Win</h3>
+        return (
+          <Card padding="lg">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-6 h-px bg-boon-blue" aria-hidden />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">
+                Reading the picture
+              </span>
             </div>
-            <p className="text-sm text-boon-charcoal/55 mb-4">
-              What breakthrough or accomplishment would you like to celebrate?
+            <Headline as="h2" size="md">
+              Insights.{' '}
+              <Headline.Kicker color="blue">From the data.</Headline.Kicker>
+            </Headline>
+            <div className="mt-6 grid sm:grid-cols-3 gap-4">
+              {insightCards.map((card, i) => (
+                <div
+                  key={i}
+                  className="relative p-5 rounded-btn bg-boon-offWhite border border-boon-charcoal/[0.06]"
+                >
+                  <span aria-hidden className="absolute left-0 top-5 bottom-5 w-[2px] bg-boon-blue/50 rounded-pill" />
+                  <div className="pl-3">
+                    <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-boon-blue">
+                      {card.eyebrow}
+                    </span>
+                    <h4 className="mt-2 font-display font-bold text-boon-navy text-[17px] leading-snug tracking-[-0.01em]">
+                      {card.title}
+                    </h4>
+                    <p className="mt-2 text-sm text-boon-charcoal/70 leading-relaxed">
+                      {card.body}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
+
+      {/* ─────────────── Add Win Modal ─────────────── */}
+      {showAddWinModal && (
+        <div className="fixed inset-0 bg-boon-charcoal/55 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[10px] p-7 w-full max-w-md shadow-xl border border-boon-charcoal/[0.08]">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-6 h-px bg-boon-coral" aria-hidden />
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">
+                Add a win
+              </span>
+            </div>
+            <Headline as="h3" size="sm">
+              What's worth marking?{' '}
+              <Headline.Kicker color="blue">Big or small.</Headline.Kicker>
+            </Headline>
+            <p className="mt-3 text-sm text-boon-charcoal/70 leading-relaxed">
+              A breakthrough, a hard conversation handled well, a habit that stuck. Notice it here.
             </p>
             <textarea
               value={newWinText}
               onChange={(e) => setNewWinText(e.target.value)}
-              placeholder="e.g., Had a difficult conversation that went well, got positive feedback, set a boundary..."
-              className="w-full p-4 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+              placeholder="e.g., Had the feedback conversation I'd been avoiding. Held the line."
+              className="mt-4 w-full p-3 border border-boon-charcoal/[0.12] rounded-btn text-sm resize-none focus:outline-none focus:border-boon-coral leading-relaxed"
               rows={4}
               maxLength={500}
               autoFocus
             />
-            <div className="flex justify-between items-center mt-2 mb-4">
-              <span className="text-xs text-boon-charcoal/55">{newWinText.length}/500</span>
+            <div className="flex justify-end mt-2 mb-4">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-boon-charcoal/45">
+                {newWinText.length}/500
+              </span>
             </div>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="ghost"
+                size="md"
                 onClick={() => {
                   setShowAddWinModal(false);
                   setNewWinText('');
                 }}
-                className="flex-1 px-4 py-2.5 text-sm font-medium text-boon-charcoal/75 bg-boon-offWhite hover:bg-boon-offWhite rounded-btn transition-colors"
+                className="flex-1"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="coral"
+                size="md"
                 onClick={handleAddWin}
                 disabled={!newWinText.trim() || isSubmittingWin}
-                className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-boon-coral hover:bg-boon-coralLight disabled:bg-boon-charcoal/20 disabled:cursor-not-allowed rounded-btn transition-colors"
+                className="flex-1"
               >
-                {isSubmittingWin ? 'Saving...' : 'Save Win'}
-              </button>
+                {isSubmittingWin ? 'Saving...' : 'Save win'}
+              </Button>
             </div>
           </div>
         </div>
