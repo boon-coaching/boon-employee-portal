@@ -233,14 +233,13 @@ export default function GrowDashboard({
           {heroStatement}{' '}
           <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
         </Headline>
-        <div className="mt-5 flex items-center gap-3">
+        <div className="mt-5">
           <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
             <div
               className="h-full bg-boon-blue rounded-pill transition-all"
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <Eyebrow color="muted">{Math.round(progressPct)}% complete</Eyebrow>
         </div>
       </header>
 
@@ -346,7 +345,7 @@ export default function GrowDashboard({
                 · From {new Date(lastSession!.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </div>
-            {actionsTotal > 0 && (
+            {actionsTotal > 0 && actionsDone > 0 && (
               <Badge variant={actionsDone === actionsTotal ? 'success' : 'neutral'}>
                 {actionsDone} of {actionsTotal} done
               </Badge>
