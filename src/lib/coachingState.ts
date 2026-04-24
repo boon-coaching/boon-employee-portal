@@ -269,7 +269,9 @@ export function getCoachingState(
   // Determine state
   let state: CoachingState;
 
-  // Check employee status for paused/terminated before normal flow
+  // Check employee status for paused/terminated/inactive before normal flow.
+  // 'Inactive' is how a historical SF backfill imported terminated users; portal
+  // admin actions write 'Terminated'. Treat both as ended for display purposes.
   const employeeStatus = employee?.status?.toLowerCase() || '';
 
   if (!employee) {
@@ -277,7 +279,7 @@ export function getCoachingState(
     state = 'NOT_SIGNED_UP';
   } else if (employeeStatus.includes('paused')) {
     state = 'PAUSED';
-  } else if (employeeStatus.includes('terminated')) {
+  } else if (employeeStatus.includes('terminated') || employeeStatus.includes('inactive')) {
     state = 'TERMINATED';
   } else if (!hasProgram && !hasCompletedOnboarding && !hasCompletedSessions) {
     // Has employee record but no program, no welcome survey, AND no sessions
