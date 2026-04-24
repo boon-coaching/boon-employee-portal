@@ -115,7 +115,7 @@ export function useEmployeeData(): EmployeeData {
       setDataError(null);
       try {
         const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData, winsData, welcomeSurveyLinkData] = await Promise.all([
-          fetchSessions(employee.id, employee.company_email),
+          fetchSessions(employee.id),
           fetchProgressData(employee.company_email),
           fetchBaseline(employee.company_email),
           fetchWelcomeSurveyScale(employee.company_email),

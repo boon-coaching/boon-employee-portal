@@ -13,6 +13,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Production has ~160 emails with duplicate employee_manager rows (same person, multiple
+// enrollments or SF contact-id format drift). Pick the row most likely to hold real data:
+// coach_id populated wins over null; otherwise the oldest row (most session history).
+export function pickBestEmployeeRecord(rows: Employee[]): Employee | null {
+  if (!rows || rows.length === 0) return null;
+  const ranked = [...rows].sort((a, b) => {
+    const aHasCoach = a.coach_id ? 1 : 0;
+    const bHasCoach = b.coach_id ? 1 : 0;
+    if (aHasCoach !== bHasCoach) return bHasCoach - aHasCoach;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+  return ranked[0];
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -80,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       const response = await fetch(
-        `${supabaseUrl}/rest/v1/employee_manager?company_email=ilike.${encodeURIComponent(email)}&limit=1`,
+        `${supabaseUrl}/rest/v1/employee_manager?company_email=ilike.${encodeURIComponent(email)}&select=*`,
         {
           headers: {
             'apikey': supabaseKey,
@@ -95,10 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) {
         console.error('Error fetching employee:', data);
         setEmployee(null);
-      } else if (data && data.length > 0) {
-        setEmployee(data[0] as Employee);
       } else {
-        setEmployee(null);
+        setEmployee(pickBestEmployeeRecord(data as Employee[]));
       }
     } catch (err) {
       console.error('Error in fetchEmployeeProfile:', err);
