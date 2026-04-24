@@ -127,7 +127,7 @@ export default function PreFirstSessionHome({
   // Coach state - full coach data from coaches table
   const [coach, setCoach] = useState<Coach | null>(null);
   const [coachName, setCoachName] = useState<string>(
-    upcomingSession?.coach_name || sessions[0]?.coach_name || 'Your Coach'
+    upcomingSession?.coach_name || sessions[0]?.coach_name || ''
   );
   const [matchSummary, setMatchSummary] = useState<string | null>(null);
   const [isLoadingCoachData, setIsLoadingCoachData] = useState(true);
@@ -171,7 +171,11 @@ export default function PreFirstSessionHome({
     loadMatchSummary();
   }, [profile?.id, userEmail]);
 
-  const coachFirstName = coachName.split(' ')[0];
+  // Fall back to "your coach" (capitalized variant for sentence starts) when no real
+  // coach name is available yet. Splitting "Your Coach" here would render "Your".
+  const resolvedFirstName = (coach?.name || coachName).trim().split(' ')[0];
+  const coachFirstName = resolvedFirstName || 'your coach';
+  const CoachFirstName = resolvedFirstName || 'Your coach';
 
   // Coach display data
   const coachPhotoUrl = coach?.photo_url || `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200`;
@@ -597,7 +601,7 @@ export default function PreFirstSessionHome({
             <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            {coachFirstName} will use this to personalize your first conversation
+            {CoachFirstName} will use this to personalize your first conversation
           </p>
         </section>
       )}
@@ -650,7 +654,7 @@ export default function PreFirstSessionHome({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
           </svg>
-          {coachFirstName} will see this before your session
+          {CoachFirstName} will see this before your session
         </p>
       </section>
 

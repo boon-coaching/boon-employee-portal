@@ -23,112 +23,34 @@ export async function fetchEmployeeProfile(email: string): Promise<Employee | nu
   return data as Employee;
 }
 
-/**
- * Fetch all sessions for an employee
- * Tries multiple lookup methods to handle different data scenarios:
- * 1. By employee_id (direct link)
- * 2. By employee_email (case-insensitive)
- * 3. Via RPC function (bypasses potential RLS issues)
- */
-export async function fetchSessions(employeeId: string, employeeEmail?: string): Promise<Session[]> {
-  devLog('[fetchSessions] Starting lookup for:', { employeeId, employeeEmail });
+// Fetches sessions for an employee by session_tracking.employee_id.
+// (Previously attempted email/RPC fallbacks against columns that don't exist.)
+export async function fetchSessions(employeeId: string): Promise<Session[]> {
+  devLog('[fetchSessions] Starting lookup for:', { employeeId });
 
-  // Helper to deduplicate sessions by ID
-  const deduplicateSessions = (sessions: Session[]): Session[] => {
-    const seen = new Set<string>();
-    return sessions.filter(s => {
-      if (seen.has(s.id)) {
-        devLog('[fetchSessions] Removing duplicate session:', s.id);
-        return false;
-      }
-      seen.add(s.id);
-      return true;
-    });
-  };
-
-  // Try by employee_id first
-  const { data: idData, error: idError } = await supabase
+  const { data, error } = await supabase
     .from('session_tracking')
     .select('*')
     .eq('employee_id', employeeId)
     .order('session_date', { ascending: false });
 
   devLog('[fetchSessions] By employee_id:', {
-    found: idData?.length || 0,
-    error: idError?.message || 'none'
+    found: data?.length || 0,
+    error: error?.message || 'none',
   });
 
-  if (!idError && idData && idData.length > 0) {
-    return deduplicateSessions(idData as Session[]);
+  if (error || !data) {
+    return [];
   }
 
-  // Fallback 1: Try by employee_email (case-insensitive)
-  if (employeeEmail) {
-    const { data: emailData, error: emailError } = await supabase
-      .from('session_tracking')
-      .select('*')
-      .ilike('employee_email', employeeEmail)
-      .order('session_date', { ascending: false });
-
-    devLog('[fetchSessions] By employee_email ilike:', {
-      searchEmail: employeeEmail,
-      found: emailData?.length || 0,
-      error: emailError?.message || 'none'
-    });
-
-    if (!emailError && emailData && emailData.length > 0) {
-      return emailData as Session[];
-    }
-
-    // Fallback 2: Try exact email match (different case handling)
-    const { data: exactData, error: exactError } = await supabase
-      .from('session_tracking')
-      .select('*')
-      .eq('employee_email', employeeEmail.toLowerCase())
-      .order('session_date', { ascending: false });
-
-    devLog('[fetchSessions] By employee_email exact lowercase:', {
-      searchEmail: employeeEmail.toLowerCase(),
-      found: exactData?.length || 0,
-      error: exactError?.message || 'none'
-    });
-
-    if (!exactError && exactData && exactData.length > 0) {
-      return exactData as Session[];
-    }
-
-    // Fallback 3: Try RPC function that uses SECURITY DEFINER to bypass RLS
-    const { data: rpcData, error: rpcError } = await supabase
-      .rpc('get_sessions_for_user', { user_email: employeeEmail });
-
-    devLog('[fetchSessions] By RPC get_sessions_for_user:', {
-      found: rpcData?.length || 0,
-      error: rpcError?.message || 'none',
-      code: rpcError?.code || 'none'
-    });
-
-    if (!rpcError && rpcData && rpcData.length > 0) {
-      return rpcData as Session[];
-    }
-
-    // Final debug: Check if sessions exist at all for this email pattern
-    // This query uses a wildcard to see if any sessions match even partially
-    const { data: debugData, error: debugError } = await supabase
-      .from('session_tracking')
-      .select('id, employee_email, employee_id, status, coach_name')
-      .or(`employee_email.ilike.%${employeeEmail.split('@')[0]}%,employee_id.eq.${employeeId}`)
-      .limit(5);
-
-    devLog('[fetchSessions] DEBUG - Partial match search:', {
-      searchPattern: `%${employeeEmail.split('@')[0]}%`,
-      found: debugData?.length || 0,
-      data: debugData,
-      error: debugError?.message || 'none'
-    });
-  }
-
-  devLog('[fetchSessions] No sessions found for user');
-  return [];
+  // Dedupe by id — `session_tracking` is supposed to be unique on id but the
+  // legacy SF sync has produced occasional duplicates.
+  const seen = new Set<string>();
+  return (data as Session[]).filter(s => {
+    if (seen.has(s.id)) return false;
+    seen.add(s.id);
+    return true;
+  });
 }
 
 /**
