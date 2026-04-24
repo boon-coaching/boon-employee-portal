@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { usePortalData } from './ProtectedLayout';
-import { isAlumniState, isPreFirstSession, isPendingReflectionState, isPausedState, isTerminatedState } from '../lib/coachingState';
+import { isAlumniState, isPreFirstSession, isPendingReflectionState, isPausedState, isTerminatedState, isInactiveState } from '../lib/coachingState';
 import { CompletedProgramHome } from './CompletedProgramHome';
 import PreFirstSessionHome from './PreFirstSessionHome';
 import PendingReflectionHome from './PendingReflectionHome';
@@ -8,6 +8,7 @@ import ScaleHome from './ScaleHome';
 import ActiveGrowHome from './ActiveGrowHome';
 import GrowDashboard from './GrowDashboard';
 import MatchingHome from './MatchingHome';
+import InactiveHome from './InactiveHome';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export function HomePage() {
   const isPendingReflection = isPendingReflectionState(coachingState.state);
   const isPaused = isPausedState(coachingState.state);
   const isTerminated = isTerminatedState(coachingState.state);
+  const isInactive = isInactiveState(coachingState.state);
   const isScale = coachingState.isScale;
 
   // SIGNED_UP_NOT_MATCHED: Show matching home
@@ -170,6 +172,17 @@ export function HomePage() {
         welcomeSurveyScale={welcomeSurveyScale}
         programType={programType}
         userEmail={userEmail}
+      />
+    );
+  }
+
+  // Inactive — has had real sessions, dormant 46-180 days, no upcoming
+  if (isInactive) {
+    return (
+      <InactiveHome
+        profile={profile}
+        lastSession={coachingState.lastSession}
+        daysSinceLastSession={coachingState.daysSinceLastCompletedSession ?? 0}
       />
     );
   }
