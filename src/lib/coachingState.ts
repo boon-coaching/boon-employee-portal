@@ -8,10 +8,11 @@ import type { Employee, Session, BaselineSurvey, CompetencyScore, ReflectionResp
  * 2. SIGNED_UP_NOT_MATCHED - Enrolled but no coach assigned
  * 3. MATCHED_PRE_FIRST_SESSION - Has coach, awaiting first session
  * 4. ACTIVE_PROGRAM - In active coaching (has completed sessions)
- * 5. PENDING_REFLECTION - Final session done, awaiting reflection submission
- * 6. COMPLETED_PROGRAM - Program finished (reflection submitted)
- * 7. PAUSED - Coaching temporarily on hold
- * 8. TERMINATED - Coaching ended early
+ * 5. INACTIVE - Has had sessions but dormant 46-180 days, no upcoming
+ * 6. PENDING_REFLECTION - Final session done, awaiting reflection submission
+ * 7. COMPLETED_PROGRAM - Program finished (reflection submitted)
+ * 8. PAUSED - Coaching temporarily on hold
+ * 9. TERMINATED - Coaching ended early
  */
 
 export type CoachingState =
@@ -19,10 +20,18 @@ export type CoachingState =
   | 'SIGNED_UP_NOT_MATCHED'
   | 'MATCHED_PRE_FIRST_SESSION'
   | 'ACTIVE_PROGRAM'
+  | 'INACTIVE'
   | 'PENDING_REFLECTION'
   | 'COMPLETED_PROGRAM'
   | 'PAUSED'
   | 'TERMINATED';
+
+// INACTIVE = had real engagement, no upcoming, last completed in this window.
+// 180+ days dormant currently stays in ACTIVE_PROGRAM (3,335 users at 365+ days
+// are functionally churned — they'd need a separate cleanup flow, not a
+// re-engagement nudge that pretends a coach is waiting).
+export const INACTIVE_MIN_DAYS = 45;
+export const INACTIVE_MAX_DAYS = 180;
 
 export interface CoachingStateData {
   state: CoachingState;
@@ -41,6 +50,8 @@ export interface CoachingStateData {
   hasEndOfProgramScores: boolean;
   hasReflection: boolean;
   isPendingReflection: boolean;
+  // Inactive cohort
+  daysSinceLastCompletedSession: number | null;
   // SCALE checkpoint tracking
   isScale: boolean;
   scaleCheckpointStatus: ScaleCheckpointStatus;
@@ -249,6 +260,17 @@ export function getCoachingState(
   const allSessionsDone = !isScale && areAllSessionsDone(sessions, programType);
   const isFullyCompleted = !isScale && isProgramFullyCompleted(employee, competencyScores, reflection);
 
+  // Days since last truly-completed session. Late Cancel / No-Show don't count
+  // here — a no-show 50 days ago isn't engagement. Used for the INACTIVE branch.
+  const daysSinceLastCompletedSession = lastSession
+    ? Math.floor((Date.now() - new Date(lastSession.session_date).getTime()) / 86_400_000)
+    : null;
+  const isInactiveCohort = !!lastSession
+    && !hasUpcomingSession
+    && daysSinceLastCompletedSession !== null
+    && daysSinceLastCompletedSession > INACTIVE_MIN_DAYS
+    && daysSinceLastCompletedSession <= INACTIVE_MAX_DAYS;
+
   // Calculate SCALE checkpoint status (use countedSessions for late cancel/no-show tracking)
   const scaleCheckpointStatus: ScaleCheckpointStatus = isScale
     ? calculateScaleCheckpointStatus(countedSessions.length, checkpoints)
@@ -294,6 +316,8 @@ export function getCoachingState(
     state = 'SIGNED_UP_NOT_MATCHED';
   } else if (!hasCompletedSessions) {
     state = 'MATCHED_PRE_FIRST_SESSION';
+  } else if (isInactiveCohort) {
+    state = 'INACTIVE';
   } else {
     state = 'ACTIVE_PROGRAM';
   }
@@ -316,6 +340,7 @@ export function getCoachingState(
     hasEndOfProgramScores,
     hasReflection,
     isPendingReflection,
+    daysSinceLastCompletedSession,
     isScale,
     scaleCheckpointStatus,
   };
@@ -364,6 +389,13 @@ export function isTerminatedState(state: CoachingState): boolean {
 }
 
 /**
+ * Helper to check if user is dormant (had sessions, gone quiet 46-180 days, no upcoming)
+ */
+export function isInactiveState(state: CoachingState): boolean {
+  return state === 'INACTIVE';
+}
+
+/**
  * Get display label for state
  */
 export function getStateLabel(state: CoachingState): string {
@@ -376,6 +408,8 @@ export function getStateLabel(state: CoachingState): string {
       return 'Ready to Begin';
     case 'ACTIVE_PROGRAM':
       return 'Active Coaching';
+    case 'INACTIVE':
+      return 'Pick It Back Up';
     case 'PENDING_REFLECTION':
       return 'Final Reflection';
     case 'COMPLETED_PROGRAM':

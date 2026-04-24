@@ -295,6 +295,7 @@ export function useEmployeeData(): EmployeeData {
     hasEndOfProgramScores: false,
     hasReflection: false,
     isPendingReflection: false,
+    daysSinceLastCompletedSession: null,
     isScale: false,
     scaleCheckpointStatus: {
       isScaleUser: false,
