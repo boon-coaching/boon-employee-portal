@@ -20,6 +20,15 @@ export interface Employee {
   company_name: string | null;
   coaching_program: string | null;
   company_id: string | null;  // Foreign key to companies table
+  // SF Contact mirror — populated by sf-contact-sync edge function.
+  // Use these in the state machine to render accurate match/lifecycle UX.
+  client_status: string | null;  // SF Status__c: Unregistered/Registered/Coach Selected/Active/Inactive/Terminated/Ineligible
+  sf_coach_1_email: string | null;
+  sf_coach_1_booking_link: string | null;
+  sf_coach_2_email: string | null;
+  sf_coach_2_booking_link: string | null;
+  sf_initial_match_email_sent_at: string | null;
+  sf_synced_at: string | null;
 }
 
 export interface Session {
