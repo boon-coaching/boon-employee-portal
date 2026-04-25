@@ -75,6 +75,7 @@ function normaliseBookingLink(value: string | null): string | null {
 interface SyncRequest {
   contact_ids?: string[]
   since?: string
+  max_rows?: number  // hard cap on employee_manager rows scanned per invocation
 }
 
 interface SyncResult {
@@ -126,27 +127,39 @@ async function runSync(req: SyncRequest): Promise<SyncResult> {
   const supabase = getSupabaseClient()
   const errors: string[] = []
 
-  // 1. Pull the employee_manager rows we want to keep in sync.
-  let query = supabase
-    .from('employee_manager')
-    .select('id, salesforce_contact_id')
-    .not('salesforce_contact_id', 'is', null)
+  // 1. Pull the employee_manager rows we want to keep in sync. PostgREST
+  // caps at 1000 rows per request — paginate explicitly so we don't silently
+  // truncate at 13k+ row table size.
+  const PAGE = 1000
+  const MAX = Math.min(req.max_rows ?? 100_000, 100_000)
+  const employeeRows: Array<{ id: number; salesforce_contact_id: string | null }> = []
+  for (let from = 0; from < MAX; from += PAGE) {
+    let q = supabase
+      .from('employee_manager')
+      .select('id, salesforce_contact_id')
+      .not('salesforce_contact_id', 'is', null)
+      .order('sf_synced_at', { ascending: true, nullsFirst: true })
+      .range(from, from + PAGE - 1)
 
-  if (req.contact_ids && req.contact_ids.length > 0) {
-    const ids15 = req.contact_ids.map((id) => sfId15(id) || id)
-    query = query.or(
-      [
-        `salesforce_contact_id.in.(${req.contact_ids.join(',')})`,
-        `salesforce_contact_id.in.(${ids15.join(',')})`,
-      ].join(',')
-    )
-  } else if (req.since) {
-    query = query.or(`sf_synced_at.is.null,sf_synced_at.lt.${req.since}`)
+    if (req.contact_ids && req.contact_ids.length > 0) {
+      const ids15 = req.contact_ids.map((id) => sfId15(id) || id)
+      q = q.or(
+        [
+          `salesforce_contact_id.in.(${req.contact_ids.join(',')})`,
+          `salesforce_contact_id.in.(${ids15.join(',')})`,
+        ].join(',')
+      )
+    } else if (req.since) {
+      q = q.or(`sf_synced_at.is.null,sf_synced_at.lt.${req.since}`)
+    }
+
+    const { data, error } = await q
+    if (error) throw new Error(`Failed to read employee_manager: ${error.message}`)
+    if (!data || data.length === 0) break
+    employeeRows.push(...(data as typeof employeeRows))
+    if (data.length < PAGE) break
+    if (employeeRows.length >= MAX) break
   }
-
-  const { data: emRows, error: emError } = await query
-  if (emError) throw new Error(`Failed to read employee_manager: ${emError.message}`)
-  const employeeRows = emRows || []
 
   // Build map: 15-char SF id -> [employee_manager.id...] (multiple rows can
   // share an SF id during the duplicate-cleanup transition; we update all).
@@ -190,13 +203,16 @@ async function runSync(req: SyncRequest): Promise<SyncResult> {
     }
   }
 
-  // 3. Apply updates row by row. Bulk upsert won't help — each employee_manager
-  // row needs different values, and Supabase rest doesn't support a "joined
-  // update" without a temp table. Sequential PATCHes are fine for ≤13k rows.
+  // 3. Apply updates in parallel batches. Sequential PATCHes are ~100ms each
+  // and would push 13k rows past the 300s edge function timeout. 50 in flight
+  // at a time keeps the connection pool happy and finishes in ~30s.
   let updated = 0
   let unmatched = 0
   const now = new Date().toISOString()
+  const PARALLEL = 25
 
+  type Task = { sfId: string; rowId: number; update: Record<string, unknown> }
+  const tasks: Task[] = []
   for (const sf of sfRecords) {
     const k = sfId15(sf.Id)
     const targets = (k && idMap.get(k)) || []
@@ -216,12 +232,22 @@ async function runSync(req: SyncRequest): Promise<SyncResult> {
       sf_synced_at: now,
     }
     for (const id of targets) {
-      const { error } = await supabase
-        .from('employee_manager')
-        .update(update)
-        .eq('id', id)
-      if (error) {
-        errors.push(`Update id=${id} (sf=${sf.Id}) failed: ${error.message}`)
+      tasks.push({ sfId: sf.Id, rowId: id, update })
+    }
+  }
+
+  for (let i = 0; i < tasks.length; i += PARALLEL) {
+    const batch = tasks.slice(i, i + PARALLEL)
+    const results = await Promise.all(
+      batch.map((t) =>
+        supabase.from('employee_manager').update(t.update).eq('id', t.rowId)
+      )
+    )
+    for (let j = 0; j < results.length; j++) {
+      const r = results[j]
+      const t = batch[j]
+      if (r.error) {
+        errors.push(`Update id=${t.rowId} (sf=${t.sfId}) failed: ${r.error.message}`)
       } else {
         updated++
       }
