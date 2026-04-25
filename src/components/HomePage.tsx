@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { usePortalData } from './ProtectedLayout';
-import { isAlumniState, isPreFirstSession, isPendingReflectionState, isPausedState, isTerminatedState, isInactiveState } from '../lib/coachingState';
+import { isAlumniState, isPreFirstSession, isPendingReflectionState, isPausedState, isTerminatedState, isInactiveState, isMatchesPresentedState, isDroppedFirstState } from '../lib/coachingState';
 import { CompletedProgramHome } from './CompletedProgramHome';
 import PreFirstSessionHome from './PreFirstSessionHome';
 import PendingReflectionHome from './PendingReflectionHome';
@@ -9,6 +9,8 @@ import ActiveGrowHome from './ActiveGrowHome';
 import GrowDashboard from './GrowDashboard';
 import MatchingHome from './MatchingHome';
 import InactiveHome from './InactiveHome';
+import MatchesPresentedHome from './MatchesPresentedHome';
+import DroppedFirstHome from './DroppedFirstHome';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -24,7 +26,25 @@ export function HomePage() {
   const isPaused = isPausedState(coachingState.state);
   const isTerminated = isTerminatedState(coachingState.state);
   const isInactive = isInactiveState(coachingState.state);
+  const isMatchesPresented = isMatchesPresentedState(coachingState.state);
+  const isDroppedFirst = isDroppedFirstState(coachingState.state);
   const isScale = coachingState.isScale;
+
+  // MATCHES_PRESENTED: SF generated coach options, user hasn't picked yet
+  if (isMatchesPresented) {
+    return (
+      <MatchesPresentedHome
+        profile={profile}
+        matchesAreStale={coachingState.matchesAreStale}
+        daysSinceMatchEmailSent={coachingState.daysSinceMatchEmailSent}
+      />
+    );
+  }
+
+  // DROPPED_FIRST: Selected coach but no-showed first session, SF flipped to Inactive
+  if (isDroppedFirst) {
+    return <DroppedFirstHome profile={profile} />;
+  }
 
   // SIGNED_UP_NOT_MATCHED: Show matching home
   if (coachingState.state === 'SIGNED_UP_NOT_MATCHED') {

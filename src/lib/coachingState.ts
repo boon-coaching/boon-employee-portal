@@ -4,21 +4,25 @@ import type { Employee, Session, BaselineSurvey, CompetencyScore, ReflectionResp
  * GROW Coaching State Machine
  *
  * States represent the progression through a coaching program:
- * 1. NOT_SIGNED_UP - No program enrollment
- * 2. SIGNED_UP_NOT_MATCHED - Enrolled but no coach assigned
- * 3. MATCHED_PRE_FIRST_SESSION - Has coach, awaiting first session
- * 4. ACTIVE_PROGRAM - In active coaching (has completed sessions)
- * 5. INACTIVE - Has had sessions but dormant 46-180 days, no upcoming
- * 6. PENDING_REFLECTION - Final session done, awaiting reflection submission
- * 7. COMPLETED_PROGRAM - Program finished (reflection submitted)
- * 8. PAUSED - Coaching temporarily on hold
- * 9. TERMINATED - Coaching ended early
+ *  1. NOT_SIGNED_UP            - No program enrollment yet
+ *  2. SIGNED_UP_NOT_MATCHED    - Welcome survey done, no match candidates yet
+ *  3. MATCHES_PRESENTED        - Coach options sent, awaiting selection
+ *  4. MATCHED_PRE_FIRST_SESSION - Coach selected (= first session booked), not happened
+ *  5. DROPPED_FIRST            - Selected coach but never had a session (no-show)
+ *  6. ACTIVE_PROGRAM           - In active coaching (has completed sessions)
+ *  7. INACTIVE                 - Had sessions but dormant 46-180 days, no upcoming
+ *  8. PENDING_REFLECTION       - Final session done, awaiting reflection submission
+ *  9. COMPLETED_PROGRAM        - Program finished (reflection submitted)
+ * 10. PAUSED                   - Coaching temporarily on hold
+ * 11. TERMINATED               - Coaching ended (Terminated/Ineligible/lost during match)
  */
 
 export type CoachingState =
   | 'NOT_SIGNED_UP'
   | 'SIGNED_UP_NOT_MATCHED'
+  | 'MATCHES_PRESENTED'
   | 'MATCHED_PRE_FIRST_SESSION'
+  | 'DROPPED_FIRST'
   | 'ACTIVE_PROGRAM'
   | 'INACTIVE'
   | 'PENDING_REFLECTION'
@@ -32,6 +36,23 @@ export type CoachingState =
 // re-engagement nudge that pretends a coach is waiting).
 export const INACTIVE_MIN_DAYS = 45;
 export const INACTIVE_MAX_DAYS = 180;
+
+// A "matches presented" session goes stale after this many days — the
+// originally-suggested coaches may no longer have capacity. UI nudges the user
+// toward fresh matches once the original ones are this old.
+export const MATCHES_STALE_DAYS = 30;
+
+// SF Status__c values mirrored to employee_manager.client_status. Use these
+// rather than employee_manager.status (which is locally stale, frozen by an
+// old one-off backfill — see PR #163 / #164 for the new sync).
+export type SfClientStatus =
+  | 'Unregistered'
+  | 'Registered'
+  | 'Coach Selected'
+  | 'Active'
+  | 'Inactive'
+  | 'Terminated'
+  | 'Ineligible';
 
 export interface CoachingStateData {
   state: CoachingState;
@@ -52,6 +73,9 @@ export interface CoachingStateData {
   isPendingReflection: boolean;
   // Inactive cohort
   daysSinceLastCompletedSession: number | null;
+  // Matches-presented cohort (Registered + Coach_1/2 populated, no Coach__c yet)
+  matchesAreStale: boolean;          // initial match email > MATCHES_STALE_DAYS old
+  daysSinceMatchEmailSent: number | null;
   // SCALE checkpoint tracking
   isScale: boolean;
   scaleCheckpointStatus: ScaleCheckpointStatus;
@@ -288,30 +312,57 @@ export function getCoachingState(
   // Either welcome_survey_scale (SCALE users) or welcome_survey_baseline (GROW/EXEC users)
   const hasCompletedOnboarding = !!welcomeSurveyScale || !!baseline;
 
+  // SF Status__c (canonical lifecycle from Salesforce, mirrored daily by
+  // sf-contact-sync). Falls back to employee.status for ghost rows that have
+  // no matching SF Contact (~3k of 13k rows).
+  const sfStatus = (employee?.client_status || employee?.status || '').toLowerCase();
+  const sfHasMatchesPresented = !!employee?.sf_coach_1_booking_link;
+  const sfHasSelectedCoach = !!employee?.coach;  // Coach__c populated
+  const daysSinceMatchEmailSent = employee?.sf_initial_match_email_sent_at
+    ? Math.floor(
+        (Date.now() - new Date(employee.sf_initial_match_email_sent_at).getTime()) / 86_400_000
+      )
+    : null;
+  const matchesAreStale =
+    daysSinceMatchEmailSent !== null && daysSinceMatchEmailSent > MATCHES_STALE_DAYS;
+
   // Determine state
   let state: CoachingState;
 
-  // Check employee status for paused/terminated/inactive before normal flow.
-  // 'Inactive' is how a historical SF backfill imported terminated users; portal
-  // admin actions write 'Terminated'. Treat both as ended for display purposes.
-  const employeeStatus = employee?.status?.toLowerCase() || '';
-
   if (!employee) {
-    // No employee record at all
     state = 'NOT_SIGNED_UP';
-  } else if (employeeStatus.includes('paused')) {
+  } else if (sfStatus.includes('paused')) {
     state = 'PAUSED';
-  } else if (employeeStatus.includes('terminated') || employeeStatus.includes('inactive')) {
+  } else if (sfStatus.includes('terminated') || sfStatus.includes('ineligible')) {
     state = 'TERMINATED';
-  } else if (!hasProgram && !hasCompletedOnboarding && !hasCompletedSessions) {
-    // Has employee record but no program, no welcome survey, AND no sessions
-    // (Session history overrides missing program/survey data for legacy clients)
+  } else if (!hasProgram && !hasCompletedOnboarding && !hasCompletedSessions && !sfHasMatchesPresented) {
+    // Has employee record but no program, no welcome survey, no sessions,
+    // and SF hasn't generated match candidates either. Treat as fresh.
     state = 'NOT_SIGNED_UP';
   } else if (isFullyCompleted) {
     state = 'COMPLETED_PROGRAM';
   } else if (allSessionsDone && !hasReflection) {
     // Sessions done but reflection not submitted (GROW/EXEC only)
     state = 'PENDING_REFLECTION';
+  } else if (sfStatus === 'inactive') {
+    // SF flipped them to Inactive. Three flavours:
+    //  - had real sessions → re-engagement nudge (DORMANT, behaviourally inactive)
+    //  - selected a coach but never showed → DROPPED_FIRST
+    //  - never matched/selected → effectively churned, show ended-program screen
+    if (hasCompletedSessions) {
+      state = 'INACTIVE';
+    } else if (sfHasSelectedCoach) {
+      state = 'DROPPED_FIRST';
+    } else {
+      state = 'TERMINATED';
+    }
+  } else if (sfStatus === 'coach selected') {
+    // SF "Coach Selected" === first session has been booked. May or may not
+    // have happened yet — fall through to existing session-based logic.
+    state = !hasCompletedSessions ? 'MATCHED_PRE_FIRST_SESSION' : 'ACTIVE_PROGRAM';
+  } else if (sfStatus === 'registered' && sfHasMatchesPresented && !sfHasSelectedCoach) {
+    // Match candidates generated and (probably) emailed; user hasn't picked.
+    state = 'MATCHES_PRESENTED';
   } else if (!hasCoach) {
     state = 'SIGNED_UP_NOT_MATCHED';
   } else if (!hasCompletedSessions) {
@@ -341,6 +392,8 @@ export function getCoachingState(
     hasReflection,
     isPendingReflection,
     daysSinceLastCompletedSession,
+    matchesAreStale,
+    daysSinceMatchEmailSent,
     isScale,
     scaleCheckpointStatus,
   };
@@ -396,6 +449,20 @@ export function isInactiveState(state: CoachingState): boolean {
 }
 
 /**
+ * Helper to check if user has match candidates ready but hasn't picked one
+ */
+export function isMatchesPresentedState(state: CoachingState): boolean {
+  return state === 'MATCHES_PRESENTED';
+}
+
+/**
+ * Helper to check if user selected a coach but never had a session (no-show)
+ */
+export function isDroppedFirstState(state: CoachingState): boolean {
+  return state === 'DROPPED_FIRST';
+}
+
+/**
  * Get display label for state
  */
 export function getStateLabel(state: CoachingState): string {
@@ -404,6 +471,10 @@ export function getStateLabel(state: CoachingState): string {
       return 'Get Started';
     case 'SIGNED_UP_NOT_MATCHED':
       return 'Finding Your Coach';
+    case 'MATCHES_PRESENTED':
+      return 'Pick Your Coach';
+    case 'DROPPED_FIRST':
+      return 'Reconnect';
     case 'MATCHED_PRE_FIRST_SESSION':
       return 'Ready to Begin';
     case 'ACTIVE_PROGRAM':
