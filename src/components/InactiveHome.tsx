@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Coach, Employee, Session } from '../lib/types';
-import { fetchCoachById, fetchCoachByName } from '../lib/dataFetcher';
+import { fetchCoachById, fetchCoachByName, fetchCoachBySfId } from '../lib/dataFetcher';
 
 interface InactiveHomeProps {
   profile: Employee | null;
@@ -84,13 +84,14 @@ export default function InactiveHome({ profile, lastSession, daysSinceLastSessio
     let cancelled = false;
     async function loadCoach() {
       let result: Coach | null = null;
-      if (profile?.coach_id) result = await fetchCoachById(profile.coach_id);
+      if (profile?.coach) result = await fetchCoachBySfId(profile.coach);
+      if (!result && profile?.coach_id) result = await fetchCoachById(profile.coach_id);
       if (!result && lastSession?.coach_name) result = await fetchCoachByName(lastSession.coach_name);
       if (!cancelled) setCoach(result);
     }
     loadCoach();
     return () => { cancelled = true; };
-  }, [profile?.coach_id, lastSession?.coach_name]);
+  }, [profile?.coach, profile?.coach_id, lastSession?.coach_name]);
 
   const coachFirstName = coachFirstNameOf(coach, lastSession);
   const gap = formatGap(daysSinceLastSession);

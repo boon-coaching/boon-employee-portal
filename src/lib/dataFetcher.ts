@@ -428,6 +428,42 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
  * Fetch coach details by ID
  * Tries direct query first, then RPC function to bypass RLS
  */
+/**
+ * Fetch coach by Salesforce Contact Id (the value mirrored into
+ * employee_manager.coach from SF Contact.Coach__c). Handles both 15-char
+ * and 18-char SF id formats by matching the leading 15 characters.
+ */
+export async function fetchCoachBySfId(sfContactId: string): Promise<Coach | null> {
+  if (!sfContactId) return null;
+  const trimmed = sfContactId.trim();
+  const id15 = trimmed.length >= 15 ? trimmed.slice(0, 15) : trimmed;
+  const { data, error } = await supabase
+    .from('coaches')
+    .select('*')
+    .ilike('salesforce_contact_id', `${id15}%`)
+    .order('photo_url', { ascending: false, nullsFirst: false })
+    .limit(1);
+  if (!error && data && data.length > 0) return data[0] as Coach;
+  return null;
+}
+
+/**
+ * Fetch coach by email (used for SF Coach_1_Email__c / Coach_2_Email__c match candidates).
+ * Coaches table has occasional duplicate rows per email — `.limit(1)` picks
+ * whichever the index returns first; the duplicates have identical name/photo.
+ */
+export async function fetchCoachByEmail(coachEmail: string): Promise<Coach | null> {
+  if (!coachEmail) return null;
+  const { data, error } = await supabase
+    .from('coaches')
+    .select('*')
+    .ilike('email', coachEmail.trim())
+    .order('photo_url', { ascending: false, nullsFirst: false })
+    .limit(1);
+  if (!error && data && data.length > 0) return data[0] as Coach;
+  return null;
+}
+
 export async function fetchCoachById(coachId: string): Promise<Coach | null> {
   devLog('[fetchCoachById] Searching for coach:', coachId);
 

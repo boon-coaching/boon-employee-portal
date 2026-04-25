@@ -296,6 +296,8 @@ export function useEmployeeData(): EmployeeData {
     hasReflection: false,
     isPendingReflection: false,
     daysSinceLastCompletedSession: null,
+    matchesAreStale: false,
+    daysSinceMatchEmailSent: null,
     isScale: false,
     scaleCheckpointStatus: {
       isScaleUser: false,

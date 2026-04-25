@@ -23,6 +23,7 @@ export interface Employee {
   // SF Contact mirror — populated by sf-contact-sync edge function.
   // Use these in the state machine to render accurate match/lifecycle UX.
   client_status: string | null;  // SF Status__c: Unregistered/Registered/Coach Selected/Active/Inactive/Terminated/Ineligible
+  coach: string | null;           // SF Coach__c — Contact Id of the selected coach (text, distinct from internal coach_id UUID)
   sf_coach_1_email: string | null;
   sf_coach_1_booking_link: string | null;
   sf_coach_2_email: string | null;
