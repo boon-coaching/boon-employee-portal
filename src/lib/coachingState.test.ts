@@ -28,6 +28,13 @@ const createEmployee = (overrides: Partial<Employee> = {}): Employee => ({
   company_name: null,
   coaching_program: null,
   company_id: null,
+  client_status: null,
+  sf_coach_1_email: null,
+  sf_coach_1_booking_link: null,
+  sf_coach_2_email: null,
+  sf_coach_2_booking_link: null,
+  sf_initial_match_email_sent_at: null,
+  sf_synced_at: null,
   ...overrides,
 });
 
