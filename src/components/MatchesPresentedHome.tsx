@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Coach, Employee } from '../lib/types';
 import { fetchCoachByEmail } from '../lib/dataFetcher';
+import { coachAvatarObjectPosition } from '../lib/coachPhoto';
 
 interface MatchesPresentedHomeProps {
   profile: Employee | null;
@@ -57,6 +58,7 @@ function CoachCard({ coach, email, bookingLink, position }: CoachCardProps) {
             src={coach.photo_url}
             alt={coach.name}
             className="w-16 h-16 rounded-full object-cover ring-2 ring-boon-coral/40"
+            style={{ objectPosition: coachAvatarObjectPosition(coach.photo_url) }}
           />
         ) : (
           <div className="w-16 h-16 rounded-full bg-boon-blue/15 ring-2 ring-boon-coral/40 flex items-center justify-center text-boon-blue font-bold text-lg">

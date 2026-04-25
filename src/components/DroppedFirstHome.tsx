@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Coach, Employee } from '../lib/types';
 import { fetchCoachById, fetchCoachByEmail, fetchCoachBySfId } from '../lib/dataFetcher';
+import { coachAvatarObjectPosition } from '../lib/coachPhoto';
 
 interface DroppedFirstHomeProps {
   profile: Employee | null;
@@ -98,6 +99,7 @@ export default function DroppedFirstHome({ profile }: DroppedFirstHomeProps) {
               src={coach.photo_url}
               alt={coach.name}
               className="w-14 h-14 rounded-full object-cover ring-2 ring-boon-coral/40"
+              style={{ objectPosition: coachAvatarObjectPosition(coach.photo_url) }}
             />
           ) : (
             <div className="w-14 h-14 rounded-full bg-boon-blue/15 ring-2 ring-boon-coral/40 flex items-center justify-center text-boon-blue font-bold">
