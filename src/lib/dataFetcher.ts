@@ -1244,6 +1244,20 @@ function getGrowMilestones(totalSessions: number): { milestones: number[]; midpo
  * @param programType - Program type (GROW, SCALE, EXEC)
  * @param loadedSessions - Optional: already-loaded sessions to avoid re-querying
  */
+// Survey types that are anchored to a specific session and lose their value
+// once that session is far enough in the past. Structural surveys
+// (midpoint, end_of_program, grow_baseline, grow_end) are not in this set —
+// those gate the program and remain valid regardless of session age.
+const SESSION_ANCHORED_SURVEY_TYPES = ['feedback', 'touchpoint', 'first_session', 'sixth_session'];
+const STALE_SURVEY_DAYS = 30;
+
+function isStalePendingSurvey(survey: PendingSurvey | null | undefined): boolean {
+  if (!survey || !SESSION_ANCHORED_SURVEY_TYPES.includes(survey.survey_type)) return false;
+  if (!survey.session_date) return false;
+  const ageDays = (Date.now() - new Date(survey.session_date).getTime()) / 86_400_000;
+  return ageDays > STALE_SURVEY_DAYS;
+}
+
 export async function fetchPendingSurvey(
   email: string,
   programType?: string | null,
@@ -1258,8 +1272,18 @@ export async function fetchPendingSurvey(
   devLog('[fetchPendingSurvey] RPC result:', { rpcData, rpcError });
 
   if (!rpcError && rpcData && rpcData.length > 0) {
-    devLog('[fetchPendingSurvey] Found via RPC:', rpcData[0]);
-    return rpcData[0] as PendingSurvey;
+    const candidate = rpcData[0] as PendingSurvey;
+    if (isStalePendingSurvey(candidate)) {
+      // Don't block a returning user with feedback for a session they barely remember.
+      // The survey row stays in the DB and remains accessible from session detail.
+      devLog('[fetchPendingSurvey] Skipping stale session-anchored survey:', {
+        survey_type: candidate.survey_type,
+        session_date: candidate.session_date,
+      });
+      return null;
+    }
+    devLog('[fetchPendingSurvey] Found via RPC:', candidate);
+    return candidate;
   }
 
   // Fallback: use loaded sessions if available
@@ -1399,13 +1423,20 @@ export async function fetchPendingSurvey(
         }
       }
 
-      const pending = {
+      const pending: PendingSurvey = {
         session_id: session.id,
         session_number: sessionNum,
         session_date: session.session_date,
         coach_name: session.coach_name || 'Your Coach',
         survey_type: surveyType,
       };
+      if (isStalePendingSurvey(pending)) {
+        devLog('[fetchPendingSurvey] Skipping stale session-anchored survey (fallback path):', {
+          survey_type: pending.survey_type,
+          session_date: pending.session_date,
+        });
+        continue;
+      }
       devLog('[fetchPendingSurvey] Found pending survey:', pending);
       return pending;
     }
