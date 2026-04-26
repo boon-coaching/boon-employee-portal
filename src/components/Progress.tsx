@@ -368,7 +368,7 @@ export default function ProgressPage() {
 
           {/* Your Wins */}
           {coachingWins.length > 0 ? (
-            <section className="rounded-card p-8 border border-orange-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <section className="bg-boon-coral/12 rounded-card p-8 border border-boon-charcoal/[0.08]">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🏆</span>
@@ -390,19 +390,19 @@ export default function ProgressPage() {
               </div>
               <div className="space-y-4">
                 {coachingWins.map((win) => (
-                  <div key={win.id} className="bg-boon-warning/12 rounded-btn p-5 border-l-4 border-orange-400 group relative">
+                  <div key={win.id} className="bg-boon-warning/12 rounded-btn p-5 border-l-4 border-boon-coral group relative">
                     {editingWinId === win.id ? (
                       <div className="space-y-3">
                         <textarea
                           value={editWinText}
                           onChange={(e) => setEditWinText(e.target.value)}
-                          className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-boon-coral"
                           rows={3}
                         />
                         <div className="flex gap-2">
                           <button
                             onClick={handleSaveEdit}
-                            className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-btn hover:bg-orange-500"
+                            className="px-3 py-1.5 bg-boon-coral text-white text-xs font-bold rounded-btn hover:bg-boon-coralLight"
                           >
                             Save
                           </button>
@@ -466,7 +466,7 @@ export default function ProgressPage() {
               </div>
             </section>
           ) : (
-            <section className="rounded-card p-8 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <section className="bg-boon-coral/12 rounded-card p-8 border border-boon-charcoal/[0.08]">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-btn bg-boon-warning/12 flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -481,7 +481,7 @@ export default function ProgressPage() {
                   {(
                     <button
                       onClick={() => setShowAddWinModal(true)}
-                      className="text-sm font-bold text-boon-warning hover:text-amber-800 transition-colors"
+                      className="text-sm font-bold text-boon-coral hover:text-boon-lightCoral transition-colors"
                     >
                       + Add your first win
                     </button>
@@ -506,7 +506,7 @@ export default function ProgressPage() {
                   value={newWinText}
                   onChange={(e) => setNewWinText(e.target.value)}
                   placeholder="e.g., Had a difficult conversation that went well, got positive feedback, set a boundary..."
-                  className="w-full p-4 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  className="w-full p-4 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-boon-coral focus:border-transparent"
                   rows={4}
                   maxLength={500}
                   autoFocus
@@ -549,7 +549,7 @@ export default function ProgressPage() {
                 return (
                   <div key={metric.key} className="text-center p-4 bg-boon-offWhite rounded-card">
                     <div className="text-3xl font-black text-boon-navy">
-                      {metric.value ?? '—'}
+                      {metric.value ?? '·'}
                       <span className="text-base font-normal text-boon-charcoal/55">/10</span>
                     </div>
                     <p className="text-xs text-boon-charcoal/55 mt-1">{metric.label}</p>
@@ -573,7 +573,7 @@ export default function ProgressPage() {
             <section className="bg-boon-blue rounded-card p-8 text-center text-white">
               <h2 className="text-xl font-extrabold mb-2">You're all set</h2>
               <p className="text-blue-100 mb-6">
-                Your first session is scheduled — the real work begins soon
+                Your first session is scheduled. The real work begins soon.
               </p>
               {sessionDate && (
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/20 rounded-btn">
@@ -606,26 +606,31 @@ export default function ProgressPage() {
 
     // GROW/EXEC pre-first-session: Show baseline competencies if available
     return (
-      <div className="space-y-8 animate-fade-in">
-        <header className="text-center sm:text-left">
-          <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">My Progress</h1>
-          <p className="text-boon-charcoal/55 mt-2 font-medium">Track your leadership growth over time.</p>
+      <div className="space-y-8 animate-fade-in pb-32 md:pb-0">
+        <header className="pb-6 border-b border-boon-charcoal/10">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <span className="w-6 h-px bg-boon-blue" aria-hidden />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">Progress</span>
+          </div>
+          <h1 className="font-display font-bold text-boon-navy tracking-[-0.025em] leading-[1.05] text-[36px] md:text-[44px]">
+            Where you're <span className="font-serif italic font-normal text-boon-coral">starting</span>.
+          </h1>
         </header>
 
         {/* Hero Section */}
         <section className="bg-boon-offWhite rounded-card p-10 md:p-14 border border-boon-charcoal/[0.08] text-center">
-          <div className="w-20 h-20 mx-auto mb-8 bg-boon-purple/10 rounded-pill flex items-center justify-center">
-            <svg className="w-10 h-10 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-20 h-20 mx-auto mb-8 bg-boon-coral/10 rounded-pill flex items-center justify-center">
+            <svg className="w-10 h-10 text-boon-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-extrabold text-boon-navy mb-4">
-            Your Leadership Profile
+          <h2 className="font-display font-bold text-boon-navy tracking-[-0.02em] leading-[1.15] text-2xl md:text-3xl mb-4">
+            Your leadership <span className="font-serif italic font-normal">profile</span>.
           </h2>
           <p className="text-boon-charcoal/75 text-lg max-w-lg mx-auto leading-relaxed">
             {hasBaselineCompetencies
-              ? `Here's where you're starting. As you work with ${coachFirstName}, you'll see your growth across these competencies.`
-              : `Your leadership profile will emerge as you work with ${coachFirstName}.`
+              ? `Here's where you're starting. The shape changes as you work with ${coachFirstName}.`
+              : `Your profile takes shape as you work with ${coachFirstName}.`
             }
           </p>
         </section>
@@ -638,7 +643,7 @@ export default function ProgressPage() {
               <span className="text-xs text-boon-charcoal/55">From your welcome survey</span>
             </div>
             <p className="text-xs text-boon-charcoal/55 mb-4">
-              Scores reflect where you are today — from Learning (1) to Mastering (5). Most people start at 2-3.
+              Scores reflect where you are today, from Learning (1) to Mastering (5). Most people start at 2-3.
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {baselineCompetencyData.filter(c => c.baseline > 0).map(comp => (
@@ -650,11 +655,11 @@ export default function ProgressPage() {
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-boon-charcoal/55 uppercase tracking-wide">Baseline</span>
-                      <span className="font-bold text-boon-purple">{comp.baseline}/5</span>
+                      <span className="font-bold text-boon-coral">{comp.baseline}/5</span>
                     </div>
                     <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                       <div
-                        className="h-full bg-boon-purple rounded-pill transition-all duration-500"
+                        className="h-full bg-boon-coral rounded-pill transition-all duration-500"
                         style={{ width: `${(comp.baseline) * 20}%` }}
                       />
                     </div>
@@ -685,7 +690,7 @@ export default function ProgressPage() {
                 return (
                   <div key={metric.key} className="text-center">
                     <p className="text-xl font-bold text-boon-navy">
-                      {metric.value || '—'}<span className="text-sm text-boon-charcoal/55">/10</span>
+                      {metric.value || '·'}<span className="text-sm text-boon-charcoal/55">/10</span>
                     </p>
                     <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">{metric.label}</p>
                     {vsBenchmark !== null && (
@@ -705,8 +710,8 @@ export default function ProgressPage() {
           <h3 className="text-lg font-extrabold text-boon-navy mb-6">What You'll Track</h3>
           <div className="grid sm:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto mb-4 bg-boon-purple/10 rounded-btn flex items-center justify-center">
-                <svg className="w-6 h-6 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-12 h-12 mx-auto mb-4 bg-boon-coral/10 rounded-btn flex items-center justify-center">
+                <svg className="w-6 h-6 text-boon-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -886,11 +891,11 @@ export default function ProgressPage() {
 
         {/* Check-in Due Banner - Priority CTA */}
         {coachingState.scaleCheckpointStatus.isCheckpointDue && (
-          <section className="bg-boon-purple/10 rounded-card p-6 border-2 border-boon-charcoal/[0.08]">
+          <section className="bg-boon-coral/10 rounded-card p-6 border-2 border-boon-charcoal/[0.08]">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-boon-purple/20 rounded-btn flex items-center justify-center">
-                  <svg className="w-6 h-6 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-12 h-12 bg-boon-coral/20 rounded-btn flex items-center justify-center">
+                  <svg className="w-6 h-6 text-boon-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
@@ -901,7 +906,7 @@ export default function ProgressPage() {
               </div>
               <button
                 onClick={onStartCheckpoint}
-                className="px-6 py-3 bg-boon-purple text-white font-bold rounded-btn hover:bg-boon-purple transition-all"
+                className="px-6 py-3 bg-boon-coral text-white font-bold rounded-btn hover:bg-boon-coral transition-all"
               >
                 Start Check-In
               </button>
@@ -958,7 +963,7 @@ export default function ProgressPage() {
             <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest mt-1">Sessions completed</p>
           </div>
           <div className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08] text-center">
-            <p className="text-2xl font-black text-boon-navy">{monthsInProgram > 0 ? monthsInProgram : '—'}</p>
+            <p className="text-2xl font-black text-boon-navy">{monthsInProgram > 0 ? monthsInProgram : '·'}</p>
             <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest mt-1">Months in coaching</p>
           </div>
           <div className="bg-white p-5 rounded-card border border-boon-charcoal/[0.08] text-center">
@@ -1020,7 +1025,7 @@ export default function ProgressPage() {
                       <>
                         {/* Only baseline - original display */}
                         <p className="text-xl font-bold text-boon-navy">
-                          {baselineValue || '—'}<span className="text-sm text-boon-charcoal/55">/10</span>
+                          {baselineValue || '·'}<span className="text-sm text-boon-charcoal/55">/10</span>
                         </p>
                         <p className="text-[10px] font-bold text-boon-charcoal/55 uppercase tracking-widest">{metric.label}</p>
                         {(() => {
@@ -1167,19 +1172,19 @@ export default function ProgressPage() {
           {coachingWins.length > 0 ? (
             <div className="space-y-4">
               {coachingWins.map((win) => (
-                <div key={win.id} className="p-5 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-card border border-amber-100/50 group relative">
+                <div key={win.id} className="p-5 bg-boon-coral/12 rounded-card border border-boon-charcoal/[0.08] group relative">
                   {editingWinId === win.id ? (
                     <div className="space-y-3">
                       <textarea
                         value={editWinText}
                         onChange={(e) => setEditWinText(e.target.value)}
-                        className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                        className="w-full p-3 border border-boon-charcoal/[0.08] rounded-btn text-sm resize-none focus:outline-none focus:ring-2 focus:ring-boon-coral"
                         rows={3}
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveEdit}
-                          className="px-3 py-1.5 bg-orange-400 text-white text-xs font-bold rounded-btn hover:bg-orange-500"
+                          className="px-3 py-1.5 bg-boon-coral text-white text-xs font-bold rounded-btn hover:bg-boon-coralLight"
                         >
                           Save
                         </button>
@@ -1235,10 +1240,10 @@ export default function ProgressPage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-card p-6 border border-amber-200" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FEF9EE 100%)' }}>
+            <div className="bg-boon-coral/12 rounded-card p-6 border border-boon-charcoal/[0.08]">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-btn bg-boon-warning/12 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-boon-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-10 h-10 rounded-btn bg-boon-coral flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                   </svg>
                 </div>
@@ -1249,7 +1254,7 @@ export default function ProgressPage() {
                   </p>
                   <button
                     onClick={() => setShowAddWinModal(true)}
-                    className="text-sm font-bold text-boon-warning hover:text-amber-800 transition-colors"
+                    className="text-sm font-bold text-boon-coral hover:text-boon-lightCoral transition-colors"
                   >
                     + Add your first win
                   </button>
@@ -1355,7 +1360,7 @@ export default function ProgressPage() {
             <p className="text-[10px] text-boon-success mt-1">Complete</p>
           </div>
           <div className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] text-center">
-            <p className="text-3xl font-black text-boon-purple">12</p>
+            <p className="text-3xl font-black text-boon-coral">{COMPETENCIES.length}</p>
             <p className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mt-1">Competencies</p>
           </div>
           <div className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] text-center">
@@ -1394,7 +1399,7 @@ export default function ProgressPage() {
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-boon-charcoal/55 uppercase tracking-wide">Baseline</span>
-                      <span className="font-bold text-boon-charcoal/55">{comp.baseline || '—'}/5</span>
+                      <span className="font-bold text-boon-charcoal/55">{comp.baseline || '·'}/5</span>
                     </div>
                     <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
                       <div
@@ -1515,10 +1520,10 @@ export default function ProgressPage() {
 
   // Wellbeing metrics (keys match actual baseline column names)
   const wellbeingMetrics = [
-    { key: 'satisfaction', label: 'Work Satisfaction', icon: '😊', color: '#4A90A4' },
-    { key: 'productivity', label: 'Productivity', icon: '⚡', color: '#10B981' },
-    { key: 'work_life_balance', label: 'Work-Life Balance', icon: '⚖️', color: '#8B5CF6' },
-    { key: 'motivation', label: 'Motivation', icon: '💪', color: '#F59E0B' },
+    { key: 'satisfaction', label: 'Work Satisfaction', color: '#466FF6' },
+    { key: 'productivity', label: 'Productivity', color: '#1A253B' },
+    { key: 'work_life_balance', label: 'Work-Life Balance', color: '#FF6D6A' },
+    { key: 'motivation', label: 'Motivation', color: '#365ABD' },
   ];
 
   // Get the latest survey response for current wellbeing values
@@ -1646,14 +1651,14 @@ export default function ProgressPage() {
             label: avgCompetencyImprovement !== null ? 'Avg growth' : 'Scores recorded',
             value: avgCompetencyImprovement !== null
               ? `${avgCompetencyImprovement > 0 ? '+' : ''}${avgCompetencyImprovement}%`
-              : String(competencyScores.length > 0 ? competencyScores.length : '—'),
+              : String(competencyScores.length > 0 ? competencyScores.length : '·'),
             accent: 'bg-boon-blue',
           },
           { label: 'Sessions', value: String(completedSessions.length), accent: 'bg-boon-navy' },
           { label: 'Actions done', value: String(completedActions.length), accent: 'bg-boon-success' },
           {
             label: competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length > 0 ? 'Improving' : 'Tracked',
-            value: String(competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '—'),
+            value: String(competenciesWithImprovement.filter(c => (c.improvement || 0) > 0).length || competencyScores.length || '·'),
             accent: 'bg-boon-coral',
           },
         ]).map((stat, i) => (
@@ -1715,7 +1720,7 @@ export default function ProgressPage() {
                         <>
                           <div className="flex items-baseline gap-2 mb-2">
                             <span className="font-display font-bold text-boon-navy text-[26px] leading-none tracking-[-0.02em]">
-                              {comp.current || '—'}
+                              {comp.current || '·'}
                             </span>
                             <span className="text-xs text-boon-charcoal/55">/ 5</span>
                             {comp.baseline !== null && comp.baseline !== comp.current && (
@@ -1751,7 +1756,7 @@ export default function ProgressPage() {
                           <>
                             <div className="flex items-baseline gap-2 mb-2">
                               <span className="font-display font-bold text-boon-charcoal/40 text-[26px] leading-none tracking-[-0.02em]">
-                                {comp.baseline || '—'}
+                                {comp.baseline || '·'}
                               </span>
                               <span className="text-xs text-boon-charcoal/45">/ 5 baseline</span>
                             </div>
@@ -1887,8 +1892,8 @@ export default function ProgressPage() {
           {/* No Data State */}
           {!baseline && competencyScores.length === 0 && (
             <section className="bg-gradient-to-br from-boon-bg to-white p-8 rounded-card border border-boon-charcoal/[0.08] text-center">
-              <div className="w-16 h-16 bg-boon-purple/10 rounded-pill flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 bg-boon-coral/10 rounded-pill flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-boon-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -1910,18 +1915,20 @@ export default function ProgressPage() {
               {wellbeingData.map(metric => (
                 <div
                   key={metric.key}
-                  className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] hover:shadow-lg hover:border-boon-blue/20 transition-all"
+                  className="bg-white p-6 rounded-card border border-boon-charcoal/[0.08] hover:shadow-md hover:border-boon-blue/20 transition-all"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl">{metric.icon}</span>
-                  </div>
+                  <span
+                    aria-hidden
+                    className="block w-6 h-px mb-4"
+                    style={{ backgroundColor: metric.color }}
+                  />
                   <h3 className="font-bold text-boon-navy text-sm mb-3">{metric.label}</h3>
                   <div className="space-y-2">
                     <div>
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-boon-charcoal/55 uppercase tracking-wide">Score</span>
                         <span className="font-bold" style={{ color: metric.color }}>
-                          {metric.current || '—'}/{metric.maxScore}
+                          {metric.current ?? 'Not yet'}/{metric.maxScore}
                         </span>
                       </div>
                       <div className="h-2 bg-boon-offWhite rounded-pill overflow-hidden">
