@@ -911,8 +911,12 @@ export async function fetchReflection(email: string): Promise<ReflectionResponse
     .limit(1);
 
   if (error) {
-    // Table might not exist yet
-    if (error.code !== '42P01' && error.code !== 'PGRST116') {
+    // reflection_responses is a dead-code table that never shipped; the
+    // state machine falls back to competency_scores (score_type='end_of_program')
+    // via hasEndOfProgramScores in coachingState.ts. PGRST205 = schema cache
+    // miss, 42P01 = relation does not exist, PGRST116 = no rows. All silent.
+    const silentCodes = ['42P01', 'PGRST116', 'PGRST205'];
+    if (!silentCodes.includes(error.code)) {
       console.error('Error fetching reflection:', error);
     }
     return null;
