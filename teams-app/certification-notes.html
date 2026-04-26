@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Boon Coaching - Teams App Certification Notes v1.0.5</title>
+<title>Boon Coaching - Teams App Certification Notes v1.0.6</title>
 <style>
   body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 40px; color: #111; line-height: 1.5; }
   h1 { font-size: 24px; margin-bottom: 4px; }
@@ -21,7 +21,7 @@
 <h1>Boon Coaching — Teams App Certification Notes</h1>
 <p class="meta">
   <strong>App:</strong> Boon Coaching (Microsoft Teams Bot)<br>
-  <strong>Manifest version:</strong> 1.0.5<br>
+  <strong>Manifest version:</strong> 1.0.6<br>
   <strong>Product ID:</strong> ac42d19b-cd91-4d1b-8314-0b8a75b47e04<br>
   <strong>Bot ID:</strong> 4a2f6756-70f8-4802-ba89-eefe3a0aa790<br>
   <strong>Developer:</strong> Boon Coaching<br>
@@ -35,7 +35,7 @@
   <li><strong>Issue: only Slack option was visible in the portal, no Teams option</strong> — Fixed in portal v1.x.x. The Settings page at <code>https://my.boon-health.com/settings</code> now shows a "Connect Microsoft Teams" button alongside "Connect Slack". One-channel-at-a-time is enforced server-side.</li>
   <li><strong>Issue: new users have no contact / help / sign-up links in first-run</strong> — The bot's Welcome Adaptive Card (sent proactively on install) contains three buttons: Open Boon Portal, Get Help, Contact Us. The long description and Settings UI also expose Sign Up, Get Started, Help, and Contact links.</li>
   <li><strong>Issue: bot lacked welcome / Hi / Hello / Help responses</strong> — The bot now sends a proactive Adaptive Card welcome on <code>conversationUpdate</code>, and responds to <code>hi</code>, <code>hello</code>, <code>hey</code>, <code>help</code>, <code>menu</code>, <code>start</code>, <code>get started</code> with the same Welcome card. Any other text returns a fallback card pointing back to <code>help</code>. No dead ends.</li>
-  <li><strong>Issue: long description didn't meet guidelines</strong> — Updated to include features, target audience, account dependency, sign-up/help/contact links, and limitations. See manifest v1.0.5.</li>
+  <li><strong>Issue: long description didn't meet guidelines</strong> — Updated to include features, target audience, account dependency, sign-up/help/contact links, and limitations. See manifest v1.0.6.</li>
 </ul>
 
 <h2>What This App Does</h2>
@@ -45,12 +45,11 @@
 
 <h2>Test Account Credentials</h2>
 <div class="callout">
-  <strong>Boon portal account (required for both paths):</strong><br>
-  Email: <code>alex.simmons@boon-health.com</code><br>
-  Password: <code>BoonTeams2026Review!</code>
+  <strong>Per your security guidance, test credentials are not included in this document.</strong><br>
+  The Boon portal email and password for both test paths are provided in Partner Center under <em>Product overview &gt; Review and publish &gt; Additional certification info &gt; Notes for certification</em>.
 </div>
 <p>
-  This account has an active Demo SCALE coaching program with a past Completed session and two upcoming Scheduled sessions so you can validate the full portal experience end-to-end.
+  The test account has an active Demo SCALE coaching program with a past Completed session and two upcoming Scheduled sessions so you can validate the full portal experience end-to-end.
 </p>
 
 <h2>End-to-End Test Flow</h2>

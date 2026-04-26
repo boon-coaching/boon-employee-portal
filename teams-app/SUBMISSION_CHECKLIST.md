@@ -1,11 +1,11 @@
 # Teams App Store Submission Checklist
-## Resubmission for Ticket #5330350 — manifest v1.0.5
+## Resubmission for Ticket #5330350 — manifest v1.0.6
 
 ## Pre-submission setup (do this BEFORE updating Partner Center)
 
 ### 1. Side-load the app into Microsoft's test tenant (Path A)
 - Sign in to Teams Admin Center as `admin@M365x34009223.onmicrosoft.com` (creds in the validator's email).
-- Upload `teams-app.zip` (manifest v1.0.5) as a custom app for the org.
+- Upload `teams-app.zip` (manifest v1.0.6) as a custom app for the org.
 - Confirm `adelev@M365x34009223.onmicrosoft.com` can see "Boon Coaching" under Apps > Built for your org.
 - This is what unblocks the validator's "couldn't test end-to-end" complaint.
 
@@ -22,7 +22,7 @@ Open `PARTNER_CENTER_NOTES.txt` in this directory and paste the entire body into
 Per validator request, do NOT email creds. Submit them via Partner Center in the notes block (already included in `PARTNER_CENTER_NOTES.txt`).
 
 ### Packages
-Upload `teams-app.zip` from this directory (manifest v1.0.5)
+Upload `teams-app.zip` from this directory (manifest v1.0.6)
 
 ### Properties
 Developer name: **Boon Coaching**
