@@ -143,7 +143,9 @@ export default function GrowDashboard({
 
   // Editorial hero title + kicker computed from program progress.
   const completedCount = coachingState.completedSessionCount || 0;
-  const totalExpected = programInfo?.sessions_per_employee || 12;
+  const knownTotal = programInfo?.sessions_per_employee && programInfo.sessions_per_employee > 0
+    ? programInfo.sessions_per_employee
+    : null;
   const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
   const countAsWord = completedCount >= 0 && completedCount < numberWord.length
     ? numberWord[completedCount]
@@ -154,10 +156,10 @@ export default function GrowDashboard({
   if (completedCount === 0) {
     heroStatement = 'Before the first.';
     heroKicker = 'Where you begin.';
-  } else if (completedCount >= totalExpected - 2) {
+  } else if (knownTotal && completedCount >= knownTotal - 2) {
     heroStatement = 'The home stretch.';
     heroKicker = `${countAsWord.charAt(0).toUpperCase()}${countAsWord.slice(1)} in.`;
-  } else if (completedCount >= Math.ceil(totalExpected / 2)) {
+  } else if (knownTotal && completedCount >= Math.ceil(knownTotal / 2)) {
     heroStatement = `Session ${countAsWord}.`;
     heroKicker = 'The middle stretch.';
   } else {
@@ -165,7 +167,7 @@ export default function GrowDashboard({
     heroKicker = 'Still building.';
   }
 
-  const progressPct = Math.min((completedCount / totalExpected) * 100, 100);
+  const progressPct = knownTotal ? Math.min((completedCount / knownTotal) * 100, 100) : null;
 
   // Next-session navy-card copy. Statement + serif kicker is the signature
   // Boon treatment. Pull session topic if we have it, otherwise fall back
@@ -208,8 +210,9 @@ export default function GrowDashboard({
   const momentumLabel = (() => {
     if (completedCount === 0) return 'JUST STARTING';
     if (completedCount < 3) return 'EARLY STEPS';
-    if (completedCount < Math.ceil(totalExpected / 2)) return 'BUILDING MOMENTUM';
-    if (completedCount < totalExpected - 2) return 'MID-STRETCH';
+    if (!knownTotal) return 'IN PROGRESS';
+    if (completedCount < Math.ceil(knownTotal / 2)) return 'BUILDING MOMENTUM';
+    if (completedCount < knownTotal - 2) return 'MID-STRETCH';
     return 'HOME STRETCH';
   })();
 
@@ -220,27 +223,33 @@ export default function GrowDashboard({
   const hiddenActionCount = (pendingActions.length - visiblePending.length) + recentlyCompletedActions.length;
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
+    <div className="max-w-6xl mx-auto animate-fade-in pb-32 md:pb-0">
       {/* ─────────────── Compact editorial hero ─────────────── */}
       <header className="pb-6 mb-6 border-b border-boon-charcoal/10">
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="w-6 h-px bg-boon-blue" aria-hidden />
           <Eyebrow color="blue">Your progress</Eyebrow>
-          <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
+          {knownTotal ? (
+            <Eyebrow color="muted">· {completedCount} of {knownTotal} with {coachFirstName}</Eyebrow>
+          ) : completedCount > 0 ? (
+            <Eyebrow color="muted">· {completedCount} session{completedCount === 1 ? '' : 's'} with {coachFirstName}</Eyebrow>
+          ) : null}
           <Eyebrow color="coral">· {momentumLabel}</Eyebrow>
         </div>
         <Headline as="h1" size="lg">
           {heroStatement}{' '}
           <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
         </Headline>
-        <div className="mt-5">
-          <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
-            <div
-              className="h-full bg-boon-blue rounded-pill transition-all"
-              style={{ width: `${progressPct}%` }}
-            />
+        {progressPct !== null && (
+          <div className="mt-5">
+            <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+              <div
+                className="h-full bg-boon-blue rounded-pill transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* ─────────────── Row 1: Next Session (navy) + Reflection (coral) ─────────────── */}
@@ -260,7 +269,10 @@ export default function GrowDashboard({
             <div>
               <div className="text-sm font-semibold text-white">{coachName}</div>
               <div className="text-xs text-white/65">
-                {coachProfile?.headline || 'Your coach'}{coachProfile?.headline ? ' · ' : ''}{sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together
+                {coachProfile?.headline || 'Your coach'}
+                {sessionCountWithCoach > 0 && (
+                  <> · {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</>
+                )}
               </div>
             </div>
           </div>

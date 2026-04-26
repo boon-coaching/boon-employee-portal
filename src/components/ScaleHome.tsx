@@ -200,13 +200,13 @@ export default function ScaleHome({
   const completedActionCount = actionItems.filter(a => a.status === 'completed').length;
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
+    <div className="max-w-6xl mx-auto animate-fade-in pb-32 md:pb-0">
       {/* ─────────────── Editorial hero ─────────────── */}
       <header className="pb-6 mb-6 border-b border-boon-charcoal/10">
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="w-6 h-px bg-boon-blue" aria-hidden />
           <Eyebrow color="blue">Your practice</Eyebrow>
-          {coachName !== 'Your Coach' && (
+          {coachName !== 'Your Coach' && sessionCountWithCoach > 0 && (
             <Eyebrow color="muted">
               · {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} with {coachFirstName}
             </Eyebrow>
@@ -250,7 +250,10 @@ export default function ScaleHome({
             <div>
               <div className="text-sm font-semibold text-white">{coachName}</div>
               <div className="text-xs text-white/65">
-                {coachProfile?.headline || 'Your coach'} · {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together
+                {coachProfile?.headline || 'Your coach'}
+                {sessionCountWithCoach > 0 && (
+                  <> · {sessionCountWithCoach} session{sessionCountWithCoach !== 1 ? 's' : ''} together</>
+                )}
               </div>
             </div>
           </div>
@@ -444,7 +447,7 @@ export default function ScaleHome({
                       key={idx}
                       className="flex items-start gap-3.5 p-3.5 rounded-btn bg-white border border-boon-charcoal/[0.08]"
                     >
-                      <span className="w-5 h-5 rounded-md border-[1.5px] border-boon-charcoal/30 flex-shrink-0 mt-0.5" />
+                      <span className="text-boon-coral text-sm leading-relaxed mt-0.5 flex-shrink-0" aria-hidden>•</span>
                       <p className="flex-1 text-sm text-boon-charcoal leading-relaxed">{cleanText}</p>
                     </div>
                   );
