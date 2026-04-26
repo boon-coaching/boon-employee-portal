@@ -104,7 +104,7 @@ export default function MatchingHome({
         </h2>
 
         <p className="text-boon-charcoal/75 text-lg leading-relaxed">
-          We're hand-picking someone who fits the work you want to do, not pattern-matching on a checkbox. You'll get an email and a Slack or Teams ping the moment they're chosen.
+          We're hand-picking someone who fits the work you want to do, not pattern-matching on a checkbox. Most matches land within a couple of days. You'll get an email and a Slack or Teams ping the moment they're chosen.
         </p>
       </section>
 
