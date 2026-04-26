@@ -178,7 +178,8 @@ export default function PreFirstSessionHome({
   const CoachFirstName = resolvedFirstName || 'Your coach';
 
   // Coach display data
-  const coachPhotoUrl = coach?.photo_url || `https://picsum.photos/seed/${coachName.replace(' ', '')}/200/200`;
+  const coachInitials = (coach?.name || coachName || 'YC')
+    .split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
   // Extract only the relevant coach's summary from match_summary
   // Fallback: personalized from coaching goals > truncated coach bio > generic
   const allMatchSummaries = matchSummary || baseline?.match_summary || welcomeSurveyScale?.match_summary || null;
@@ -509,12 +510,18 @@ export default function PreFirstSessionHome({
             {/* Coach headshot - using aspect-ratio container with object-position to show face */}
             <div className="w-28 sm:w-32 mx-auto sm:mx-0 flex-shrink-0">
               <div className="aspect-[3/4] rounded-card overflow-hidden ring-4 ring-boon-bg shadow-lg bg-boon-offWhite">
-                <img
-                  src={coachPhotoUrl}
-                  alt={coachName}
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 15%' }}
-                />
+                {coach?.photo_url ? (
+                  <img
+                    src={coach.photo_url}
+                    alt={coachName}
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: 'center 15%' }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-boon-blue/15 flex items-center justify-center text-boon-blue font-display font-bold text-3xl">
+                    {coachInitials}
+                  </div>
+                )}
               </div>
             </div>
 

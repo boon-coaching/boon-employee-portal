@@ -119,7 +119,7 @@ export default function DroppedFirstHome({ profile }: DroppedFirstHomeProps) {
         </div>
 
         <p className="text-boon-charcoal/75 text-lg leading-relaxed mb-6">
-          You and {coachFirstName} were matched but haven't connected yet. Schedules slip — life
+          You and {coachFirstName} were matched but haven't connected yet. Schedules slip. Life
           happens. Book a time when you can show up and the conversation starts.
         </p>
 
