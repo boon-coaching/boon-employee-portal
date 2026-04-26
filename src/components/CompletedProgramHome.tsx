@@ -31,7 +31,7 @@ export function CompletedProgramHome() {
   }).filter(Boolean);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 animate-fade-in">
+    <div className="max-w-3xl mx-auto space-y-8 md:space-y-12 animate-fade-in pb-32 md:pb-0">
 
       <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pt-2">
         <div className="text-center sm:text-left">
@@ -52,7 +52,7 @@ export function CompletedProgramHome() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <p className="text-lg font-black text-boon-navy tracking-tight truncate">
-              {lastSession?.coach_name?.split(' ')[0] || '\u2014'}
+              {lastSession?.coach_name?.split(' ')[0] || '·'}
             </p>
             <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-widest">Coach</p>
           </div>
@@ -71,12 +71,12 @@ export function CompletedProgramHome() {
               {(() => {
                 const first = completedSessions[completedSessions.length - 1];
                 const last = completedSessions[0];
-                if (!first || !last) return '\u2014';
+                if (!first || !last) return '·';
                 const startDate = new Date(first.session_date);
                 const endDate = new Date(last.session_date);
                 const startMonth = startDate.toLocaleDateString('en-US', { month: 'short' });
                 const endMonth = endDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-                return `${startMonth} \u2013 ${endMonth}`;
+                return `${startMonth} to ${endMonth}`;
               })()}
             </p>
             <p className="text-[10px] text-boon-charcoal/55 uppercase tracking-widest">Duration</p>
@@ -183,7 +183,7 @@ export function CompletedProgramHome() {
           <section className="bg-white p-8 rounded-card border border-boon-charcoal/[0.08] shadow-sm">
             <div className="flex flex-col h-full justify-between">
               <div>
-                <p className="text-[11px] font-black text-boon-purple uppercase tracking-[0.18em] mb-2">
+                <p className="text-[11px] font-black text-boon-coral uppercase tracking-[0.18em] mb-2">
                   Session Archive
                 </p>
                 <p className="text-boon-charcoal/75 text-sm leading-relaxed">

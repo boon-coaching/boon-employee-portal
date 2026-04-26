@@ -9,7 +9,6 @@ export default function WelcomePage({ welcomeSurveyUrl }: WelcomePageProps) {
 
   return (
     <div className="min-h-screen bg-boon-bg">
-      {/* Minimal Header */}
       <header className="p-6">
         <img
           src="https://res.cloudinary.com/djbo6r080/image/upload/v1764863862/Logo_Blue_2_kl7tot.png"
@@ -18,81 +17,68 @@ export default function WelcomePage({ welcomeSurveyUrl }: WelcomePageProps) {
         />
       </header>
 
-      <main className="flex items-center justify-center px-6 py-12">
+      <main className="flex items-center justify-center px-6 py-12 pb-32 md:pb-12">
         <div className="w-full max-w-lg animate-fade-in">
-          {/* Welcome Card */}
-          <div className="bg-white rounded-[2.5rem] p-10 md:p-12 shadow-sm border border-gray-100 text-center">
-            {/* Icon */}
-            <div className="w-24 h-24 bg-gradient-to-br from-boon-lightBlue to-boon-blue/20 rounded-full flex items-center justify-center mx-auto mb-8">
-              <svg className="w-12 h-12 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          <div className="bg-white rounded-card p-8 md:p-10 shadow-sm border border-boon-charcoal/[0.08]">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-btn bg-boon-coral flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">First step</span>
             </div>
 
-            {/* Welcome Text */}
-            <h1 className="text-3xl md:text-4xl font-extrabold text-boon-text mb-4">
-              Welcome{employee?.first_name ? `, ${employee.first_name}` : ''}!
+            <h1 className="font-display font-bold text-boon-navy tracking-[-0.02em] leading-[1.15] text-3xl md:text-4xl mb-4">
+              Welcome{employee?.first_name ? `, ${employee.first_name}` : ''}.{' '}
+              <span className="font-serif italic font-normal">Let's begin.</span>
             </h1>
-            <p className="text-gray-500 text-lg mb-8 leading-relaxed">
-              You're about to start a transformative coaching journey. Let's begin with a quick survey to understand your goals and match you with the perfect coach.
+            <p className="text-boon-charcoal/75 text-lg leading-relaxed mb-8">
+              A short survey tells us where you want to grow. Your answers go straight to the coach we hand-pick for you, so the first conversation already has shape.
             </p>
 
-            {/* Benefits */}
-            <div className="bg-boon-bg rounded-2xl p-6 mb-8 text-left">
-              <p className="text-sm font-bold text-boon-text mb-4">What you'll get:</p>
+            <div className="bg-boon-offWhite rounded-card p-6 mb-8 border border-boon-charcoal/[0.08]">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-charcoal/55 mb-4">What comes next</p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-boon-lightBlue flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3.5 h-3.5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-gray-600">A coach matched to your unique goals and style</span>
+                  <span className="text-boon-coral mt-0.5 flex-shrink-0" aria-hidden>•</span>
+                  <span className="text-boon-charcoal/75 text-sm">A coach matched to your goals, style, and the work you actually want to do</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-boon-lightBlue flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3.5 h-3.5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-gray-600">Personalized 1:1 coaching sessions</span>
+                  <span className="text-boon-coral mt-0.5 flex-shrink-0" aria-hidden>•</span>
+                  <span className="text-boon-charcoal/75 text-sm">1:1 sessions paced to your calendar</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-boon-lightBlue flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-3.5 h-3.5 text-boon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-gray-600">Tools and support for your professional growth</span>
+                  <span className="text-boon-coral mt-0.5 flex-shrink-0" aria-hidden>•</span>
+                  <span className="text-boon-charcoal/75 text-sm">A practice space and journal between sessions</span>
                 </li>
               </ul>
             </div>
 
-            {/* CTA Button */}
             {welcomeSurveyUrl ? (
               <a
                 href={welcomeSurveyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full py-4 bg-boon-blue text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-boon-darkBlue transition-all shadow-lg shadow-boon-blue/20 active:scale-[0.98]"
+                className="inline-flex w-full items-center justify-center gap-3 px-6 py-3 text-sm font-bold rounded-btn text-white bg-boon-blue hover:bg-boon-navy transition-all shadow-sm"
               >
-                Start Welcome Survey
+                Start welcome survey
+                <span className="text-xs font-medium text-white/85">~5 min</span>
               </a>
             ) : (
-              <div className="w-full py-4 bg-gray-200 text-gray-400 rounded-2xl font-bold text-sm uppercase tracking-widest text-center cursor-not-allowed">
-                Start Welcome Survey
+              <div className="w-full py-3 bg-boon-charcoal/10 text-boon-charcoal/45 rounded-btn font-bold text-sm text-center cursor-not-allowed">
+                Start welcome survey
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-4">
+            <p className="text-xs text-boon-charcoal/55 mt-4 text-center">
               {welcomeSurveyUrl
-                ? 'Takes about 5 minutes'
-                : <>Your welcome survey is being prepared. Please check back shortly or <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">contact support</a>.</>
+                ? 'Takes about 5 minutes.'
+                : <>Your survey is being prepared. <a href="mailto:hello@boon-health.com" className="text-boon-blue hover:underline">Reach out</a> if you want a nudge.</>
               }
             </p>
           </div>
 
-          {/* Sign out link */}
-          <p className="text-center text-sm text-gray-400 mt-8">
+          <p className="text-center text-sm text-boon-charcoal/55 mt-8">
             Signed in as {employee?.company_email || 'unknown'}.{' '}
             <button onClick={signOut} className="text-boon-blue hover:underline">
               Sign out
