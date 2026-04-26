@@ -28,14 +28,35 @@ function truncate(text: string | null, maxLength = 90): string {
 
 interface CoachCardProps {
   coach: Coach | null;
-  email: string | null;
   bookingLink: string | null;
-  position: 1 | 2;
+  loading: boolean;
 }
 
-function CoachCard({ coach, email, bookingLink, position }: CoachCardProps) {
-  const displayName = coach?.name || (email ? email.split('@')[0] : 'Your coach');
-  const firstName = displayName.split(' ')[0];
+function CoachCardSkeleton() {
+  return (
+    <div className="bg-white rounded-card p-7 md:p-8 border border-boon-charcoal/[0.08] shadow-sm flex flex-col animate-pulse">
+      <div className="flex items-center gap-4 mb-5">
+        <div className="w-16 h-16 rounded-full bg-boon-charcoal/[0.08]" />
+        <div className="min-w-0 flex-1">
+          <div className="h-5 bg-boon-charcoal/[0.08] rounded w-32 mb-2" />
+          <div className="h-3 bg-boon-charcoal/[0.05] rounded w-48" />
+        </div>
+      </div>
+      <div className="space-y-2 mb-6 flex-1">
+        <div className="h-3 bg-boon-charcoal/[0.05] rounded w-full" />
+        <div className="h-3 bg-boon-charcoal/[0.05] rounded w-11/12" />
+        <div className="h-3 bg-boon-charcoal/[0.05] rounded w-3/4" />
+      </div>
+      <div className="h-11 bg-boon-charcoal/[0.05] rounded-btn" />
+    </div>
+  );
+}
+
+function CoachCard({ coach, bookingLink, loading }: CoachCardProps) {
+  if (loading) return <CoachCardSkeleton />;
+
+  const displayName = coach?.name || 'Your coach';
+  const firstName = coach?.name ? coach.name.split(' ')[0] : 'this coach';
   const initials = displayName
     .split(' ')
     .map((w) => w[0])
@@ -46,12 +67,6 @@ function CoachCard({ coach, email, bookingLink, position }: CoachCardProps) {
 
   return (
     <div className="bg-white rounded-card p-7 md:p-8 border border-boon-charcoal/[0.08] shadow-sm hover:border-boon-blue/30 hover:shadow-md transition-all flex flex-col">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">
-          Match {position}
-        </span>
-      </div>
-
       <div className="flex items-center gap-4 mb-5">
         {coach?.photo_url ? (
           <img
@@ -114,10 +129,12 @@ export default function MatchesPresentedHome({
 }: MatchesPresentedHomeProps) {
   const [coach1, setCoach1] = useState<Coach | null>(null);
   const [coach2, setCoach2] = useState<Coach | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      setLoading(true);
       const [c1, c2] = await Promise.all([
         profile?.sf_coach_1_email ? fetchCoachByEmail(profile.sf_coach_1_email) : Promise.resolve(null),
         profile?.sf_coach_2_email ? fetchCoachByEmail(profile.sf_coach_2_email) : Promise.resolve(null),
@@ -125,6 +142,7 @@ export default function MatchesPresentedHome({
       if (!cancelled) {
         setCoach1(c1);
         setCoach2(c2);
+        setLoading(false);
       }
     }
     load();
@@ -141,7 +159,7 @@ export default function MatchesPresentedHome({
         </h1>
         <p className="text-boon-charcoal/55 mt-2 text-lg font-medium">
           {matchesAreStale
-            ? `It's been ${daysSinceMatchEmailSent} days — let's get you moving`
+            ? `It's been ${daysSinceMatchEmailSent} days. Let's get you moving.`
             : 'Your matches are ready'}
         </p>
       </header>
@@ -185,15 +203,13 @@ export default function MatchesPresentedHome({
       <div className="grid md:grid-cols-2 gap-6 md:gap-8">
         <CoachCard
           coach={coach1}
-          email={profile?.sf_coach_1_email || null}
           bookingLink={profile?.sf_coach_1_booking_link || null}
-          position={1}
+          loading={loading}
         />
         <CoachCard
           coach={coach2}
-          email={profile?.sf_coach_2_email || null}
           bookingLink={profile?.sf_coach_2_booking_link || null}
-          position={2}
+          loading={loading}
         />
       </div>
 
