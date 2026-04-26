@@ -121,12 +121,12 @@ export default function CoachPage() {
 
   const specialties = coach?.special_services
     ? parseCoachSpecialties(coach.special_services, 5)
-    : ['Leadership', 'EQ', 'Resilience', 'Productivity', 'Communication'];
+    : null;
 
-  const coachBio = coach?.bio || `${coachFirstName} specializes in leadership development and emotional intelligence. With experience helping professionals at all levels, ${coachFirstName} helps individuals unlock their potential by balancing performance with sustainable wellbeing.`;
+  const coachBio = coach?.bio || null;
 
   const extractedSummary = extractCoachSummary(matchSummary, coachName);
-  const displayMatchSummary = truncateBio(extractedSummary || coachBio, 280) || coachBio;
+  const displayMatchSummary = truncateBio(extractedSummary || coachBio || '', 280) || coachBio;
 
   const monthsTogether = completedWithCoach.length > 0
     ? Math.max(
@@ -183,9 +183,11 @@ export default function CoachPage() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 rounded-btn bg-boon-offWhite border border-boon-charcoal/[0.06]">
-            <p className="text-sm text-boon-charcoal/80 leading-relaxed">{displayMatchSummary}</p>
-          </div>
+          {displayMatchSummary && (
+            <div className="mt-6 p-4 rounded-btn bg-boon-offWhite border border-boon-charcoal/[0.06]">
+              <p className="text-sm text-boon-charcoal/80 leading-relaxed">{displayMatchSummary}</p>
+            </div>
+          )}
 
           <div className="mt-6 grid grid-cols-2 gap-4">
             <div>
@@ -231,28 +233,36 @@ export default function CoachPage() {
         {/* ─────────────── Right column ─────────────── */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           {/* About */}
-          <Card padding="lg">
-            <Eyebrow color="coral">About {coachFirstName}</Eyebrow>
-            <Headline as="h3" size="md" className="mt-2">
-              How {coachFirstName} works.
-            </Headline>
-            <p className="mt-4 text-[15px] text-boon-charcoal/80 leading-relaxed">
-              {bioExpanded ? coachBio : truncateBio(coachBio, 280)}
-            </p>
-            {coachBio.length > 280 && (
-              <button
-                onClick={() => setBioExpanded(!bioExpanded)}
-                className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-boon-blue hover:text-boon-darkBlue transition-colors"
-              >
-                {bioExpanded ? 'Show less' : 'Read more'}
-              </button>
-            )}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {specialties.map(skill => (
-                <Badge key={skill} variant="neutral">{skill}</Badge>
-              ))}
-            </div>
-          </Card>
+          {(coachBio || (specialties && specialties.length > 0)) && (
+            <Card padding="lg">
+              <Eyebrow color="coral">About {coachFirstName}</Eyebrow>
+              <Headline as="h3" size="md" className="mt-2">
+                How {coachFirstName} works.
+              </Headline>
+              {coachBio && (
+                <>
+                  <p className="mt-4 text-[15px] text-boon-charcoal/80 leading-relaxed">
+                    {bioExpanded ? coachBio : truncateBio(coachBio, 280)}
+                  </p>
+                  {coachBio.length > 280 && (
+                    <button
+                      onClick={() => setBioExpanded(!bioExpanded)}
+                      className="mt-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-boon-blue hover:text-boon-darkBlue transition-colors"
+                    >
+                      {bioExpanded ? 'Show less' : 'Read more'}
+                    </button>
+                  )}
+                </>
+              )}
+              {specialties && specialties.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {specialties.map(skill => (
+                    <Badge key={skill} variant="neutral">{skill}</Badge>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Session History */}
           <Card padding="lg">
@@ -316,25 +326,24 @@ export default function CoachPage() {
           <Card variant="coral-outlined" padding="lg" accent>
             <Eyebrow color="coral">Make it count</Eyebrow>
             <Headline as="h3" size="sm" className="mt-2">
-              Getting the most.{' '}
-              <Headline.Kicker color="blue">From every session.</Headline.Kicker>
+              Bring the <span className="font-serif italic font-normal">moment</span>.
             </Headline>
             <ul className="mt-4 flex flex-col gap-2.5 text-[14px] text-boon-charcoal/80 leading-relaxed">
               <li className="flex gap-2.5">
                 <span aria-hidden className="text-boon-coral mt-0.5">·</span>
-                <span>Come with a specific situation or challenge in mind.</span>
+                <span>One real situation. Not "leadership in general."</span>
               </li>
               <li className="flex gap-2.5">
                 <span aria-hidden className="text-boon-coral mt-0.5">·</span>
-                <span>Share what's been on your mind since the last session.</span>
+                <span>What's still rattling around since you last met.</span>
               </li>
               <li className="flex gap-2.5">
                 <span aria-hidden className="text-boon-coral mt-0.5">·</span>
-                <span>Be open about what's working and what's not.</span>
+                <span>What's working. What isn't. {coachFirstName} can't read minds.</span>
               </li>
               <li className="flex gap-2.5">
                 <span aria-hidden className="text-boon-coral mt-0.5">·</span>
-                <span>Ask {coachFirstName} for specific tools or frameworks when helpful.</span>
+                <span>Ask for a tool, a frame, a script. {coachFirstName} has them.</span>
               </li>
             </ul>
           </Card>

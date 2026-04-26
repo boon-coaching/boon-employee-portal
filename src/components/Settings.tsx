@@ -55,6 +55,25 @@ const NUDGE_TYPE_BAR_COLOR: Record<string, string> = {
   daily_digest: 'bg-boon-warning',
 };
 
+const NUDGE_RESPONSE_LABELS: Record<string, string> = {
+  action_done: 'Done',
+  action_in_progress: 'In progress',
+  action_skip: 'Skipped',
+  progress_great: 'Great',
+  progress_ok: 'Okay',
+  progress_stuck: 'Stuck',
+  complete_yes: 'Yes',
+  complete_no: 'No',
+  complete_maybe: 'Maybe',
+};
+
+function formatNudgeResponse(response: string): string {
+  if (NUDGE_RESPONSE_LABELS[response]) return NUDGE_RESPONSE_LABELS[response];
+  // Unknown enum: strip prefix + title-case as a graceful fallback.
+  const stripped = response.replace(/^(action_|progress_|complete_)/, '').replace(/_/g, ' ');
+  return stripped.charAt(0).toUpperCase() + stripped.slice(1);
+}
+
 export default function Settings() {
   const { employee, signOut } = useAuth();
   const [slackStatus, setSlackStatus] = useState<SlackConnectionStatus>({ connected: false, settings: null });
@@ -214,7 +233,7 @@ export default function Settings() {
         </div>
         <Headline as="h1" size="lg">
           How you want it.{' '}
-          <Headline.Kicker color="blue">Tuned to you.</Headline.Kicker>
+          <span className="font-serif italic font-normal text-boon-coral">Tuned to you.</span>
         </Headline>
       </header>
 
@@ -487,9 +506,7 @@ export default function Settings() {
                         </div>
                       </div>
                       {nudge.status === 'responded' && nudge.response ? (
-                        <Badge variant="success">
-                          {nudge.response.replace('action_', '').replace('progress_', '').replace('complete_', '')}
-                        </Badge>
+                        <Badge variant="success">{formatNudgeResponse(nudge.response)}</Badge>
                       ) : nudge.status === 'sent' ? (
                         <Badge variant="neutral">Sent</Badge>
                       ) : null}
