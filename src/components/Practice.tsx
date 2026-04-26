@@ -219,8 +219,8 @@ Describe your situation in detail so we can provide the most relevant guidance.`
         <div className="bg-white rounded-card p-5 border border-boon-charcoal/[0.08] hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-btn bg-boon-purple/10 flex items-center justify-center">
-                <svg className="w-5 h-5 text-boon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-btn bg-boon-coral/12 flex items-center justify-center">
+                <svg className="w-5 h-5 text-boon-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
@@ -231,7 +231,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
             </div>
             <button
               onClick={() => setShowTeamManager(true)}
-              className="px-3 py-1.5 text-xs font-bold text-boon-purple bg-boon-purple/10 hover:bg-boon-purple/10 rounded-btn transition-colors"
+              className="px-3 py-1.5 text-xs font-bold text-boon-coral bg-boon-coral/12 hover:bg-boon-coral/20 rounded-btn transition-colors"
             >
               {teamMembers.length > 0 ? 'Manage' : 'Add'}
             </button>
@@ -415,8 +415,8 @@ Describe your situation in detail so we can provide the most relevant guidance.`
       {hasAnyTheme && selectedCategory === 'all' && (
         <p className="text-center text-xs text-boon-charcoal/55 font-medium">
           <span className="inline-flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-pill bg-boon-blue" />
-            Scenarios matching your coaching themes are shown first
+            <span className="w-2 h-2 rounded-pill bg-boon-coral" />
+            What you've been working on, surfaced first.
           </span>
         </p>
       )}
@@ -468,8 +468,11 @@ Describe your situation in detail so we can provide the most relevant guidance.`
       </div>
 
       {filteredScenarios.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-boon-charcoal/55 font-medium">No scenarios found for this category.</p>
+        <div className="text-center py-16 bg-white rounded-card border border-boon-charcoal/[0.08]">
+          <p className="font-display font-bold text-boon-navy text-xl mb-2 tracking-[-0.02em]">
+            Nothing here <span className="font-serif italic font-normal">yet</span>.
+          </p>
+          <p className="text-boon-charcoal/55 text-sm">Try a different category, or run a custom scenario.</p>
         </div>
       )}
 
