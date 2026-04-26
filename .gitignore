@@ -38,3 +38,14 @@ yarn-error.log*
 # Testing
 coverage/
 .vercel
+test-results/
+playwright-report/
+.playwright-mcp/
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# Build artifacts
+*.zip
+
