@@ -7,8 +7,13 @@
 //           and reconciles status AND date against Salesforce.
 // Pass 1.5: Content backfill — syncs Goals, Plan, and theme fields from SF for
 //           Completed sessions where plan IS NULL (last 90 days).
+// Pass 1.6:  Zoom backfill — SF Flow does not fire on Zoom_Join_Link__c changes, so
+//            session_tracking misses links populated after initial sync. Pulls them
+//            in for all upcoming Scheduled sessions with null zoom_join_link.
+// Pass 1.75: Status mismatch — finds non-Scheduled sessions (Cancelled, No Show, etc.)
+//            whose status diverged from Salesforce and corrects them.
 // Pass 2:   Missing appointments — finds recent SF appointments that don't exist in
-//           session_tracking and inserts them.
+//           session_tracking and inserts them (with program resolution).
 // Pass 3:   Count verification — compares SF vs Supabase appointment counts within the
 //           lookback window, alerts on drift.
 //
@@ -53,7 +58,8 @@ interface SfAppointmentFull {
   DurationInMinutes: number | null
   Account?: { Name: string } | null
   Contact?: { Name: string; Email: string } | null
-  Coach__r?: { Name: string } | null
+  Coach__r?: { Id: string; Name: string } | null
+  Company_Program__r?: { Name: string } | null
 }
 
 interface SfContentRecord {
@@ -126,6 +132,13 @@ Deno.serve(async (req) => {
     // Pass 1.5
     content_candidates: 0,
     content_synced: 0,
+    // Pass 1.6
+    zoom_candidates: 0,
+    zoom_synced: 0,
+    // Pass 1.75
+    status_mismatch_checked: 0,
+    status_mismatches_found: 0,
+    status_mismatches_fixed: 0,
     // Pass 2
     missing_found: 0,
     missing_inserted: 0,
@@ -387,12 +400,202 @@ Deno.serve(async (req) => {
     }
 
     // ================================================================
+    // PASS 1.6: Zoom link backfill for upcoming Scheduled sessions
+    // Root cause: the SF Flow fires on create/status-change but not on
+    // Zoom_Join_Link__c changes. Zoom links populate AFTER initial sync,
+    // so session_tracking never picks them up. This pass pulls them in.
+    // ================================================================
+    console.log('[RECONCILE] === Pass 1.6: Zoom link backfill ===')
+
+    const { data: zoomCandidates, error: zoomQueryError } = await supabase
+      .from('session_tracking')
+      .select('id, appointment_number')
+      .eq('status', 'Scheduled')
+      .gte('session_date', new Date().toISOString())
+      .is('zoom_join_link', null)
+      .not('appointment_number', 'is', null)
+
+    if (zoomQueryError) {
+      console.error('[RECONCILE] Pass 1.6 query failed:', zoomQueryError.message)
+      results.errors++
+    } else if (!zoomCandidates || zoomCandidates.length === 0) {
+      console.log('[RECONCILE] No upcoming sessions missing Zoom link')
+    } else {
+      results.zoom_candidates = zoomCandidates.length
+      console.log(`[RECONCILE] Found ${zoomCandidates.length} upcoming Scheduled sessions missing Zoom link`)
+
+      const zoomMap = new Map<string, number>()
+      for (const row of zoomCandidates) {
+        if (row.appointment_number) zoomMap.set(row.appointment_number, row.id)
+      }
+
+      const zoomApptNumbers = Array.from(zoomMap.keys())
+      const zoomChunks = chunk(zoomApptNumbers, SOQL_CHUNK_SIZE)
+
+      const sfZoomMap = new Map<string, string>()
+
+      for (const batch of zoomChunks) {
+        const inClause = batch.map(n => `'${n}'`).join(',')
+        const soql = `SELECT AppointmentNumber, Zoom_Join_Link__c FROM ServiceAppointment WHERE AppointmentNumber IN (${inClause}) AND Zoom_Join_Link__c != NULL`
+
+        try {
+          const records = await salesforceQuery<{ AppointmentNumber: string; Zoom_Join_Link__c: string }>(sfAuth, soql)
+          for (const record of records) {
+            if (record.Zoom_Join_Link__c) {
+              sfZoomMap.set(record.AppointmentNumber, record.Zoom_Join_Link__c)
+            }
+          }
+        } catch (queryError) {
+          console.error('[RECONCILE] Pass 1.6 SOQL batch failed:', String(queryError))
+          results.errors++
+        }
+      }
+
+      console.log(`[RECONCILE] SF has Zoom links for ${sfZoomMap.size}/${zoomCandidates.length} candidates`)
+
+      const zoomUpdates: Array<{ id: number; zoom: string }> = []
+      for (const [apptNum, zoom] of sfZoomMap) {
+        const sessionId = zoomMap.get(apptNum)
+        if (sessionId) zoomUpdates.push({ id: sessionId, zoom })
+      }
+
+      const zoomBatches = chunk(zoomUpdates, UPDATE_BATCH_SIZE)
+
+      for (const batch of zoomBatches) {
+        const promises = batch.map(async (update) => {
+          try {
+            const { error: updateError } = await supabase
+              .from('session_tracking')
+              .update({ zoom_join_link: update.zoom })
+              .eq('id', update.id)
+              .is('zoom_join_link', null)
+
+            if (updateError) {
+              console.error(`[RECONCILE] Pass 1.6 update failed for session ${update.id}:`, updateError)
+              results.errors++
+              return
+            }
+
+            results.zoom_synced++
+          } catch (err) {
+            console.error(`[RECONCILE] Pass 1.6 update error for session ${update.id}:`, err)
+            results.errors++
+          }
+        })
+
+        await Promise.all(promises)
+      }
+
+      console.log(`[RECONCILE] Pass 1.6 complete: ${results.zoom_synced} sessions backfilled with Zoom link`)
+    }
+
+    // ================================================================
+    // PASS 1.75: Status mismatch reconciliation for non-Scheduled sessions
+    // Catches cases where SF status changed (e.g. Cancelled -> Completed)
+    // but the real-time webhook missed it. Pass 1 only checks Scheduled.
+    // ================================================================
+    console.log('[RECONCILE] === Pass 1.75: Status mismatch reconciliation ===')
+
+    const lookbackDate = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString()
+    const mismatchStatuses = ['Cancelled', 'Client No Show', 'Late Cancel', 'Rescheduled', 'Coach No Show']
+
+    const { data: mismatchCandidates, error: mismatchQueryError } = await supabase
+      .from('session_tracking')
+      .select('id, appointment_number, status')
+      .in('status', mismatchStatuses)
+      .gte('session_date', lookbackDate)
+      .not('appointment_number', 'is', null)
+
+    if (mismatchQueryError) {
+      console.error('[RECONCILE] Pass 1.75 query failed:', mismatchQueryError.message)
+      results.errors++
+    } else if (!mismatchCandidates || mismatchCandidates.length === 0) {
+      console.log('[RECONCILE] No non-Scheduled sessions to check for status mismatches')
+    } else {
+      results.status_mismatch_checked = mismatchCandidates.length
+      console.log(`[RECONCILE] Checking ${mismatchCandidates.length} non-Scheduled sessions for status mismatches`)
+
+      const mismatchMap = new Map<string, { id: number; status: string }>()
+      for (const row of mismatchCandidates) {
+        if (row.appointment_number) {
+          mismatchMap.set(row.appointment_number, { id: row.id, status: row.status })
+        }
+      }
+
+      const mismatchApptNumbers = Array.from(mismatchMap.keys())
+      const mismatchChunks = chunk(mismatchApptNumbers, SOQL_CHUNK_SIZE)
+
+      const sfMismatchMap = new Map<string, string>()
+
+      for (const batch of mismatchChunks) {
+        const inClause = batch.map(n => `'${n}'`).join(',')
+        const soql = `SELECT AppointmentNumber, Status FROM ServiceAppointment WHERE AppointmentNumber IN (${inClause})`
+
+        try {
+          const records = await salesforceQuery<{ AppointmentNumber: string; Status: string }>(sfAuth, soql)
+          for (const record of records) {
+            sfMismatchMap.set(record.AppointmentNumber, normalizeStatus(record.Status))
+          }
+        } catch (queryError) {
+          console.error('[RECONCILE] Pass 1.75 SOQL batch failed:', String(queryError))
+          results.errors++
+        }
+      }
+
+      const statusFixUpdates: Array<{ id: number; newStatus: string }> = []
+
+      for (const [apptNum, session] of mismatchMap) {
+        const sfStatus = sfMismatchMap.get(apptNum)
+        if (!sfStatus) continue
+        if (sfStatus !== session.status) {
+          statusFixUpdates.push({ id: session.id, newStatus: sfStatus })
+        }
+      }
+
+      results.status_mismatches_found = statusFixUpdates.length
+
+      if (statusFixUpdates.length > 0) {
+        console.log(`[RECONCILE] Found ${statusFixUpdates.length} status mismatches to fix`)
+
+        const fixBatches = chunk(statusFixUpdates, UPDATE_BATCH_SIZE)
+
+        for (const batch of fixBatches) {
+          const promises = batch.map(async (update) => {
+            try {
+              const { error: updateError } = await supabase
+                .from('session_tracking')
+                .update({ status: update.newStatus })
+                .eq('id', update.id)
+
+              if (updateError) {
+                console.error(`[RECONCILE] Pass 1.75 update failed for session ${update.id}:`, updateError)
+                results.errors++
+                return
+              }
+
+              results.status_mismatches_fixed++
+            } catch (err) {
+              console.error(`[RECONCILE] Pass 1.75 update error for session ${update.id}:`, err)
+              results.errors++
+            }
+          })
+
+          await Promise.all(promises)
+        }
+      } else {
+        console.log('[RECONCILE] No status mismatches found')
+      }
+
+      console.log(`[RECONCILE] Pass 1.75 complete: ${results.status_mismatches_fixed} status mismatches fixed`)
+    }
+
+    // ================================================================
     // PASS 2: Find and insert missing appointments
     // ================================================================
     console.log(`[RECONCILE] === Pass 2: Find missing appointments (lookback ${lookbackDays} days) ===`)
 
     let sfAppointments: SfAppointmentFull[] = []
-    const fullSoql = `SELECT AppointmentNumber, Status, SchedStartTime, DurationInMinutes, Account.Name, Contact.Name, Contact.Email, Coach__r.Name FROM ServiceAppointment WHERE SchedStartTime >= LAST_N_DAYS:${lookbackDays} AND Status != 'Canceled'`
+    const fullSoql = `SELECT AppointmentNumber, Status, SchedStartTime, DurationInMinutes, Account.Name, Contact.Name, Contact.Email, Coach__r.Id, Coach__r.Name, Company_Program__r.Name FROM ServiceAppointment WHERE SchedStartTime >= LAST_N_DAYS:${lookbackDays} AND Status != 'Canceled'`
 
     try {
       sfAppointments = await salesforceQuery<SfAppointmentFull>(sfAuth, fullSoql)
@@ -449,19 +652,119 @@ Deno.serve(async (req) => {
       } else {
         console.log(`[RECONCILE] Found ${missing.length} missing appointments to insert`)
 
+        // Resolve program info from program_config via Company_Program__r.Name (= program_number)
+        const programNumbers = [...new Set(
+          missing.map(a => a.Company_Program__r?.Name).filter(Boolean) as string[]
+        )]
+        const programConfigMap = new Map<string, { program_title: string; program_type: string; company_id: string }>()
+
+        if (programNumbers.length > 0) {
+          const pcBatches = chunk(programNumbers, SOQL_CHUNK_SIZE)
+          for (const batch of pcBatches) {
+            const { data: configs, error: pcError } = await supabase
+              .from('program_config')
+              .select('program_number, program_title, program_type, company_id')
+              .in('program_number', batch)
+
+            if (pcError) {
+              console.error('[RECONCILE] Pass 2 program_config lookup failed:', pcError.message)
+              results.errors++
+            } else if (configs) {
+              for (const pc of configs) {
+                if (pc.program_number) {
+                  programConfigMap.set(pc.program_number, {
+                    program_title: pc.program_title,
+                    program_type: pc.program_type,
+                    company_id: pc.company_id,
+                  })
+                }
+              }
+            }
+          }
+          console.log(`[RECONCILE] Resolved ${programConfigMap.size} program configs for missing appointments`)
+        }
+
+        // Resolve company_id by account_name for appointments without a program_config match
+        const accountNames = [...new Set(
+          missing
+            .filter(a => {
+              const pn = a.Company_Program__r?.Name
+              return !pn || !programConfigMap.has(pn)
+            })
+            .map(a => a.Account?.Name)
+            .filter(Boolean) as string[]
+        )]
+        const companyMap = new Map<string, string>()
+
+        if (accountNames.length > 0) {
+          for (const accountName of accountNames) {
+            const { data: company } = await supabase
+              .from('companies')
+              .select('id')
+              .or(`account_name.eq.${accountName},name.eq.${accountName}`)
+              .maybeSingle()
+
+            if (company) {
+              companyMap.set(accountName, company.id)
+            }
+          }
+          console.log(`[RECONCILE] Resolved ${companyMap.size} companies by account_name`)
+        }
+
+        // Resolve coach_id deterministically via salesforce_contact_id (SA.Coach__r.Id).
+        // Batched lookup keeps this O(1) SOQL round trip instead of per-row.
+        const coachContactIds = [...new Set(
+          missing.map(a => a.Coach__r?.Id).filter(Boolean) as string[]
+        )]
+        const coachIdMap = new Map<string, string>()
+
+        if (coachContactIds.length > 0) {
+          const coachBatches = chunk(coachContactIds, SOQL_CHUNK_SIZE)
+          for (const batch of coachBatches) {
+            const { data: coaches, error: coachErr } = await supabase
+              .from('coaches')
+              .select('id, salesforce_contact_id')
+              .in('salesforce_contact_id', batch)
+
+            if (coachErr) {
+              console.error('[RECONCILE] Pass 2 coach lookup failed:', coachErr.message)
+              results.errors++
+            } else if (coaches) {
+              for (const c of coaches) {
+                if (c.salesforce_contact_id) coachIdMap.set(c.salesforce_contact_id, c.id)
+              }
+            }
+          }
+          console.log(`[RECONCILE] Resolved ${coachIdMap.size}/${coachContactIds.length} coach_ids by salesforce_contact_id`)
+        }
+
         // Insert in batches
         const insertBatches = chunk(missing, UPDATE_BATCH_SIZE)
 
         for (const batch of insertBatches) {
-          const rows = batch.map(appt => ({
-            appointment_number: appt.AppointmentNumber,
-            status: normalizeStatus(appt.Status),
-            session_date: appt.SchedStartTime || null,
-            duration_minutes: appt.DurationInMinutes || null,
-            account_name: appt.Account?.Name || null,
-            employee_name: appt.Contact?.Name || null,
-            coach_name: appt.Coach__r?.Name || null,
-          }))
+          const rows = batch.map(appt => {
+            const programNumber = appt.Company_Program__r?.Name || null
+            const pc = programNumber ? programConfigMap.get(programNumber) : null
+            const accountName = appt.Account?.Name || null
+            const companyId = pc?.company_id || (accountName ? companyMap.get(accountName) : null) || null
+            const coachSfContactId = appt.Coach__r?.Id || null
+            const coachId = coachSfContactId ? coachIdMap.get(coachSfContactId) ?? null : null
+
+            return {
+              appointment_number: appt.AppointmentNumber,
+              status: normalizeStatus(appt.Status),
+              session_date: appt.SchedStartTime || null,
+              duration_minutes: appt.DurationInMinutes || null,
+              account_name: accountName,
+              employee_name: appt.Contact?.Name || null,
+              coach_name: appt.Coach__r?.Name || null,
+              coach_id: coachId,
+              program_name: pc?.program_title || null,
+              program_type: pc?.program_type || null,
+              program_number: programNumber,
+              company_id: companyId,
+            }
+          })
 
           const { error: insertError, data: inserted } = await supabase
             .from('session_tracking')
@@ -556,6 +859,10 @@ Deno.serve(async (req) => {
     console.log(`--- Pass 1.5: Content Backfill ---`)
     console.log(`Candidates (plan IS NULL): ${results.content_candidates}`)
     console.log(`Content synced: ${results.content_synced}`)
+    console.log(`--- Pass 1.75: Status Mismatch Reconciliation ---`)
+    console.log(`Checked: ${results.status_mismatch_checked}`)
+    console.log(`Mismatches found: ${results.status_mismatches_found}`)
+    console.log(`Mismatches fixed: ${results.status_mismatches_fixed}`)
     console.log(`--- Pass 2: Missing Appointments ---`)
     console.log(`Missing found: ${results.missing_found}`)
     console.log(`Missing inserted: ${results.missing_inserted}`)
@@ -572,7 +879,7 @@ Deno.serve(async (req) => {
     // Slack alert (skip silently if webhook not configured)
     // ================================================================
     const slackWebhookUrl = Deno.env.get('SLACK_OPS_WEBHOOK_URL')
-    const workDone = results.updated > 0 || results.content_synced > 0 || results.missing_inserted > 0 || results.errors > 0
+    const workDone = results.updated > 0 || results.content_synced > 0 || results.status_mismatches_fixed > 0 || results.missing_inserted > 0 || results.errors > 0
     const driftAlert = !results.counts_in_sync
 
     if (slackWebhookUrl && (workDone || driftAlert)) {
@@ -586,6 +893,7 @@ Deno.serve(async (req) => {
         '',
         `Pass 1: ${results.updated} updated (${results.dates_corrected} dates, ${results.durations_corrected} durations) | ${results.already_correct} already correct | ${results.no_sf_match} no SF match`,
         `Pass 1.5: ${results.content_synced} sessions backfilled with goals/plan/themes (${results.content_candidates} candidates)`,
+        `Pass 1.75: ${results.status_mismatches_fixed} status mismatches fixed (${results.status_mismatch_checked} checked)`,
         `Pass 2: ${results.missing_found} missing found | ${results.missing_inserted} inserted`,
         `Counts (last ${lookbackDays}d, excl. cancelled): SF ${sfFmt} | In Supabase ${supFmt} | Missing: ${results.count_delta} ${driftIcon}`,
         `Errors: ${results.errors} | Duration: ${duration}s`,
