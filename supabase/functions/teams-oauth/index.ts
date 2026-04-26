@@ -277,11 +277,13 @@ Deno.serve(async (req) => {
         );
       }
 
-      const { data: connection } = await supabase
+      const { data: connections } = await supabase
         .from('employee_teams_connections')
         .select('teams_user_id, nudge_enabled, nudge_frequency, preferred_time, timezone')
         .ilike('employee_email', user.email)
-        .single();
+        .order('connected_at', { ascending: false })
+        .limit(1);
+      const connection = connections?.[0] ?? null;
 
       return new Response(
         JSON.stringify({
