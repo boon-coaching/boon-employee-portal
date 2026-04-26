@@ -35,6 +35,17 @@ function Eyebrow({
   );
 }
 
+function formatRelative(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 interface ActiveGrowHomeProps {
   profile: Employee | null;
   sessions: Session[];
@@ -106,7 +117,9 @@ export default function ActiveGrowHome({
   // Editorial hero. EXEC + GROW share the cohort arc, so copy mirrors
   // GrowDashboard's progress-aware kickers.
   const completedCount = coachingState.completedSessionCount || 0;
-  const totalExpected = coachingState.totalExpectedSessions || 12;
+  const knownTotal = coachingState.totalExpectedSessions && coachingState.totalExpectedSessions > 0
+    ? coachingState.totalExpectedSessions
+    : null;
   const numberWord = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
   const countAsWord = completedCount >= 0 && completedCount < numberWord.length
     ? numberWord[completedCount]
@@ -118,10 +131,10 @@ export default function ActiveGrowHome({
   if (completedCount === 0) {
     heroStatement = 'Before the first.';
     heroKicker = 'Where you begin.';
-  } else if (completedCount >= totalExpected - 2) {
+  } else if (knownTotal && completedCount >= knownTotal - 2) {
     heroStatement = 'The home stretch.';
     heroKicker = `${capitalize(countAsWord)} in.`;
-  } else if (completedCount >= Math.ceil(totalExpected / 2)) {
+  } else if (knownTotal && completedCount >= Math.ceil(knownTotal / 2)) {
     heroStatement = `Session ${countAsWord}.`;
     heroKicker = 'The middle stretch.';
   } else {
@@ -132,12 +145,13 @@ export default function ActiveGrowHome({
   const momentumLabel = (() => {
     if (completedCount === 0) return 'JUST STARTING';
     if (completedCount < 3) return 'EARLY STEPS';
-    if (completedCount < Math.ceil(totalExpected / 2)) return 'BUILDING MOMENTUM';
-    if (completedCount < totalExpected - 2) return 'MID-STRETCH';
+    if (!knownTotal) return 'IN PROGRESS';
+    if (completedCount < Math.ceil(knownTotal / 2)) return 'BUILDING MOMENTUM';
+    if (completedCount < knownTotal - 2) return 'MID-STRETCH';
     return 'HOME STRETCH';
   })();
 
-  const progressPct = Math.min((completedCount / totalExpected) * 100, 100);
+  const progressPct = knownTotal ? Math.min((completedCount / knownTotal) * 100, 100) : null;
 
   const hasUpcomingSession = !!upcomingSession;
 
@@ -220,11 +234,13 @@ export default function ActiveGrowHome({
     setIsSavingReflection(false);
   }, [upcomingSession, userEmail]);
 
+  // Skip the first save echo from the load effect — only persist user edits.
+  const [reflectionDirty, setReflectionDirty] = useState(false);
   useEffect(() => {
-    if (!reflection) return;
+    if (!reflectionDirty || !reflection) return;
     const timer = setTimeout(() => saveReflection(reflection), 1000);
     return () => clearTimeout(timer);
-  }, [reflection, saveReflection]);
+  }, [reflection, reflectionDirty, saveReflection]);
 
   const actionsDone = recentlyCompletedActions.length;
   const actionsTotal = pendingActions.length + recentlyCompletedActions.length;
@@ -235,28 +251,34 @@ export default function ActiveGrowHome({
   const hiddenActionCount = (pendingActions.length - visiblePending.length) + recentlyCompletedActions.length;
 
   return (
-    <div className="max-w-6xl mx-auto animate-fade-in">
+    <div className="max-w-6xl mx-auto animate-fade-in pb-32 md:pb-0">
       {/* ─────────────── Editorial hero ─────────────── */}
       <header className="pb-6 mb-6 border-b border-boon-charcoal/10">
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <span className="w-6 h-px bg-boon-blue" aria-hidden />
           <Eyebrow color="blue">Your progress</Eyebrow>
-          <Eyebrow color="muted">· {completedCount} of {totalExpected} with {coachFirstName}</Eyebrow>
+          {knownTotal ? (
+            <Eyebrow color="muted">· {completedCount} of {knownTotal} with {coachFirstName}</Eyebrow>
+          ) : completedCount > 0 ? (
+            <Eyebrow color="muted">· {completedCount} session{completedCount === 1 ? '' : 's'} with {coachFirstName}</Eyebrow>
+          ) : null}
           <Eyebrow color="coral">· {momentumLabel}</Eyebrow>
         </div>
         <Headline as="h1" size="lg">
           {heroStatement}{' '}
           <Headline.Kicker color="blue">{heroKicker}</Headline.Kicker>
         </Headline>
-        <div className="mt-5 flex items-center gap-3">
-          <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
-            <div
-              className="h-full bg-boon-blue rounded-pill transition-all"
-              style={{ width: `${progressPct}%` }}
-            />
+        {progressPct !== null && (
+          <div className="mt-5 flex items-center gap-3">
+            <div className="w-48 h-[3px] bg-boon-charcoal/10 rounded-pill overflow-hidden">
+              <div
+                className="h-full bg-boon-blue rounded-pill transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <Eyebrow color="muted">{Math.round(progressPct)}% complete</Eyebrow>
           </div>
-          <Eyebrow color="muted">{Math.round(progressPct)}% complete</Eyebrow>
-        </div>
+        )}
       </header>
 
       {/* ─────────────── Row 1: Next Session (navy) + Reflection (coral) ─────────────── */}
@@ -319,19 +341,16 @@ export default function ActiveGrowHome({
         {hasUpcomingSession ? (
           <Card variant="coral-outlined" padding="lg" accent>
             <Eyebrow color="coral">Before you meet</Eyebrow>
-            <p className="mt-3 font-serif italic text-boon-charcoal text-[15px] leading-relaxed">
-              How's it going?
-            </p>
             <textarea
               value={reflection}
-              onChange={e => setReflection(e.target.value)}
+              onChange={e => { setReflection(e.target.value); setReflectionDirty(true); }}
               placeholder={`Share what's on your mind. ${coachFirstName} will see this before your session.`}
-              className="mt-3 w-full p-3 rounded-btn bg-white border border-boon-charcoal/[0.12] focus:border-boon-coral focus:outline-none text-sm leading-relaxed min-h-[120px] resize-none placeholder:text-boon-charcoal/40"
+              className="mt-4 w-full p-3 rounded-btn bg-white border border-boon-charcoal/[0.12] focus:border-boon-coral focus:outline-none text-sm leading-relaxed min-h-[120px] resize-none placeholder:text-boon-charcoal/40"
             />
             <div className="mt-2 h-4 flex items-center text-[11px] font-extrabold uppercase tracking-[0.14em]">
-              {isSavingReflection && <span className="text-boon-charcoal/45">Saving...</span>}
+              {isSavingReflection && <span className="text-boon-charcoal/45">Saving</span>}
               {!isSavingReflection && reflectionSavedAt && (
-                <span className="text-boon-coral">Saved</span>
+                <span className="text-boon-coral">Saved {formatRelative(reflectionSavedAt)}</span>
               )}
             </div>
           </Card>
