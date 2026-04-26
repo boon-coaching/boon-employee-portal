@@ -100,8 +100,8 @@ export default function FeedbackPage() {
     return (
       <div className="min-h-screen bg-boon-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-boon-amber border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Loading survey...</p>
+          <div className="w-10 h-10 border-2 border-boon-blue/30 border-t-boon-blue rounded-pill animate-spin mx-auto mb-4" />
+          <p className="text-boon-charcoal/55 text-sm">Loading survey</p>
         </div>
       </div>
     );
@@ -110,19 +110,27 @@ export default function FeedbackPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-boon-bg flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+        <div className="max-w-md w-full bg-white rounded-card shadow-sm border border-boon-charcoal/[0.08] p-8 md:p-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-btn bg-boon-coral flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">Survey unavailable</span>
           </div>
-          <h2 className="text-xl font-bold text-boon-text mb-2">Unable to Load Survey</h2>
-          <p className="text-gray-500 mb-6">{error}</p>
+          <h2 className="font-display font-bold text-boon-navy tracking-[-0.02em] leading-[1.15] text-2xl md:text-3xl mb-3">
+            Couldn't load <span className="font-serif italic font-normal">this one</span>.
+          </h2>
+          <p className="text-boon-charcoal/75 leading-relaxed mb-6">{error}</p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-3 bg-boon-blue text-white font-bold rounded-xl hover:bg-boon-darkBlue transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-boon-blue rounded-btn hover:bg-boon-navy transition-all shadow-sm"
           >
-            Go to Dashboard
+            Back to home
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
       </div>

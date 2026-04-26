@@ -18,8 +18,8 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bgColor: strin
   },
   framework: {
     label: 'Framework',
-    color: 'text-boon-purple',
-    bgColor: 'bg-boon-purple/10',
+    color: 'text-boon-coral',
+    bgColor: 'bg-boon-coral/12',
     icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
   },
   worksheet: {
@@ -155,11 +155,17 @@ export default function Resources() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <header className="text-center sm:text-left">
-        <h1 className="font-display font-bold text-boon-navy text-[36px] leading-[1.05] tracking-[-0.025em]">Resources</h1>
-        <p className="text-boon-charcoal/55 mt-2 font-medium">Curated content to support your growth journey.</p>
+    <div className="space-y-8 animate-fade-in pb-32 md:pb-0">
+      {/* Editorial hero matching the rest of the portal */}
+      <header className="pb-6 mb-2 border-b border-boon-charcoal/10">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <span className="w-6 h-px bg-boon-blue" aria-hidden />
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-blue">Resources</span>
+        </div>
+        <h1 className="font-display font-bold text-boon-navy tracking-[-0.025em] leading-[1.05] text-[36px] md:text-[44px]">
+          The work between sessions.{' '}
+          <span className="font-serif italic font-normal text-boon-coral">Build the muscle.</span>
+        </h1>
       </header>
 
       {/* Recommended for You — hidden when searching */}
@@ -340,7 +346,7 @@ export default function Resources() {
                   <div className="w-full h-36 rounded-btn bg-boon-offWhite overflow-hidden mb-4">
                     <img
                       src={r.thumbnail_url}
-                      alt=""
+                      alt={r.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -439,17 +445,14 @@ export default function Resources() {
       )}
 
       {/* Tip Card */}
-      <section className="bg-gradient-to-br from-boon-lightBlue/30 to-boon-bg p-8 rounded-card border border-boon-lightBlue/30">
-        <div className="flex items-start gap-4">
-          <span className="text-3xl">💡</span>
-          <div>
-            <h3 className="font-bold text-boon-navy mb-2">Getting the most from resources</h3>
-            <p className="text-boon-charcoal/75 text-sm leading-relaxed">
-              Pick one resource that resonates with where you are right now. Before your next session,
-              try applying one concept and share your experience with your coach.
-            </p>
-          </div>
-        </div>
+      <section className="bg-boon-coral/12 p-8 rounded-card border border-boon-charcoal/[0.08]">
+        <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coral">How to use this</span>
+        <h3 className="mt-3 font-display font-bold text-boon-navy text-2xl tracking-[-0.02em] leading-[1.2]">
+          One thing. <span className="font-serif italic font-normal">Try it.</span> Bring it back.
+        </h3>
+        <p className="mt-3 text-boon-charcoal/75 leading-relaxed">
+          Pick one piece that lands where you are right now. Apply one concept before your next session, then bring what happened to your coach.
+        </p>
       </section>
     </div>
   );

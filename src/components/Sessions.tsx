@@ -486,7 +486,7 @@ export default function SessionsPage() {
 
                         {/* Expanded Content */}
                         {isExpanded && hasDetails && (
-                          <div className="px-6 pb-6 space-y-4 border-t border-gray-50 pt-4">
+                          <div className="px-6 pb-6 space-y-4 border-t border-boon-charcoal/[0.08] pt-4">
                             {themes.length > 0 && (
                               <div>
                                 <h4 className="text-[11px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] mb-2">Topics Discussed</h4>
@@ -556,7 +556,7 @@ export default function SessionsPage() {
               </div>
             )) : (
               <div className="text-center py-12 bg-white rounded-card border border-boon-charcoal/[0.08]">
-                <svg className="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-10 h-10 text-boon-charcoal/30 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <p className="text-boon-charcoal/55 font-medium mb-1">No upcoming sessions</p>
@@ -578,7 +578,7 @@ export default function SessionsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <h3 className="text-xl font-black text-boon-navy">
+              <h3 className="text-xl font-display font-bold text-boon-navy tracking-[-0.02em]">
                 {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </h3>
               <button 
@@ -593,7 +593,7 @@ export default function SessionsPage() {
 
             <div className="grid grid-cols-7 gap-1 mb-2">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-[10px] font-black text-boon-charcoal/55 uppercase tracking-widest py-2">
+                <div key={day} className="text-center text-[10px] font-extrabold text-boon-charcoal/55 uppercase tracking-[0.18em] py-2">
                   {day}
                 </div>
               ))}
@@ -634,7 +634,7 @@ export default function SessionsPage() {
                 })}
               </h4>
               {selectedDaySessions.length > 0 ? selectedDaySessions.map(session => (
-                <div key={session.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                <div key={session.id} className="flex items-center justify-between py-3 border-b border-boon-charcoal/[0.08] last:border-0">
                   <div>
                     <p className="font-bold text-boon-navy">{session.coach_name}</p>
                     {(() => {
@@ -662,9 +662,9 @@ export default function SessionsPage() {
             className="absolute inset-0 bg-boon-text/40 backdrop-blur-md" 
             onClick={() => !isSubmitting && setFeedbackSession(null)}
           />
-          <div className="relative bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[3rem] shadow-2xl">
+          <div className="relative bg-white w-full max-w-lg rounded-t-card sm:rounded-card shadow-2xl border border-boon-charcoal/[0.08]">
             <div className="w-12 h-1.5 bg-boon-offWhite rounded-pill mx-auto mt-4 mb-2 sm:hidden" />
-            <div className="p-8 sm:p-12">
+            <div className="p-8 sm:p-10">
               {isSuccess ? (
                 <div className="py-12 text-center">
                   <div className="w-20 h-20 bg-boon-success/10 text-boon-success rounded-pill flex items-center justify-center mx-auto mb-8">
@@ -672,13 +672,15 @@ export default function SessionsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="text-3xl font-black text-boon-navy">Thank You!</h3>
+                  <h3 className="font-display font-bold text-boon-navy text-3xl tracking-[-0.02em]">
+                    Thank <span className="font-serif italic font-normal">you</span>.
+                  </h3>
                   <p className="text-boon-charcoal/55 mt-3">Your feedback helps us improve.</p>
                 </div>
               ) : (
                 <form onSubmit={handleFeedbackSubmit} className="space-y-8">
                   <header className="text-center">
-                    <h3 className="text-2xl font-black text-boon-navy">Session Feedback</h3>
+                    <h3 className="font-display font-bold text-boon-navy text-2xl tracking-[-0.02em]">Session feedback</h3>
                     <p className="text-boon-charcoal/55 mt-2">How was your session with {feedbackSession.coach_name}?</p>
                   </header>
 
