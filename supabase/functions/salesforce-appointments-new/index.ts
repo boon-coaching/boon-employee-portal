@@ -4,8 +4,14 @@
 // 1. Validates required fields
 // 2. Looks up program_config for program_type + company_id
 // 3. Looks up employee_id (case-insensitive email match)
-// 4. Upserts to session_tracking (keyed on appointment_number)
-// 5. Stores salesforce_contact_id on employee_manager for deterministic joins
+// 4. Looks up coach_id via salesforce_contact_id (deterministic) or coach_name fallback
+// 5. Upserts to session_tracking (keyed on appointment_number)
+// 6. Stores salesforce_contact_id on employee_manager for deterministic joins
+//
+// v4 Changes (2026-04-22):
+// - NEW: Accepts coach_sf_contact_id (SA.Coach__r.Id) and resolves coach_id via coaches.salesforce_contact_id.
+//        Eliminates the 15% null-coach_id rate caused by first-name-only coach_name strings from legacy Apex.
+//        Name fallback retained for payloads that don't yet carry the Contact Id.
 //
 // v3 Changes:
 // - FIX: .eq() -> .ilike() for email matching (case-insensitive)
@@ -42,6 +48,7 @@ interface SalesforcePayload {
 
   // Coach fields
   coach_name?: string;
+  coach_sf_contact_id?: string;  // SA.Coach__r.Id — deterministic join key
 
   // Program fields
   program_name?: string;
@@ -66,6 +73,16 @@ interface SalesforcePayload {
   mental_well_being?: string;
   other_themes?: string;
 
+  // Obstacles (coach-reported blockers for the session)
+  obstacles?: string;
+  obstacles_free_text?: string;
+
+  // Loop prevention — origin of this callout.
+  //   'sf_direct'  = real SF-side user edit (default when Apex can't tell)
+  //   'sf_callout' = echo from our portal PATCH (Apex would need to stamp this)
+  // If absent, we fall back to timestamp-only guard.
+  last_modified_source?: string;
+
   // Session type
   session_type?: string;
   billable?: boolean;
@@ -78,6 +95,8 @@ interface SyncResult {
   program_type: string | null;
   company_id: string | null;
   employee_id: number | null;
+  coach_id: string | null;
+  coach_resolution: "sf_contact_id" | "name_match" | "unresolved" | null;
   warnings: string[];
   error?: string;
 }
@@ -178,6 +197,8 @@ Deno.serve(async (req: Request) => {
     program_type: null,
     company_id: null,
     employee_id: null,
+    coach_id: null,
+    coach_resolution: null,
     warnings: [],
   };
 
@@ -308,6 +329,50 @@ Deno.serve(async (req: Request) => {
 
     result.employee_id = employeeId;
 
+    // -- Look Up Coach ID --
+    // Strategy 1 (deterministic): resolve via salesforce_contact_id (SA.Coach__r.Id).
+    // Strategy 2 (fallback): exact case-insensitive coach_name match against coaches.name.
+    // If neither hits we leave coach_id null and log a warning — do NOT guess by first name.
+    let coachId: string | null = null;
+
+    if (payload.coach_sf_contact_id) {
+      const { data: coach } = await supabase
+        .from("coaches")
+        .select("id")
+        .eq("salesforce_contact_id", payload.coach_sf_contact_id)
+        .maybeSingle();
+
+      if (coach) {
+        coachId = coach.id;
+        result.coach_resolution = "sf_contact_id";
+      }
+    }
+
+    if (!coachId && payload.coach_name) {
+      const { data: matches } = await supabase
+        .from("coaches")
+        .select("id")
+        .ilike("name", payload.coach_name);
+
+      if (matches && matches.length === 1) {
+        coachId = matches[0].id;
+        result.coach_resolution = "name_match";
+      } else if (matches && matches.length > 1) {
+        result.warnings.push(
+          `Ambiguous coach_name "${payload.coach_name}" matched ${matches.length} coaches; coach_id left null`
+        );
+      }
+    }
+
+    if (!coachId) {
+      result.coach_resolution = "unresolved";
+      result.warnings.push(
+        `coach_id unresolved for coach_name="${payload.coach_name || "none"}" sf_contact_id="${payload.coach_sf_contact_id || "none"}"`
+      );
+    }
+
+    result.coach_id = coachId;
+
     // -- Build employee_name from parts or whole --
     const employeeName =
       payload.client_name ||
@@ -330,6 +395,7 @@ Deno.serve(async (req: Request) => {
       salesforce_program_id: payload.salesforce_program_id,
       salesforce_contact_id: payload.salesforce_contact_id,
       coach_name: payload.coach_name,
+      coach_id: coachId,
       session_date: payload.scheduled_start,
       status: normalizeStatus(payload.status),
       duration_minutes:
@@ -346,6 +412,8 @@ Deno.serve(async (req: Request) => {
       plan: payload.plan,
       notes: payload.notes,
       employee_pre_session_note: payload.employee_pre_session_notes,
+      obstacles: payload.obstacles,
+      obstacles_free_text: payload.obstacles_free_text,
     };
 
     // Remove undefined values
@@ -356,9 +424,49 @@ Deno.serve(async (req: Request) => {
     // Check if record exists, then update or insert
     const { data: existing } = await supabase
       .from("session_tracking")
-      .select("id")
+      .select("id, last_modified_source, last_modified_at")
       .eq("appointment_number", payload.appointment_number)
       .maybeSingle();
+
+    // Loop-prevention: if the portal just wrote this row, skip the echo that
+    // SF Apex fires in response to our PATCH. This guards against a 10-30s
+    // window where stale SF data could overwrite fresh portal data.
+    //
+    // Two-tier check:
+    //   1. If the Apex payload explicitly tags itself 'sf_callout', skip when
+    //      current row is a recent 'portal' write.
+    //   2. Fallback (Apex hasn't been updated yet): pure timestamp guard —
+    //      if current row is a recent 'portal' write, skip regardless of
+    //      origin. Real SF-side edits within 30s of a portal write will be
+    //      dropped; acceptable during pilot where such edits are expected to
+    //      be rare.
+    const ECHO_WINDOW_MS = 30_000;
+    if (existing?.last_modified_source === "portal" && existing.last_modified_at) {
+      const ageMs = Date.now() - new Date(existing.last_modified_at).getTime();
+      const isEcho = payload.last_modified_source === "sf_callout";
+      const withinWindow = ageMs < ECHO_WINDOW_MS;
+      if (withinWindow && (isEcho || !payload.last_modified_source)) {
+        result.action = "skipped";
+        result.warnings.push(
+          `echo-skip: portal write ${ageMs}ms ago, incoming source=${payload.last_modified_source || "unknown"}`,
+        );
+        result.success = true;
+        console.log(
+          `[SYNC] Echo-skip: ${payload.appointment_number} ageMs=${ageMs} incoming=${payload.last_modified_source || "unknown"}`,
+        );
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Stamp this write as coming from the SF callout path so subsequent portal
+    // writes can detect who wrote last.
+    sessionData.last_modified_source = payload.last_modified_source === "sf_direct"
+      ? "sf_direct"
+      : "sf_callout";
+    sessionData.last_modified_at = new Date().toISOString();
 
     if (existing) {
       const { error: updateError } = await supabase
@@ -399,7 +507,7 @@ Deno.serve(async (req: Request) => {
 
     result.success = true;
     console.log(
-      `[SYNC] Success: ${result.action} | ${payload.appointment_number} | type=${programType} | employee_id=${employeeId} | sf_contact=${payload.salesforce_contact_id || "none"} | warnings=${result.warnings.length}`
+      `[SYNC] Success: ${result.action} | ${payload.appointment_number} | type=${programType} | employee_id=${employeeId} | sf_contact=${payload.salesforce_contact_id || "none"} | coach_id=${coachId || "null"}(${result.coach_resolution}) | warnings=${result.warnings.length}`
     );
   } catch (err) {
     const errorMsg =
