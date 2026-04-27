@@ -407,15 +407,14 @@ export function useEmployeeData(): EmployeeData {
     comp_time_management_and_productivity: 4,
   };
 
-  // ARCHITECTURE NOTE: Two session arrays serve different purposes.
-  // - `sessions` (full history): used by getCoachingState() for state detection, Progress for metrics
-  // - `recentSessions` (90 days): used by display components for goals, plans, summaries
-  // Coaches were asked to review the last 90 days only. Do NOT pass raw `sessions` to display components.
-  const recentSessions = sessions.filter(s => {
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    return new Date(s.session_date) >= ninetyDaysAgo;
-  });
+  // `recentSessions` was originally a 90-day filter scoped to "what coaches
+  // review." That filter shouldn't apply to the employee-portal display, where
+  // it caused real bugs: a SCALE user 6 months in saw "Session three. Finding
+  // the rhythm." (the 3 sessions in last 90 days) instead of their true
+  // total. Sessions list also showed only 3 of 6 completed sessions. Now
+  // recentSessions === sessions; we keep the name to avoid touching every
+  // consumer at once.
+  const recentSessions = sessions;
 
   const isPreviewingPreFirstSession = stateOverride === 'MATCHED_PRE_FIRST_SESSION';
   const isPreviewingActiveProgram = stateOverride === 'ACTIVE_PROGRAM';
