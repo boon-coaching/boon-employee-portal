@@ -1363,6 +1363,16 @@ export async function fetchPendingSurvey(
 ): Promise<PendingSurvey | null> {
   devLog('[fetchPendingSurvey] Checking for pending survey:', { email, programType, hasLoadedSessions: !!loadedSessions });
 
+  const normalizedProgram = programType?.toUpperCase() || '';
+  const isScale = normalizedProgram === 'SCALE' || normalizedProgram.startsWith('SCALE') || normalizedProgram.startsWith('SLX');
+
+  // SCALE feedback flows through CheckpointFlow, which writes the canonical
+  // (rich, structured) survey_submissions row. Returning a SurveyModal pending
+  // here would race against the checkpoint modal and write a sparse duplicate.
+  if (isScale) {
+    return null;
+  }
+
   // First, try the RPC function (uses the comprehensive pending_surveys view).
   // The RPC isn't deployed in every environment — PGRST202 (no function found)
   // is expected and handled by the fallback below; only log other errors.
@@ -1389,7 +1399,6 @@ export async function fetchPendingSurvey(
   }
 
   // Fallback: use loaded sessions if available
-  const normalizedProgram = programType?.toUpperCase() || '';
   const isGrow = normalizedProgram === 'GROW' || normalizedProgram.startsWith('GROW');
 
   // For GROW programs, calculate midpoint
