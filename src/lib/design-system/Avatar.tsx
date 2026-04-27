@@ -1,4 +1,5 @@
 import { HTMLAttributes, useMemo } from 'react'
+import { optimizeCoachPhoto } from '../coachPhoto'
 
 /**
  * Avatar
@@ -30,6 +31,13 @@ const sizeClasses: Record<Size, string> = {
   xl: 'w-16 h-16 text-xl',
 }
 
+const sizePixels: Record<Size, number> = {
+  sm: 24,
+  md: 32,
+  lg: 40,
+  xl: 64,
+}
+
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return '?'
@@ -46,10 +54,18 @@ export function Avatar({ name, src, size = 'md', alt, className = '', ...rest }:
     className,
   ].join(' ')
 
+  const optimizedSrc = useMemo(() => (src ? optimizeCoachPhoto(src, sizePixels[size]) : null), [src, size])
+
   return (
     <span {...rest} className={classes} aria-label={alt ?? name} role="img">
-      {src ? (
-        <img src={src} alt={alt ?? name} className="w-full h-full object-cover" />
+      {optimizedSrc ? (
+        <img
+          src={optimizedSrc}
+          alt={alt ?? name}
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover"
+        />
       ) : (
         <span aria-hidden>{initials}</span>
       )}
