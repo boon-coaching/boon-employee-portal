@@ -41,18 +41,27 @@ export default function JournalPage() {
     return weeks.size;
   }, [entries]);
 
-  // Get coaching themes from recent sessions for context
+  // Get coaching themes from recent sessions for context. Themes can repeat
+  // across sessions ("Communicating boundaries" surfaces in multiple recaps);
+  // dedupe so the prompt doesn't read "X, X, X".
   const coachingThemes = useMemo(() => {
     const completed = sessions
       .filter(s => s.status === 'Completed')
       .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime())
       .slice(0, 3);
+    const seen = new Set<string>();
     const themes: string[] = [];
     for (const s of completed) {
-      if (s.leadership_management_skills) themes.push(s.leadership_management_skills);
-      if (s.communication_skills) themes.push(s.communication_skills);
+      for (const theme of [s.leadership_management_skills, s.communication_skills]) {
+        if (!theme) continue;
+        const key = theme.trim().toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        themes.push(theme.trim());
+        if (themes.length >= 3) return themes;
+      }
     }
-    return themes.slice(0, 3);
+    return themes;
   }, [sessions]);
 
   // Show how many prompts exist for rotation context
