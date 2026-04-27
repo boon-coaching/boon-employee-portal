@@ -111,7 +111,7 @@ export default function CompletionAcknowledgment({
               </p>
               {duration && (
                 <p>
-                  {duration.startMonth} – {duration.endMonth}
+                  {duration.startMonth} to {duration.endMonth}
                   <span className="text-gray-400"> • {duration.months} month{duration.months > 1 ? 's' : ''}</span>
                 </p>
               )}
@@ -120,8 +120,8 @@ export default function CompletionAcknowledgment({
 
           <p className="text-gray-500 text-sm mb-8 leading-relaxed">
             This space has shifted to reflect where you are now.
-            What follows is intentionally different—a place to revisit what you built
-            and return when things get hard.
+            What follows is intentionally different. A place to revisit what you built,
+            and return to when things get hard.
           </p>
 
           <button
