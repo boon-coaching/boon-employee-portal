@@ -77,6 +77,12 @@ interface SalesforcePayload {
   obstacles?: string;
   obstacles_free_text?: string;
 
+  // Additional notes — landed in SF as Additional_Notes__c. Apex
+  // SyncAppointmentToSupabase needs to include this in the payload for
+  // real-time inbound sync; until then this stays undefined for incoming
+  // callouts and the column is filled by the backfill + portal writes only.
+  additional_notes?: string;
+
   // Loop prevention — origin of this callout.
   //   'sf_direct'  = real SF-side user edit (default when Apex can't tell)
   //   'sf_callout' = echo from our portal PATCH (Apex would need to stamp this)
@@ -397,6 +403,7 @@ Deno.serve(async (req: Request) => {
       coach_name: payload.coach_name,
       coach_id: coachId,
       session_date: payload.scheduled_start,
+      scheduled_end: payload.scheduled_end,
       status: normalizeStatus(payload.status),
       duration_minutes:
         payload.duration || payload.actual_duration || null,
@@ -410,8 +417,19 @@ Deno.serve(async (req: Request) => {
       other_themes: payload.other_themes,
       goals: payload.goals,
       plan: payload.plan,
-      notes: payload.notes,
-      employee_pre_session_note: payload.employee_pre_session_notes,
+      // SF Notes__c is the coach's session summary. Land it in `summary`
+      // (the column the scheduler portal reads). The legacy `notes` key was
+      // dropped silently because no `notes` column exists — historical SF
+      // Notes__c content is recovered via the one-off backfill.
+      summary: payload.notes,
+      // SF Employee_Pre_Session_Notes__c is in practice the coach's notes
+      // FOR the employee. Maps to `employee_notes` per Path A. Old code
+      // wrote to `employee_pre_session_note` which the portal didn't read.
+      employee_notes: payload.employee_pre_session_notes,
+      // SF Additional_Notes__c — newly mapped inbound. Apex will need to
+      // include this in its payload for it to flow on real-time edits;
+      // historical content recovered via backfill.
+      additional_notes: payload.additional_notes,
       obstacles: payload.obstacles,
       obstacles_free_text: payload.obstacles_free_text,
     };
