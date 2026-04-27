@@ -289,11 +289,15 @@ export function getCoachingState(
   const daysSinceLastCompletedSession = lastSession
     ? Math.floor((Date.now() - new Date(lastSession.session_date).getTime()) / 86_400_000)
     : null;
+  // Was bounded by INACTIVE_MAX_DAYS (180) too, but users dormant for years
+  // were falling through to ACTIVE_PROGRAM and rendering "Before the first"
+  // as if they'd never had a session. The InactiveHome "Pick it back up?"
+  // framing works regardless of how long it's been; the formatted gap copy
+  // ("50 months since your last session") tells the truth.
   const isInactiveCohort = !!lastSession
     && !hasUpcomingSession
     && daysSinceLastCompletedSession !== null
-    && daysSinceLastCompletedSession > INACTIVE_MIN_DAYS
-    && daysSinceLastCompletedSession <= INACTIVE_MAX_DAYS;
+    && daysSinceLastCompletedSession > INACTIVE_MIN_DAYS;
 
   // Calculate SCALE checkpoint status (use countedSessions for late cancel/no-show tracking)
   const scaleCheckpointStatus: ScaleCheckpointStatus = isScale
