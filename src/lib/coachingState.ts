@@ -1,4 +1,4 @@
-import type { Employee, Session, BaselineSurvey, CompetencyScore, ReflectionResponse, Checkpoint, ScaleCheckpointStatus, WelcomeSurveyScale } from './types';
+import type { Employee, Session, BaselineSurvey, CompetencyScore, Checkpoint, ScaleCheckpointStatus, WelcomeSurveyScale } from './types';
 
 /**
  * GROW Coaching State Machine
@@ -118,38 +118,23 @@ function areAllSessionsDone(
 }
 
 /**
- * Determines if a program is fully completed (sessions done + reflection submitted)
+ * Determines if a program is fully completed.
  * 1. Employee status contains 'completed', 'graduated', or 'finished'
- * 2. Has end_of_program competency scores (implies reflection done)
- * 3. Has reflection response submitted
+ * 2. Has end_of_program competency scores (the canonical signal that the
+ *    end-of-program survey was submitted via SurveyModal grow_end)
  */
 function isProgramFullyCompleted(
   employee: Employee | null,
-  competencyScores: CompetencyScore[],
-  reflection: ReflectionResponse | null
+  competencyScores: CompetencyScore[]
 ): boolean {
   if (!employee) return false;
 
-  // Check employee status field
   const status = employee.status?.toLowerCase() || '';
   if (status.includes('completed') || status.includes('graduated') || status.includes('finished')) {
     return true;
   }
 
-  // Check for end_of_program competency scores (implies reflection done)
-  const hasEndOfProgramScores = competencyScores.some(
-    cs => cs.score_type === 'end_of_program'
-  );
-  if (hasEndOfProgramScores) {
-    return true;
-  }
-
-  // Check for reflection response
-  if (reflection) {
-    return true;
-  }
-
-  return false;
+  return competencyScores.some(cs => cs.score_type === 'end_of_program');
 }
 
 /**
@@ -248,7 +233,6 @@ export function getCoachingState(
   sessions: Session[],
   baseline: BaselineSurvey | null,
   competencyScores: CompetencyScore[] = [],
-  reflection: ReflectionResponse | null = null,
   checkpoints: Checkpoint[] = [],
   welcomeSurveyScale: WelcomeSurveyScale | null = null,
   fetchedProgramType: string | null = null
@@ -280,9 +264,9 @@ export function getCoachingState(
     : Math.min(100, Math.round((countedSessions.length / totalExpectedSessions) * 100));
 
   const hasEndOfProgramScores = competencyScores.some(cs => cs.score_type === 'end_of_program');
-  const hasReflection = !!reflection || hasEndOfProgramScores;
+  const hasReflection = hasEndOfProgramScores;
   const allSessionsDone = !isScale && areAllSessionsDone(sessions, programType);
-  const isFullyCompleted = !isScale && isProgramFullyCompleted(employee, competencyScores, reflection);
+  const isFullyCompleted = !isScale && isProgramFullyCompleted(employee, competencyScores);
 
   // Days since last truly-completed session. Late Cancel / No-Show don't count
   // here — a no-show 50 days ago isn't engagement. Used for the INACTIVE branch.
