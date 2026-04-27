@@ -256,10 +256,15 @@ export async function fetchActionItems(email: string): Promise<ActionItem[]> {
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
+  // .eq + lowercased email lets Postgres hit idx_action_items_email_status
+  // (functional index on lower(email)). ILIKE-with-no-wildcards looked like
+  // equality but planner couldn't use the index → parallel seq scan over
+  // 218k rows → 9s statement_timeout on cold cache. A backfill + trigger
+  // (20260427_action_items_email_lowercase.sql) keeps stored emails lowercase.
   const { data, error } = await supabase
     .from('action_items')
     .select('*')
-    .ilike('email', email)
+    .eq('email', email.toLowerCase())
     .gte('created_at', ninetyDaysAgo.toISOString())
     .order('created_at', { ascending: false })
     .limit(100);
