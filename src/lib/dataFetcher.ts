@@ -390,12 +390,16 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
   const trimmedName = coachName.trim();
   devLog('[fetchCoachByName] Searching for coach:', trimmedName);
 
-  // First try exact ilike match
+  // First try exact ilike match. Coaches table has duplicate rows for some
+  // names (e.g. Sharon Wilson, Karen Patricelli), so .single() throws 406.
+  // Order by photo_url DESC NULLS LAST so the row with a real headshot wins.
   const { data: exactData, error: exactError } = await supabase
     .from('coaches')
     .select(COACH_PUBLIC_COLUMNS)
     .ilike('name', trimmedName)
-    .single();
+    .order('photo_url', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
 
   if (!exactError && exactData) {
     const coach = exactData as unknown as Coach;
@@ -412,8 +416,9 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
     .from('coaches')
     .select(COACH_PUBLIC_COLUMNS)
     .ilike('name', `%${trimmedName}%`)
+    .order('photo_url', { ascending: false, nullsFirst: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (!flexError && flexData) {
     const coach = flexData as unknown as Coach;
@@ -436,8 +441,9 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
       .from('coaches')
       .select(COACH_PUBLIC_COLUMNS)
       .ilike('name', `${firstName}%${lastName}`)
+      .order('photo_url', { ascending: false, nullsFirst: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (!partsError && partsData) {
       const coach = partsData as unknown as Coach;
@@ -1357,11 +1363,15 @@ export async function fetchPendingSurvey(
 ): Promise<PendingSurvey | null> {
   devLog('[fetchPendingSurvey] Checking for pending survey:', { email, programType, hasLoadedSessions: !!loadedSessions });
 
-  // First, try the RPC function (uses the comprehensive pending_surveys view)
+  // First, try the RPC function (uses the comprehensive pending_surveys view).
+  // The RPC isn't deployed in every environment — PGRST202 (no function found)
+  // is expected and handled by the fallback below; only log other errors.
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('get_pending_survey', { user_email: email });
 
-  devLog('[fetchPendingSurvey] RPC result:', { rpcData, rpcError });
+  if (rpcError && rpcError.code !== 'PGRST202' && rpcError.code !== '42883') {
+    devLog('[fetchPendingSurvey] RPC error:', rpcError);
+  }
 
   if (!rpcError && rpcData && rpcData.length > 0) {
     const candidate = rpcData[0] as PendingSurvey;
