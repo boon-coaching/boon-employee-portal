@@ -1495,26 +1495,34 @@ export async function fetchPendingSurvey(
     }
   }
 
+  // Fetch this user's existing survey outcomes once. We match client-side
+  // because the previous ILIKE '%Session N%' approach false-matched session
+  // numbers that are substrings of other numbers (e.g. 'Session 1' inside
+  // 'Session 10', 'Session 11', 'Session 12'). outcomes is formatted as
+  // 'Session N' or 'Session N, …', so an anchored regex is unambiguous.
+  const { data: existingSurveys } = await supabase
+    .from('survey_submissions')
+    .select('outcomes')
+    .ilike('email', email);
+
+  // outcomes formats observed in prod:
+  //   "Session 1"                        — submitGrowFirstSessionSurvey
+  //   "Session 6 Midpoint, Progress: …"  — submitGrowMidpointSurvey
+  //   "Session 3, Coach match: 8/10"     — submitCheckpoint (legacy SCALE rows)
+  // Word-boundary anchor handles all three without false-matching 'Session 1' inside 'Session 10'.
+  const submittedSessionNumbers = new Set<number>();
+  for (const row of existingSurveys ?? []) {
+    const match = (row.outcomes as string | null)?.trim().match(/^Session (\d+)\b/i);
+    if (match) submittedSessionNumbers.add(parseInt(match[1], 10));
+  }
+
+  devLog('[fetchPendingSurvey] Submitted session numbers:', Array.from(submittedSessionNumbers));
+
   // Check which milestone sessions don't have a survey yet
   for (const session of milestoneSessions) {
     const sessionNum = session.calculatedSessionNumber;
-    const sessionPattern = `Session ${sessionNum}`;
-    devLog('[fetchPendingSurvey] Checking for existing survey:', {
-      sessionPattern,
-      sessionId: session.id,
-      calculatedSessionNumber: sessionNum
-    });
 
-    const { data: existingSurvey } = await supabase
-      .from('survey_submissions')
-      .select('id')
-      .ilike('email', email)
-      .ilike('outcomes', `%${sessionPattern}%`)
-      .limit(1);
-
-    devLog('[fetchPendingSurvey] Existing survey check:', { existingSurvey });
-
-    if (!existingSurvey || existingSurvey.length === 0) {
+    if (!submittedSessionNumbers.has(sessionNum)) {
       // Skip stale surveys: if the user is more than 5 sessions past this milestone, don't prompt
       if (countedSessions.length - sessionNum > 5) {
         devLog('[fetchPendingSurvey] Skipping stale survey for session', sessionNum,
