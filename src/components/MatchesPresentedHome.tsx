@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Coach, Employee } from '../lib/types';
 import { fetchCoachByEmail } from '../lib/dataFetcher';
-import { coachAvatarObjectPosition } from '../lib/coachPhoto';
+import { coachAvatarObjectPosition, optimizeCoachPhoto } from '../lib/coachPhoto';
 
 interface MatchesPresentedHomeProps {
   profile: Employee | null;
@@ -70,8 +70,10 @@ function CoachCard({ coach, bookingLink, loading }: CoachCardProps) {
       <div className="flex items-center gap-4 mb-5">
         {coach?.photo_url ? (
           <img
-            src={coach.photo_url}
+            src={optimizeCoachPhoto(coach.photo_url, 64) || ''}
             alt={coach.name}
+            loading="lazy"
+            decoding="async"
             className="w-16 h-16 rounded-full object-cover ring-2 ring-boon-coral/40"
             style={{ objectPosition: coachAvatarObjectPosition(coach.photo_url) }}
           />

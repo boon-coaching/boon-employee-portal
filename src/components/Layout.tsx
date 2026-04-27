@@ -162,29 +162,29 @@ export default function Layout({ children, coachingState, badges }: LayoutProps)
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-boon-charcoal/[0.08] flex justify-around items-center px-2 py-3 pb-[env(safe-area-inset-bottom,16px)] z-30">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-boon-charcoal/[0.08] flex justify-between items-stretch px-1 pt-2 pb-[env(safe-area-inset-bottom,12px)] z-30">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1.5 min-w-0 transition-all active:scale-90 ${
+              `flex-1 min-w-0 flex flex-col items-center gap-0.5 px-0.5 py-1 transition-all active:scale-95 ${
                 isActive ? 'text-boon-blue' : 'text-boon-charcoal/55'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <div className={`relative p-2 rounded-btn transition-colors ${isActive ? 'bg-boon-blue/10' : ''}`}>
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className={`relative p-1.5 rounded-btn transition-colors ${isActive ? 'bg-boon-blue/10' : ''}`}>
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                   </svg>
                   {badges?.[item.to] && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-boon-error rounded-pill" />
+                    <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-boon-error rounded-pill" />
                   )}
                 </div>
-                <span className="text-[10px] font-extrabold uppercase tracking-[0.18em]">{item.label}</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider truncate w-full text-center leading-tight">{item.label}</span>
               </>
             )}
           </NavLink>

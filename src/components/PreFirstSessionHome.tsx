@@ -9,6 +9,7 @@ import { SCALE_FOCUS_AREA_LABELS } from '../lib/types';
 import { supabase } from '../lib/supabase';
 import { fetchCoachByName, fetchCoachById, fetchMatchSummary } from '../lib/dataFetcher';
 import { isUpcomingSession } from '../lib/coachingState';
+import { optimizeCoachPhoto } from '../lib/coachPhoto';
 
 /**
  * Extract the specific coach's summary from the full match_summary text.
@@ -501,8 +502,10 @@ export default function PreFirstSessionHome({
               <div className="aspect-[3/4] rounded-card overflow-hidden ring-4 ring-boon-bg shadow-lg bg-boon-offWhite">
                 {coach?.photo_url ? (
                   <img
-                    src={coach.photo_url}
+                    src={optimizeCoachPhoto(coach.photo_url, 200) || ''}
                     alt={coachName}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     style={{ objectPosition: 'center 15%' }}
                   />
