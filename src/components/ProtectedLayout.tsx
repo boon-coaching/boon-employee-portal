@@ -6,7 +6,6 @@ import { GoalProvider } from '../hooks/useGoalData';
 import NoEmployeeFound from '../pages/NoEmployeeFound';
 import WelcomePage from '../pages/WelcomePage';
 import Layout from './Layout';
-import ReflectionFlow from './ReflectionFlow';
 import CheckpointFlow from './CheckpointFlow';
 import AdminStatePreview from './AdminStatePreview';
 import SurveyModal from './SurveyModal';
@@ -143,12 +142,6 @@ export function ProtectedLayout() {
     );
   }
 
-  // Reflection completion handler that navigates to /progress
-  function handleReflectionComplete(newReflection: Parameters<typeof data.handleReflectionComplete>[0]) {
-    data.handleReflectionComplete(newReflection);
-    navigate('/progress');
-  }
-
   // Checkpoint completion handler that navigates to /progress
   function handleCheckpointComplete(newCheckpoint: Parameters<typeof data.handleCheckpointComplete>[0]) {
     data.handleCheckpointComplete(newCheckpoint);
@@ -165,16 +158,6 @@ export function ProtectedLayout() {
     <GoalProvider sessions={data.sessions} actionItems={data.actionItems}>
     <Layout coachingState={data.coachingState}>
       <Outlet context={data} />
-
-      {/* Reflection Flow Modal */}
-      {data.showReflectionFlow && (
-        <ReflectionFlow
-          userEmail={data.employee.company_email || ''}
-          baseline={data.baseline}
-          onComplete={handleReflectionComplete}
-          onClose={() => data.setShowReflectionFlow(false)}
-        />
-      )}
 
       {/* Checkpoint Flow Modal (for SCALE users) */}
       {data.showCheckpointFlow && (() => {

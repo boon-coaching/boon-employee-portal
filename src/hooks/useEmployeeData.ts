@@ -4,9 +4,9 @@ import { useAuth } from '../lib/AuthContext';
 const devLog = (...args: unknown[]) => {
   if (import.meta.env.DEV) console.log(...args);
 };
-import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchReflection, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins, addCoachingWin, deleteCoachingWin, updateCoachingWin, fetchWelcomeSurveyLink } from '../lib/dataFetcher';
+import { fetchSessions, fetchProgressData, fetchBaseline, fetchWelcomeSurveyScale, fetchCompetencyScores, fetchProgramType, fetchActionItems, fetchCheckpoints, fetchPendingSurvey, fetchCoachingWins, addCoachingWin, deleteCoachingWin, updateCoachingWin, fetchWelcomeSurveyLink } from '../lib/dataFetcher';
 import { getCoachingState, type CoachingStateData, type CoachingState } from '../lib/coachingState';
-import type { Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, ReflectionResponse, Checkpoint, PendingSurvey, CoachingWin } from '../lib/types';
+import type { Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, Checkpoint, PendingSurvey, CoachingWin } from '../lib/types';
 
 export interface EmployeeData {
   // Auth
@@ -31,7 +31,6 @@ export interface EmployeeData {
   effectiveProgramType: ProgramType | string | null;
   actionItems: ActionItem[];
   effectiveActionItems: ActionItem[];
-  reflection: ReflectionResponse | null;
   checkpoints: Checkpoint[];
   coachingWins: CoachingWin[];
   welcomeSurveyLink: string | null;
@@ -45,7 +44,6 @@ export interface EmployeeData {
   showSurveyModal: boolean;
 
   // Modal state
-  showReflectionFlow: boolean;
   showCheckpointFlow: boolean;
 
   // Admin preview
@@ -56,18 +54,15 @@ export interface EmployeeData {
   reloadActionItems: () => Promise<void>;
   handleStartReflection: () => void;
   handleStartCheckpoint: () => void;
-  handleReflectionComplete: (newReflection: ReflectionResponse) => void;
   handleCheckpointComplete: (newCheckpoint: Checkpoint) => void;
   handleSurveyComplete: () => Promise<void>;
   handleAddWin: (winText: string) => Promise<boolean>;
   handleDeleteWin: (winId: string) => Promise<boolean>;
   handleUpdateWin: (winId: string, winText: string) => Promise<boolean>;
-  setShowReflectionFlow: (show: boolean) => void;
   setShowCheckpointFlow: (show: boolean) => void;
   setShowSurveyModal: (show: boolean) => void;
   setStateOverride: (state: CoachingState | null) => void;
   setProgramTypeOverride: (type: string | null) => void;
-  setReflection: (reflection: ReflectionResponse | null) => void;
   setCheckpoints: React.Dispatch<React.SetStateAction<Checkpoint[]>>;
 }
 
@@ -82,12 +77,10 @@ export function useEmployeeData(): EmployeeData {
   const [competencyScores, setCompetencyScores] = useState<CompetencyScore[]>([]);
   const [programType, setProgramType] = useState<ProgramType | null>(null);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
-  const [reflection, setReflection] = useState<ReflectionResponse | null>(null);
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [welcomeSurveyScale, setWelcomeSurveyScale] = useState<WelcomeSurveyScale | null>(null);
   const [coachingWins, setCoachingWins] = useState<CoachingWin[]>([]);
   const [welcomeSurveyLink, setWelcomeSurveyLink] = useState<string | null>(null);
-  const [showReflectionFlow, setShowReflectionFlow] = useState(false);
   const [showCheckpointFlow, setShowCheckpointFlow] = useState(false);
   const [stateOverride, setStateOverride] = useState<CoachingState | null>(null);
   const [programTypeOverride, setProgramTypeOverride] = useState<string | null>(null);
@@ -114,7 +107,7 @@ export function useEmployeeData(): EmployeeData {
       setDataLoading(true);
       setDataError(null);
       try {
-        const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, reflectionData, checkpointsData, winsData, welcomeSurveyLinkData] = await Promise.all([
+        const [sessionsData, progressData, baselineData, welcomeSurveyScaleData, competencyData, programTypeData, actionItemsData, checkpointsData, winsData, welcomeSurveyLinkData] = await Promise.all([
           fetchSessions(employee.id),
           fetchProgressData(employee.company_email),
           fetchBaseline(employee.company_email),
@@ -122,7 +115,6 @@ export function useEmployeeData(): EmployeeData {
           fetchCompetencyScores(employee.company_email),
           fetchProgramType(employee.coaching_program),
           fetchActionItems(employee.company_email),
-          fetchReflection(employee.company_email),
           fetchCheckpoints(employee.company_email),
           fetchCoachingWins(employee.company_email),
           employee.company_id ? fetchWelcomeSurveyLink(employee.company_id, employee.coaching_program) : Promise.resolve(null),
@@ -143,7 +135,6 @@ export function useEmployeeData(): EmployeeData {
           programType: programTypeData,
           employeeProgram: employee.coaching_program,
           actionItemsCount: actionItemsData.length,
-          hasReflection: !!reflectionData,
           checkpointsCount: checkpointsData.length,
           winsCount: winsData.length,
         });
@@ -195,7 +186,6 @@ export function useEmployeeData(): EmployeeData {
 
         // Action items are already filtered to last 90 days at the query level
         setActionItems(actionItemsData);
-        setReflection(reflectionData);
         setCheckpoints(checkpointsData);
         setCoachingWins(winsData);
         setWelcomeSurveyLink(welcomeSurveyLinkData);
@@ -223,11 +213,6 @@ export function useEmployeeData(): EmployeeData {
     setActionItems(items);
   }
 
-  function handleReflectionComplete(newReflection: ReflectionResponse) {
-    setReflection(newReflection);
-    setShowReflectionFlow(false);
-  }
-
   function handleCheckpointComplete(newCheckpoint: Checkpoint) {
     setCheckpoints(prev => [...prev, newCheckpoint]);
     setShowCheckpointFlow(false);
@@ -242,7 +227,13 @@ export function useEmployeeData(): EmployeeData {
     }
   }
 
-  const handleStartReflection = () => setShowReflectionFlow(true);
+  // Reflection submission is the SurveyModal grow_end path; reopen the modal
+  // if there's a pending end-of-program survey. Used by PendingReflectionHome
+  // and Progress as a manual "I want to redo this now" entry point in case
+  // the auto-open was dismissed.
+  const handleStartReflection = () => {
+    if (pendingSurvey) setShowSurveyModal(true);
+  };
   const handleStartCheckpoint = () => setShowCheckpointFlow(true);
 
   const handleAddWin = async (winText: string): Promise<boolean> => {
@@ -311,7 +302,7 @@ export function useEmployeeData(): EmployeeData {
   };
 
   const actualCoachingState: CoachingStateData = employee
-    ? getCoachingState(employee, sessions, baseline, competencyScores, reflection, checkpoints, welcomeSurveyScale, programType)
+    ? getCoachingState(employee, sessions, baseline, competencyScores, checkpoints, welcomeSurveyScale, programType)
     : defaultCoachingState;
 
   // Effective program type (actual or overridden for admin preview)
@@ -516,7 +507,6 @@ export function useEmployeeData(): EmployeeData {
     effectiveProgramType,
     actionItems,
     effectiveActionItems,
-    reflection,
     checkpoints,
     coachingWins,
     welcomeSurveyLink,
@@ -524,25 +514,21 @@ export function useEmployeeData(): EmployeeData {
     coachingState,
     pendingSurvey,
     showSurveyModal,
-    showReflectionFlow,
     showCheckpointFlow,
     stateOverride,
     programTypeOverride,
     reloadActionItems,
     handleStartReflection,
     handleStartCheckpoint,
-    handleReflectionComplete,
     handleCheckpointComplete,
     handleSurveyComplete,
     handleAddWin,
     handleDeleteWin,
     handleUpdateWin,
-    setShowReflectionFlow,
     setShowCheckpointFlow,
     setShowSurveyModal,
     setStateOverride,
     setProgramTypeOverride,
-    setReflection,
     setCheckpoints,
   };
 }

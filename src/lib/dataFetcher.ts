@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Employee, Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, TeamsConnectionStatus, Nudge, ReflectionResponse, Checkpoint, Coach } from './types';
+import type { Employee, Session, SurveyResponse, BaselineSurvey, WelcomeSurveyScale, CompetencyScore, ProgramType, ActionItem, SlackConnectionStatus, TeamsConnectionStatus, Nudge, Checkpoint, Coach } from './types';
 
 const devLog = (...args: unknown[]) => {
   if (import.meta.env.DEV) console.log(...args);
@@ -961,57 +961,6 @@ export async function fetchNudgeHistory(email: string): Promise<Nudge[]> {
 // ============================================
 // POST-PROGRAM REFLECTION
 // ============================================
-
-/**
- * Fetch reflection response for a user (post-program assessment)
- */
-export async function fetchReflection(email: string): Promise<ReflectionResponse | null> {
-  const { data, error } = await supabase
-    .from('reflection_responses')
-    .select('*')
-    .ilike('email', email)
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (error) {
-    // reflection_responses is a dead-code table that never shipped; the
-    // state machine falls back to competency_scores (score_type='end_of_program')
-    // via hasEndOfProgramScores in coachingState.ts. PGRST205 = schema cache
-    // miss, 42P01 = relation does not exist, PGRST116 = no rows. All silent.
-    const silentCodes = ['42P01', 'PGRST116', 'PGRST205'];
-    if (!silentCodes.includes(error.code)) {
-      console.error('Error fetching reflection:', error);
-    }
-    return null;
-  }
-
-  return (data && data.length > 0) ? data[0] as ReflectionResponse : null;
-}
-
-/**
- * Submit post-program reflection
- */
-export async function submitReflection(
-  email: string,
-  reflection: Omit<ReflectionResponse, 'id' | 'email' | 'created_at'>
-): Promise<{ success: boolean; data?: ReflectionResponse; error?: string }> {
-  const { data, error } = await supabase
-    .from('reflection_responses')
-    .insert({
-      email: email.toLowerCase(),
-      ...reflection,
-      created_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error submitting reflection:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true, data: data as ReflectionResponse };
-}
 
 // ============================================
 // SCALE CHECKPOINTS (Longitudinal Tracking)
