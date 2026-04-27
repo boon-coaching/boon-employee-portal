@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Coach, Employee, Session } from '../lib/types';
 import { fetchCoachById, fetchCoachByName, fetchCoachBySfId } from '../lib/dataFetcher';
-import { coachAvatarObjectPosition } from '../lib/coachPhoto';
+import { coachAvatarObjectPosition, optimizeCoachPhoto } from '../lib/coachPhoto';
 
 interface InactiveHomeProps {
   profile: Employee | null;
@@ -131,8 +131,10 @@ export default function InactiveHome({ profile, lastSession, daysSinceLastSessio
         <div className="flex items-center gap-4 mb-5">
           {coach?.photo_url ? (
             <img
-              src={coach.photo_url}
+              src={optimizeCoachPhoto(coach.photo_url, 56) || ''}
               alt={coach.name}
+              loading="lazy"
+              decoding="async"
               className="w-14 h-14 rounded-full object-cover ring-2 ring-boon-coral/40"
               style={{ objectPosition: coachAvatarObjectPosition(coach.photo_url) }}
             />

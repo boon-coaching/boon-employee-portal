@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Coach, Employee, Session, BaselineSurvey, ProgramType } from '../lib/types';
 import { fetchCoachByName } from '../lib/dataFetcher';
-import { coachAvatarObjectPosition } from '../lib/coachPhoto';
+import { coachAvatarObjectPosition, optimizeCoachPhoto } from '../lib/coachPhoto';
 
 interface PendingReflectionHomeProps {
   profile: Employee | null;
@@ -89,8 +89,10 @@ export default function PendingReflectionHome({
           <div className="flex items-center gap-3">
             {coach?.photo_url ? (
               <img
-                src={coach.photo_url}
+                src={optimizeCoachPhoto(coach.photo_url, 40) || ''}
                 alt={coachName || 'Coach'}
+                loading="lazy"
+                decoding="async"
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-boon-coral/40"
                 style={{ objectPosition: coachAvatarObjectPosition(coach.photo_url) }}
               />
