@@ -335,6 +335,54 @@ export async function submitSessionFeedback(
 }
 
 /**
+ * Public column allow-list for the coaches table.
+ *
+ * The DB GRANT (see 20260427_coaches_column_lockdown_v2.sql) restricts
+ * authenticated/anon SELECT to non-PII columns. Querying `*` returns 403.
+ * This constant mirrors the GRANT so portal queries succeed.
+ *
+ * Sensitive columns intentionally absent: phone, birthdate, mailing_address,
+ * gender, race, linkedin, session_rate, account_name, companies, capacity
+ * planning, performance metrics, HR data, infra. Service role / admin
+ * edge functions bypass GRANTs and can still read those.
+ */
+const COACH_PUBLIC_COLUMNS = [
+  'id',
+  'salesforce_contact_id',
+  'name',
+  'first_name',
+  'last_name',
+  'email',
+  'photo_url',
+  'bio',
+  'headline',
+  'notable_credentials',
+  'specialties',
+  'industries',
+  'services',
+  'special_services',
+  'coach_languages',
+  'coach_department',
+  'experienced_working_with',
+  'improvement_areas',
+  'pronouns',
+  'age_range',
+  'practitioner_type',
+  'timezone',
+  'preferred_time_window',
+  'icf_level',
+  'is_scale_coach',
+  'is_grow_coach',
+  'is_exec_coach',
+  'is_active',
+  'facilitator',
+  'x360_performance',
+  'assessments',
+  'created_at',
+  'updated_at',
+].join(',');
+
+/**
  * Fetch coach details by name
  * Tries direct query first, then RPC function to bypass RLS
  */
@@ -345,35 +393,37 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
   // First try exact ilike match
   const { data: exactData, error: exactError } = await supabase
     .from('coaches')
-    .select('*')
+    .select(COACH_PUBLIC_COLUMNS)
     .ilike('name', trimmedName)
     .single();
 
   if (!exactError && exactData) {
+    const coach = exactData as unknown as Coach;
     devLog('[fetchCoachByName] Found coach (exact match):', {
-      name: exactData?.name,
-      hasPhotoUrl: !!exactData?.photo_url,
-      photoUrl: exactData?.photo_url
+      name: coach.name,
+      hasPhotoUrl: !!coach.photo_url,
+      photoUrl: coach.photo_url
     });
-    return exactData as Coach;
+    return coach;
   }
 
   // Try flexible match with wildcards (handles extra spaces, etc.)
   const { data: flexData, error: flexError } = await supabase
     .from('coaches')
-    .select('*')
+    .select(COACH_PUBLIC_COLUMNS)
     .ilike('name', `%${trimmedName}%`)
     .limit(1)
     .single();
 
   if (!flexError && flexData) {
+    const coach = flexData as unknown as Coach;
     devLog('[fetchCoachByName] Found coach (flexible match):', {
       searchedName: trimmedName,
-      foundName: flexData?.name,
-      hasPhotoUrl: !!flexData?.photo_url,
-      photoUrl: flexData?.photo_url
+      foundName: coach.name,
+      hasPhotoUrl: !!coach.photo_url,
+      photoUrl: coach.photo_url
     });
-    return flexData as Coach;
+    return coach;
   }
 
   // Try matching by first name + last name separately (handles formatting differences)
@@ -384,19 +434,20 @@ export async function fetchCoachByName(coachName: string): Promise<Coach | null>
 
     const { data: partsData, error: partsError } = await supabase
       .from('coaches')
-      .select('*')
+      .select(COACH_PUBLIC_COLUMNS)
       .ilike('name', `${firstName}%${lastName}`)
       .limit(1)
       .single();
 
     if (!partsError && partsData) {
+      const coach = partsData as unknown as Coach;
       devLog('[fetchCoachByName] Found coach (name parts match):', {
         searchedName: trimmedName,
-        foundName: partsData?.name,
-        hasPhotoUrl: !!partsData?.photo_url,
-        photoUrl: partsData?.photo_url
+        foundName: coach.name,
+        hasPhotoUrl: !!coach.photo_url,
+        photoUrl: coach.photo_url
       });
-      return partsData as Coach;
+      return coach;
     }
   }
 
@@ -439,11 +490,11 @@ export async function fetchCoachBySfId(sfContactId: string): Promise<Coach | nul
   const id15 = trimmed.length >= 15 ? trimmed.slice(0, 15) : trimmed;
   const { data, error } = await supabase
     .from('coaches')
-    .select('*')
+    .select(COACH_PUBLIC_COLUMNS)
     .ilike('salesforce_contact_id', `${id15}%`)
     .order('photo_url', { ascending: false, nullsFirst: false })
     .limit(1);
-  if (!error && data && data.length > 0) return data[0] as Coach;
+  if (!error && data && data.length > 0) return data[0] as unknown as Coach;
   return null;
 }
 
@@ -456,11 +507,11 @@ export async function fetchCoachByEmail(coachEmail: string): Promise<Coach | nul
   if (!coachEmail) return null;
   const { data, error } = await supabase
     .from('coaches')
-    .select('*')
+    .select(COACH_PUBLIC_COLUMNS)
     .ilike('email', coachEmail.trim())
     .order('photo_url', { ascending: false, nullsFirst: false })
     .limit(1);
-  if (!error && data && data.length > 0) return data[0] as Coach;
+  if (!error && data && data.length > 0) return data[0] as unknown as Coach;
   return null;
 }
 
@@ -469,17 +520,18 @@ export async function fetchCoachById(coachId: string): Promise<Coach | null> {
 
   const { data, error } = await supabase
     .from('coaches')
-    .select('*')
+    .select(COACH_PUBLIC_COLUMNS)
     .eq('id', coachId)
     .single();
 
   if (!error && data) {
+    const coach = data as unknown as Coach;
     devLog('[fetchCoachById] Found coach (direct query):', {
-      name: data?.name,
-      hasPhotoUrl: !!data?.photo_url,
-      photoUrl: data?.photo_url
+      name: coach.name,
+      hasPhotoUrl: !!coach.photo_url,
+      photoUrl: coach.photo_url
     });
-    return data as Coach;
+    return coach;
   }
 
   // Fallback: Try RPC function which uses SECURITY DEFINER to bypass RLS
