@@ -88,25 +88,40 @@
     }
                                                                                                                                        
     if (!programTitle && req.program) {
-      programTitle = req.program                                                                                                       
-    }                                                                                                                                
+      programTitle = req.program
+    }
 
-    // Insert into employee_manager (no SF contact ID — will be linked after manual SF entry)                                          
-    const { data: employee, error: dbError } = await supabase
-      .from('employee_manager')                                                                                                        
-      .insert({                                                                                                                        
-        company_email: req.email,
-        first_name: req.first_name,                                                                                                    
-        last_name: req.last_name,                                                                                                    
-        company_id: req.company_id,
-        job_title: req.job_title || null,                                                                                              
-        company_name: req.company_name || null,
-        coaching_program: req.program || null,                                                                                         
-        status: 'Active',                                                                                                            
-      })                                                                                                                               
+    const { data: existing } = await supabase
+      .from('employee_manager')
       .select('id')
-      .single()                                                                                                                        
-                                                                                                                                     
+      .ilike('company_email', req.email)
+      .eq('company_id', req.company_id)
+      .maybeSingle()
+
+    if (existing) {
+      return {
+        success: true,
+        employee_id: existing.id,
+        already_existed: true,
+      }
+    }
+
+    // Insert into employee_manager (no SF contact ID — will be linked after manual SF entry)
+    const { data: employee, error: dbError } = await supabase
+      .from('employee_manager')
+      .insert({
+        company_email: req.email,
+        first_name: req.first_name,
+        last_name: req.last_name,
+        company_id: req.company_id,
+        job_title: req.job_title || null,
+        company_name: req.company_name || null,
+        coaching_program: req.program || null,
+        status: 'Active',
+      })
+      .select('id')
+      .single()
+
     if (dbError) {
       throw new Error(`employee_manager insert failed: ${dbError.message}`)
     }                                                                                                                                  
