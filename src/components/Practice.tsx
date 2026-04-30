@@ -69,15 +69,22 @@ export default function Practice() {
   };
 
   const handleOpenSavedPlan = (plan: SavedPlan) => {
-    // Find the original scenario or create a custom one
     const originalScenario = SCENARIOS.find(s => s.id === plan.scenario_id);
-    if (originalScenario) {
-      setSelectedScenario(originalScenario);
-      setCustomSituation(plan.context);
-      if (plan.team_member_id) {
-        const member = teamMembers.find(m => m.id === plan.team_member_id);
-        setSelectedTeamMember(member || null);
-      }
+    const scenarioToOpen: PracticeScenario = originalScenario ?? {
+      id: plan.scenario_id || `custom-${plan.id}`,
+      title: plan.scenario_title || 'Custom Situation',
+      category: 'leadership',
+      description: plan.context.slice(0, 100) + (plan.context.length > 100 ? '...' : ''),
+      difficulty: 'Medium',
+      tags: ['custom'],
+      explanation: 'Your specific situation requires a tailored approach.',
+      basePrompt: `**STRATEGY GUIDE:** ${plan.scenario_title || 'Custom Situation'}\n\nBased on your specific situation, we'll help you:\n1. Understand what's really happening\n2. Identify the key stakeholders and dynamics\n3. Develop a clear action plan\n4. Practice the conversation`,
+    };
+    setSelectedScenario(scenarioToOpen);
+    setCustomSituation(plan.context);
+    if (plan.team_member_id) {
+      const member = teamMembers.find(m => m.id === plan.team_member_id);
+      setSelectedTeamMember(member || null);
     }
   };
 
@@ -480,7 +487,7 @@ Describe your situation in detail so we can provide the most relevant guidance.`
       {selectedScenario && (
         <PracticeModal
           scenario={selectedScenario}
-          initialContext={selectedScenario.id.startsWith('custom-') ? customSituation : ''}
+          initialContext={customSituation}
           coachName={coachName}
           teamMember={selectedTeamMember}
           userEmail={userEmail}

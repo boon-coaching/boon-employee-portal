@@ -40,6 +40,8 @@ export default function SessionsPage() {
   const actionItems = data.actionItems;
   const reloadActionItems = data.reloadActionItems;
   const coachingState = data.coachingState;
+  const bookingLink = data.employee?.booking_link || null;
+  const coachFirstName = sessions[0]?.coach_name?.split(' ')[0] || 'your coach';
   const isCompleted = isAlumniState(coachingState.state);
   const isPreFirst = isPreFirstSession(coachingState.state);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -339,6 +341,35 @@ export default function SessionsPage() {
         </div>
       </header>
 
+      {!isCompleted && upcomingCount === 0 && bookingLink && (
+        <section className="bg-boon-navy rounded-card p-6 md:p-8 border border-boon-navy">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div>
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-boon-coralLight">
+                Nothing on the calendar
+              </span>
+              <h2 className="mt-2 font-display font-bold text-white text-[24px] md:text-[28px] leading-[1.15] tracking-[-0.02em]">
+                Book your next.{' '}
+                <span className="font-serif italic font-normal text-boon-coralLight">
+                  With {coachFirstName}.
+                </span>
+              </h2>
+            </div>
+            <a
+              href={bookingLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold rounded-btn text-white bg-boon-coral hover:bg-boon-coralLight transition-all shadow-sm whitespace-nowrap"
+            >
+              Book a session
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </section>
+      )}
+
       {viewMode === 'list' ? (
         <div className="space-y-8">
           <div className="overflow-x-auto pb-4 -mx-5 px-5 scrollbar-hide">
@@ -559,8 +590,19 @@ export default function SessionsPage() {
                 <svg className="w-10 h-10 text-boon-charcoal/30 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p className="text-boon-charcoal/55 font-medium mb-1">No upcoming sessions</p>
-                <p className="text-boon-charcoal/55 text-sm">Your next session will appear here once it's scheduled.</p>
+                <p className="text-boon-charcoal/55 font-medium mb-1">No sessions yet</p>
+                {bookingLink && !isCompleted ? (
+                  <a
+                    href={bookingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 text-sm font-bold rounded-btn text-white bg-boon-blue hover:bg-boon-darkBlue transition-all"
+                  >
+                    Book a session
+                  </a>
+                ) : (
+                  <p className="text-boon-charcoal/55 text-sm">Your next session will appear here once it's scheduled.</p>
+                )}
               </div>
             )}
           </div>
